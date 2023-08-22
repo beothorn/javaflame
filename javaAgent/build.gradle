@@ -1,0 +1,23 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'net.bytebuddy:byte-buddy:1.14.6'
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.github.beothorn.MethodInstrumentationAgent"
+        attributes "Agent-Class": "com.github.beothorn.MethodInstrumentationAgent"
+        attributes "Premain-Class": "com.github.beothorn.MethodInstrumentationAgent"
+        attributes "Can-Redefine-Classes" : "true"
+        attributes "Can-Retransform-Classes" : "true"
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
