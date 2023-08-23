@@ -12,9 +12,8 @@ public class MethodInstrumentationAgent {
         String argument,
         Instrumentation instrumentation
     ) {
-        Advice advice = Advice.to(SpanCatcher.class);
         new AgentBuilder.Default()
-            .type(ElementMatchers.any())
+            .type(ElementMatchers.not(ElementMatchers.nameContains("com.github.beothorn.flameServer")))
             .transform(
                 (
                     builder,
@@ -23,7 +22,7 @@ public class MethodInstrumentationAgent {
                     module,
                     protectionDomain
                 ) ->
-                builder.visit(advice.on(ElementMatchers.isMethod()))
+                builder.visit(Advice.to(SpanCatcher.class).on(ElementMatchers.isMethod()))
             )
             .installOn(instrumentation);
     }
