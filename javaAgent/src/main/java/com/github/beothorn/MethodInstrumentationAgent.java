@@ -12,6 +12,10 @@ public class MethodInstrumentationAgent {
         String argument,
         Instrumentation instrumentation
     ) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("I am leaving bye bye!!!!");
+        }));
+
         new AgentBuilder.Default()
             .type(ElementMatchers.not(ElementMatchers.nameContains("com.github.beothorn.flameServer")))
             .transform(
