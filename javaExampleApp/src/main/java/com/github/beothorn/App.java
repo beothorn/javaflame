@@ -11,7 +11,14 @@ public class App {
         int foo = 0;
 
         foo = fastFunction(foo);
+        Thread thread = new Thread(() -> slowFunction(99));
+        thread.start();
         foo = slowFunction(foo);
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return foo;
     }
 
