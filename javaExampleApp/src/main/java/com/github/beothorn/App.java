@@ -3,6 +3,9 @@
  */
 package com.github.beothorn;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 public class App {
     public static int functionThatCallsFunctions(){
         int foo = 0;
