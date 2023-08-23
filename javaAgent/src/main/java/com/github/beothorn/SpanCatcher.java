@@ -59,6 +59,7 @@ public class SpanCatcher {
 
     @Advice.OnMethodEnter
     public static long enter(@Advice.Origin Method method) {
+        System.out.println("------->"+Thread.currentThread().getName());
         callOnEnter(method);
         return System.currentTimeMillis();
     }
