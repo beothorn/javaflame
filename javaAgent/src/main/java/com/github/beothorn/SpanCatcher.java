@@ -5,6 +5,7 @@ import net.bytebuddy.asm.Advice;
 public class SpanCatcher {
     @Advice.OnMethodEnter
     public static long enter() {
+        // call com.github.beothorn.MethodListener#onEnter
         return System.currentTimeMillis();
     }
     @Advice.OnMethodExit(onThrowable = Throwable.class)
