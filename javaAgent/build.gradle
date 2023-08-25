@@ -6,13 +6,14 @@ repositories {
 
 dependencies {
     implementation 'net.bytebuddy:byte-buddy:1.14.6'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
 }
 
 jar {
     manifest {
-        attributes "Main-Class": "com.github.beothorn.MethodInstrumentationAgent"
-        attributes "Agent-Class": "com.github.beothorn.MethodInstrumentationAgent"
-        attributes "Premain-Class": "com.github.beothorn.MethodInstrumentationAgent"
+        attributes "Main-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
+        attributes "Agent-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
+        attributes "Premain-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
         attributes "Can-Redefine-Classes" : "true"
         attributes "Can-Retransform-Classes" : "true"
     }

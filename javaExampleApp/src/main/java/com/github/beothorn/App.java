@@ -23,9 +23,9 @@ public class App {
     }
 
     private static int slowFunction(int foo) {
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             foo -= 5000;
-            for (int j = 0; j < 20000; j++) {
+            for (int j = 0; j < 200; j++) {
                 foo++;
                 for (int k = 0; k < 1000; k++) {
                     foo--;
@@ -36,7 +36,7 @@ public class App {
     }
 
     private static int fastFunction(int foo) {
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 1000; i++) {
             foo++;
         }
         return foo;
@@ -45,6 +45,8 @@ public class App {
     public static void main(String[] args) {
         System.out.println("Started");
         System.out.println(functionThatCallsFunctions());
+        AnotherClass foo = new AnotherClass("foo");
+        System.out.println(foo.getValue());
         System.out.println("Ended");
     }
 }
