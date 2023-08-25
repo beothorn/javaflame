@@ -10,9 +10,4 @@ rm -rf build
 gradle assemble
 popd
 
-pushd ./flameServer
-rm -rf build
-gradle assemble
-popd
-
-java -javaagent:./javaAgent/build/libs/javaAgent.jar -cp "./flameServer/build/libs/flameServer.jar:./javaExampleApp/build/libs/javaExampleApp.jar" com.github.beothorn.App
+java -javaagent:./javaAgent/build/libs/javaAgent.jar -jar ./javaExampleApp/build/libs/javaExampleApp.jar

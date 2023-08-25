@@ -1,4 +1,4 @@
-package com.github.beothorn;
+package com.github.beothorn.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
@@ -14,10 +14,12 @@ public class MethodInstrumentationAgent {
     ) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("I am leaving bye bye!!!!");
+            System.out.println(SpanCatcher.getFinalCallStack());
+            System.out.println("Done!!!!");
         }));
 
         new AgentBuilder.Default()
-            .type(ElementMatchers.not(ElementMatchers.nameContains("com.github.beothorn.flameServer")))
+            .type(ElementMatchers.not(ElementMatchers.nameContains("com.github.beothorn.agent")))
             .transform(
                 (
                     builder,
@@ -30,4 +32,6 @@ public class MethodInstrumentationAgent {
             )
             .installOn(instrumentation);
     }
+
+
 }
