@@ -14,11 +14,11 @@ public class SpanCatcher {
     @Advice.OnMethodEnter
     public static long enter(@Advice.Origin Method method) {
         String methodName = method.getName();
-        return onEnter(methodName);
+        final String threadName = Thread.currentThread().getName();
+        return onEnter(threadName, methodName);
     }
 
-    public static long onEnter(final String methodName) {
-        final String threadName = Thread.currentThread().getName();
+    public static long onEnter(final String threadName, final String methodName){
         final ArrayDeque<Span> stack = stackPerThread.getOrDefault(threadName, new ArrayDeque<>());
         stack.push(Span.span(methodName));
         stackPerThread.put(threadName, stack);
@@ -28,11 +28,11 @@ public class SpanCatcher {
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(@Advice.Enter long start) {
         long currentTimeMillis = System.currentTimeMillis();
-        onLeave(start, currentTimeMillis);
+        final String threadName = Thread.currentThread().getName();
+        onLeave(threadName, start, currentTimeMillis);
     }
 
-    public static void onLeave(final long start, final long currentTimeMillis) {
-        final String threadName = Thread.currentThread().getName();
+    public static void onLeave(final String threadName, final long start, final long currentTimeMillis) {
         final ArrayDeque<Span> stack = stackPerThread.get(threadName);
         Span current = stack.pop();
         long executionTime = currentTimeMillis - start;
@@ -47,10 +47,10 @@ public class SpanCatcher {
 
     public static String getFinalCallStack() {
         System.out.println("size "+SpanCatcher.stackPerThread.size());
-        return SpanCatcher.stackPerThread
+        return "["+SpanCatcher.stackPerThread
                 .entrySet()
                 .stream()
                 .map(eS -> "{\"thread\":\""+eS.getKey()+"\",\"span\":"+eS.getValue().getLast().toJson()+"}")
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining(","))+"]";
     }
 }
