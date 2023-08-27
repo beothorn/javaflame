@@ -16,6 +16,7 @@ https://github.com/spiermar/d3-flame-graph
 
 ## TODO
 
+- agent parameter: outpout directory
 - agent parameter: snapshot interval
 - timestamps on spans
 - join spans on page
