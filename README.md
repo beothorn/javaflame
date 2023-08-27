@@ -1,9 +1,14 @@
 # javaflame
 
+Simple and easy flame graph for java.  
+No servers or open connections, just plug the agent and get the results.
 
-Will be only agent in the end
+## Usage
 
-`java -javaagent:javaAgent.jar -classpath javasServer.jar  -jar application.jar`
+`java -javaagent:javaAgent.jar -jar application.jar`
+
+
+## Libraries used
 
 https://github.com/spiermar/d3-flame-graph
 
