@@ -1,0 +1,1 @@
+var data = [{"thread":"main","span":{"children":[{"children":[{"name":"fastFunction","value":0},{"name":"slowFunction","value":1063}],"name":"functionThatCallsFunctions","value":1105},{"name":"getValue","value":16}],"name":"main","value":1128}},{"thread":"Thread-1","span":{"name":"slowFunction","value":1104}}]
