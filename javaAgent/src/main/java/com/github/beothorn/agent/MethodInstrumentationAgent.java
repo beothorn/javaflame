@@ -17,9 +17,38 @@ public class MethodInstrumentationAgent {
         String argument,
         Instrumentation instrumentation
     ) {
-        Path javaFlameDirectory;
+        Path javaFlameDirectory = null;
+        boolean detailed = false;
         try {
-            javaFlameDirectory = Files.createTempDirectory("javaflame");
+            String[] arguments = argument.split(",");
+            for (String keyValue : arguments) {
+                String[] keyValeArg = keyValue.split(":");
+                String key = keyValeArg[0];
+                String value = keyValeArg[1];
+                if (key.equalsIgnoreCase("mode")) {
+                    detailed = value.equals("detailed");
+                }
+                if (key.equalsIgnoreCase("out")) {
+                    File file = new File(value);
+                    javaFlameDirectory = file.toPath();
+                    if(!file.exists() || !file.isDirectory()){
+                        System.err.println("Bad directory: '"+file.getAbsolutePath()+"'");
+                        System.err.println("Directory needs to exist!");
+                        System.err.println("Will use temporary instead");
+                        javaFlameDirectory = null;
+                    }
+                }
+            }
+        }catch (ArrayIndexOutOfBoundsException exc){
+            System.err.println("Bad arguments: '"+argument+"'");
+            System.err.println("Expected: 'mode:detailed,out:/tmp/flameOut'");
+            System.out.println("Using default values");
+        }
+
+        try {
+            if(javaFlameDirectory == null){
+                javaFlameDirectory = Files.createTempDirectory("javaflame");
+            }
             snapshotDirectory = new File(javaFlameDirectory.toFile().getAbsolutePath(), System.currentTimeMillis() + "_snap");
             if(!snapshotDirectory.mkdir()){
                 System.err.println("Could not create dir "+snapshotDirectory.getAbsolutePath());
@@ -43,6 +72,7 @@ public class MethodInstrumentationAgent {
             System.out.println("Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
         }));
 
+        Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
         new AgentBuilder.Default()
             .type(ElementMatchers.not(ElementMatchers.nameContains("com.github.beothorn.agent")))
             .transform(
@@ -53,13 +83,13 @@ public class MethodInstrumentationAgent {
                     module,
                     protectionDomain
                 ) ->
-                builder.visit(Advice.to(SpanCatcher.class).on(ElementMatchers.isMethod()))
+                builder.visit(advice.on(ElementMatchers.isMethod()))
             )
             .installOn(instrumentation);
     }
 
-    private static void extractFromResources(final File snapdir, final String fileToBeExtracted) throws IOException {
-        File indexHtmlOut = new File(snapdir.getAbsolutePath(), fileToBeExtracted);
+    private static void extractFromResources(final File snapshotDirectory, final String fileToBeExtracted) throws IOException {
+        File indexHtmlOut = new File(snapshotDirectory.getAbsolutePath(), fileToBeExtracted);
         try(InputStream in = MethodInstrumentationAgent.class.getResourceAsStream(fileToBeExtracted)){
             if(in == null){
                 throw new RuntimeException("Jar is corrupted, missing file '"+ fileToBeExtracted +"'");
@@ -69,6 +99,4 @@ public class MethodInstrumentationAgent {
             }
         }
     }
-
-
 }
