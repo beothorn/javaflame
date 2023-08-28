@@ -10,4 +10,4 @@ rm -rf build
 gradle assemble
 popd
 
-java -javaagent:./javaAgent/build/libs/javaAgent.jar -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+java -javaagent:./javaAgent/build/libs/javaAgent.jar=mode:detailed,out:/tmp/flameOut -jar ./javaExampleApp/build/libs/javaExampleApp.jar
