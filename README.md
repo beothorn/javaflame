@@ -14,7 +14,15 @@ No servers or open connections, just plug the agent and get the results.
 This is slower but a great view for debugging. Only mode:detailed available for now. Example: `java -javaagent:javaAgent.jar=mode:detailed,out:/tmp/flameOut -jar yourApp.jar`
 - out: Specifies the output directory. Example: `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar`
 
+# Screenshots
+
+Performance:  
+
 ![flamegraph](https://github.com/beothorn/javaflame/blob/main/screenshot.png?raw=true)
+
+Detailed mode (for debugging):  
+
+![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotDetailedMode.png?raw=true)
 
 
 ## Libraries used
