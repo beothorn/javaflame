@@ -22,7 +22,7 @@ Performance:
 
 Detailed mode (for debugging):  
 
-![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotDetailedMode.png?raw=true)
+![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotDetailed.png?raw=true)
 
 
 ## Libraries used
