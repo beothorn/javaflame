@@ -10,8 +10,10 @@ No servers or open connections, just plug the agent and get the results.
 
 ## Arguments
 
-- mode: Specifies detailed mode, all parameter values will be recorded with a toString() call.  
-This is slower but a great view for debugging. Only mode:detailed available for now. Example: `java -javaagent:javaAgent.jar=mode:detailed,out:/tmp/flameOut -jar yourApp.jar`
+- mode:detailed Specifies detailed mode, all parameter values will be recorded with a toString() call.  
+This is slower but a great view for debugging.
+Example: `java -javaagent:javaAgent.jar=mode:detailed,out:/tmp/flameOut -jar yourApp.jar`
+- mode:debug Will print every method call.
 - out: Specifies the output directory. Example: `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar`
 
 # Screenshots

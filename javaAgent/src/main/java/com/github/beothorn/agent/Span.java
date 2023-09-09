@@ -41,6 +41,10 @@ public class Span{
         return "{\"children\":["+childrenAsJson+"],\"name\":\""+name+"\",\"value\":"+value+"}";
     }
 
+    public String description(){
+        return name + ": "+value;
+    }
+
     @Override
     public String toString() {
         return toJson();

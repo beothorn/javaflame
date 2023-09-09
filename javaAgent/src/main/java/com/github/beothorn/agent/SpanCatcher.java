@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 public class SpanCatcher {
     public static final Map<String, ArrayDeque<Span>> stackPerThread = new ConcurrentHashMap<>();
 
+    public static boolean debug = false;
+
     @Advice.OnMethodEnter
     public static long enter(@Advice.Origin Method method) {
         String methodName = method.getName();
@@ -19,6 +21,9 @@ public class SpanCatcher {
     }
 
     public static long onEnter(final String threadName, final String methodName){
+        if(debug){
+            System.out.println("[JAVA_AGENT] Enter @"+threadName+": "+methodName);
+        }
         final ArrayDeque<Span> stack = stackPerThread.getOrDefault(threadName, new ArrayDeque<>());
         stack.push(Span.span(methodName));
         stackPerThread.put(threadName, stack);
@@ -38,6 +43,9 @@ public class SpanCatcher {
         long executionTime = currentTimeMillis - start;
         current.value(executionTime);
         Span parent = stack.peek();
+        if(debug){
+            System.out.println("[JAVA_AGENT] Leave @"+threadName+": "+current.description());
+        }
         if(parent == null){
             stack.push(current);
         }else{
@@ -46,7 +54,6 @@ public class SpanCatcher {
     }
 
     public static String getFinalCallStack() {
-        System.out.println("size "+SpanCatcher.stackPerThread.size());
         return "["+SpanCatcher.stackPerThread
                 .entrySet()
                 .stream()
