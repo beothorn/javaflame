@@ -4,6 +4,7 @@ import net.bytebuddy.asm.Advice;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 
 public class SpanCatcherDetailed {
 
@@ -15,12 +16,18 @@ public class SpanCatcherDetailed {
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
+            String argToString;
+            if(allArguments[i].getClass().isArray()){
+                argToString = Arrays.toString((Object[]) allArguments[i]);
+            }else{
+                argToString = allArguments[i].toString();
+            }
             prettyCall.append(
                     parameter.getType().getName())
                     .append(" ")
                     .append(parameter.getName())
                     .append(" = ")
-                    .append(allArguments[i].toString());
+                    .append(argToString);
         }
         prettyCall.append(")");
         final String threadName = Thread.currentThread().getName();

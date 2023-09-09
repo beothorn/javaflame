@@ -7,7 +7,7 @@ import net.bytebuddy.matcher.ElementMatchers;
 import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Optional;
 
 public class MethodInstrumentationAgent {
 
@@ -17,41 +17,31 @@ public class MethodInstrumentationAgent {
         String argument,
         Instrumentation instrumentation
     ) {
-        Path javaFlameDirectory = null;
-        boolean detailed = false;
+        boolean detailed = argumentHasDetailedMode(argument);
+        SpanCatcher.debug = argumentHasDebugMode(argument);
+        Optional<String> maybeFilePath = outputFileOnArgument(argument);
+
+        Optional<File> file = maybeFilePath
+                .map(File::new)
+                .filter(f -> f.exists() || f.isDirectory());
+
+        if(maybeFilePath.isPresent() && file.isEmpty()){
+            System.err.println("[JAVA_AGENT] Bad directory: '"+maybeFilePath.get()+"'");
+            System.err.println("[JAVA_AGENT] Directory needs to exist!");
+            System.err.println("[JAVA_AGENT] Will use temporary instead");
+        }
+
+        File javaFlameDirectory;
         try {
-            String[] arguments = argument.split(",");
-            for (String keyValue : arguments) {
-                String[] keyValeArg = keyValue.split(":");
-                String key = keyValeArg[0];
-                String value = keyValeArg[1];
-                if (key.equalsIgnoreCase("mode")) {
-                    detailed = value.equals("detailed");
-                }
-                if (key.equalsIgnoreCase("out")) {
-                    File file = new File(value);
-                    javaFlameDirectory = file.toPath();
-                    if(!file.exists() || !file.isDirectory()){
-                        System.err.println("Bad directory: '"+file.getAbsolutePath()+"'");
-                        System.err.println("Directory needs to exist!");
-                        System.err.println("Will use temporary instead");
-                        javaFlameDirectory = null;
-                    }
-                }
-            }
-        }catch (ArrayIndexOutOfBoundsException exc){
-            System.err.println("Bad arguments: '"+argument+"'");
-            System.err.println("Expected: 'mode:detailed,out:/tmp/flameOut'");
-            System.out.println("Using default values");
+            javaFlameDirectory = file.orElse(Files.createTempDirectory("javaflame").toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
         try {
-            if(javaFlameDirectory == null){
-                javaFlameDirectory = Files.createTempDirectory("javaflame");
-            }
-            snapshotDirectory = new File(javaFlameDirectory.toFile().getAbsolutePath(), System.currentTimeMillis() + "_snap");
+            snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
             if(!snapshotDirectory.mkdir()){
-                System.err.println("Could not create dir "+snapshotDirectory.getAbsolutePath());
+                System.err.println("[JAVA_AGENT]Could not create dir "+snapshotDirectory.getAbsolutePath());
             }
             extractFromResources(snapshotDirectory, "index.html");
             extractFromResources(snapshotDirectory, "d3.v7.js");
@@ -69,7 +59,7 @@ public class MethodInstrumentationAgent {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            System.out.println("Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
+            System.out.println("[JAVA_AGENT] Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
         }));
 
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
@@ -86,6 +76,27 @@ public class MethodInstrumentationAgent {
                 builder.visit(advice.on(ElementMatchers.isMethod()))
             )
             .installOn(instrumentation);
+    }
+
+    public static boolean argumentHasDetailedMode(String argument){
+        return argument.contains("mode:detailed");
+    }
+
+    public static boolean argumentHasDebugMode(String argument){
+        return argument.contains("mode:debug");
+    }
+
+    public static Optional<String> outputFileOnArgument(String argument){
+        if(!argument.contains("out:")){
+            return Optional.empty();
+        }
+        String afterOut = argument.split("out:")[1];
+        int separator = afterOut.indexOf(',');
+        if(separator == -1){
+           return Optional.of(afterOut);
+        }
+        String filePath = afterOut.substring(0, separator);
+        return Optional.of(filePath);
     }
 
     private static void extractFromResources(final File snapshotDirectory, final String fileToBeExtracted) throws IOException {
