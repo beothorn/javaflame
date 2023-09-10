@@ -9,6 +9,9 @@ import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
 import java.util.Optional;
 
+import static net.bytebuddy.matcher.ElementMatchers.nameContains;
+import static net.bytebuddy.matcher.ElementMatchers.not;
+
 public class MethodInstrumentationAgent {
 
     private static File snapshotDirectory;
@@ -68,7 +71,10 @@ public class MethodInstrumentationAgent {
         System.out.println("[JAVA_AGENT] Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+" output to '"+snapshotDirectory.getAbsolutePath()+"'");
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
         new AgentBuilder.Default()
-            .type(ElementMatchers.not(ElementMatchers.nameContains("com.github.beothorn.agent")))
+            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+            .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+            .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+            .type(not(nameContains("com.github.beothorn.agent")))
             .transform(
                 (
                     builder,
