@@ -2,7 +2,10 @@ package com.github.beothorn.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatchers;
+import net.bytebuddy.utility.JavaModule;
 
 import java.io.*;
 import java.lang.instrument.Instrumentation;
@@ -70,10 +73,14 @@ public class MethodInstrumentationAgent {
 
         System.out.println("[JAVA_AGENT] Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+" output to '"+snapshotDirectory.getAbsolutePath()+"'");
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
-        new AgentBuilder.Default()
-            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-            .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
-            .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+        AgentBuilder agentBuilder = new AgentBuilder.Default()
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+                .with(AgentBuilder.TypeStrategy.Default.REDEFINE);
+        if(SpanCatcher.debug){
+            agentBuilder = agentBuilder.with(new DebugListener());
+        }
+        agentBuilder
             .type(not(nameContains("com.github.beothorn.agent")))
             .transform(
                 (
@@ -122,6 +129,56 @@ public class MethodInstrumentationAgent {
             try(FileOutputStream out = new FileOutputStream(indexHtmlOut)){
                 out.write(in.readAllBytes());
             }
+        }
+    }
+
+    private static class DebugListener implements AgentBuilder.Listener {
+
+        @Override
+        public void onDiscovery(
+                String typeName,
+                ClassLoader classLoader,
+                JavaModule module,
+                boolean loaded
+        ) {
+            System.out.println("[JAVA_AGENT] onDiscovery(String typeName='"+typeName+"', " +
+                    "ClassLoader classLoader='"+classLoader+"', " +
+                    "JavaModule module='"+module+"', " +
+                    "boolean loaded='"+loaded+"')");
+        }
+
+        @Override
+        public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded, DynamicType dynamicType) {
+            System.out.println("[JAVA_AGENT] onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
+                    "ClassLoader classLoader='"+classLoader+"', " +
+                    "JavaModule module='"+module+"', " +
+                    "boolean loaded='"+loaded+"', " +
+                    "DynamicType dynamicType='"+dynamicType+"')");
+        }
+
+        @Override
+        public void onIgnored(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded) {
+            System.out.println("[JAVA_AGENT] onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
+                    "ClassLoader classLoader='"+classLoader+"', " +
+                    "JavaModule module='"+module+"', " +
+                    "boolean loaded='"+loaded+"')");
+        }
+
+        @Override
+        public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {
+            System.out.println("[JAVA_AGENT] onError(String typeName='"+typeName+"', " +
+                    "ClassLoader classLoader='"+classLoader+"', " +
+                    "JavaModule module='"+module+"', " +
+                    "boolean loaded='"+loaded+"', " +
+                    "Throwable throwable='"+throwable+"')");
+        }
+
+        @Override
+        public void onComplete(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded) {
+            System.out.println("[JAVA_AGENT] onComplete(String typeName='"+typeName+"', " +
+                    "ClassLoader classLoader='"+classLoader+"', " +
+                    "JavaModule module='"+module+"', " +
+                    "boolean loaded='"+loaded+"')");
         }
     }
 }
