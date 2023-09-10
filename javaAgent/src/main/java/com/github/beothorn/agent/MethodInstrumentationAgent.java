@@ -14,9 +14,11 @@ public class MethodInstrumentationAgent {
     private static File snapshotDirectory;
 
     public static void premain(
-        String argument,
+        String argumentParameter,
         Instrumentation instrumentation
     ) {
+        System.out.println("[JAVA_AGENT] Agent loaded");
+        String argument = argumentParameter == null ? "" : argumentParameter;
         boolean detailed = argumentHasDetailedMode(argument);
         SpanCatcher.debug = argumentHasDebugMode(argument);
         Optional<String> maybeFilePath = outputFileOnArgument(argument);
@@ -41,7 +43,7 @@ public class MethodInstrumentationAgent {
         try {
             snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
             if(!snapshotDirectory.mkdir()){
-                System.err.println("[JAVA_AGENT]Could not create dir "+snapshotDirectory.getAbsolutePath());
+                System.err.println("[JAVA_AGENT] Could not create dir "+snapshotDirectory.getAbsolutePath());
             }
             extractFromResources(snapshotDirectory, "index.html");
             extractFromResources(snapshotDirectory, "d3.v7.js");
@@ -62,6 +64,8 @@ public class MethodInstrumentationAgent {
             System.out.println("[JAVA_AGENT] Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
         }));
 
+
+        System.out.println("[JAVA_AGENT] Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+" output to '"+snapshotDirectory.getAbsolutePath()+"'");
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
         new AgentBuilder.Default()
             .type(ElementMatchers.not(ElementMatchers.nameContains("com.github.beothorn.agent")))
@@ -72,8 +76,12 @@ public class MethodInstrumentationAgent {
                     classLoader,
                     module,
                     protectionDomain
-                ) ->
-                builder.visit(advice.on(ElementMatchers.isMethod()))
+                ) -> {
+                    if(SpanCatcher.debug){
+                        System.out.println("[JAVA_AGENT] Transform '"+typeDescription.getCanonicalName()+"'");
+                    }
+                    return builder.visit(advice.on(ElementMatchers.isMethod()));
+                }
             )
             .installOn(instrumentation);
     }
