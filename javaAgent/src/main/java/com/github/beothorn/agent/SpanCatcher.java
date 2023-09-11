@@ -15,9 +15,16 @@ public class SpanCatcher {
 
     @Advice.OnMethodEnter
     public static long enter(@Advice.Origin Method method) {
-        String methodName = method.getName();
-        final String threadName = Thread.currentThread().getName();
-        return onEnter(threadName, methodName);
+        try {
+            String methodName = method.getName();
+            final String threadName = Thread.currentThread().getName();
+            return onEnter(threadName, methodName);
+        } catch (Exception e){
+            if(debug){
+                System.err.println("[JAVA_AGENT] ERROR "+e.getMessage());
+            }
+            return 0;
+        }
     }
 
     public static long onEnter(final String threadName, final String methodName){
@@ -32,9 +39,15 @@ public class SpanCatcher {
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(@Advice.Enter long start) {
-        long currentTimeMillis = System.currentTimeMillis();
-        final String threadName = Thread.currentThread().getName();
-        onLeave(threadName, start, currentTimeMillis);
+        try {
+            long currentTimeMillis = System.currentTimeMillis();
+            final String threadName = Thread.currentThread().getName();
+            onLeave(threadName, start, currentTimeMillis);
+        } catch (Exception e){
+            if(debug){
+                System.err.println("[JAVA_AGENT] ERROR "+e.getMessage());
+            }
+        }
     }
 
     public static void onLeave(final String threadName, final long start, final long currentTimeMillis) {

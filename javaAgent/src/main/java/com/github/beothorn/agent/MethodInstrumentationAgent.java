@@ -4,6 +4,7 @@ import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
 
@@ -11,7 +12,11 @@ import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static net.bytebuddy.matcher.ElementMatchers.nameContains;
 import static net.bytebuddy.matcher.ElementMatchers.not;
@@ -71,15 +76,20 @@ public class MethodInstrumentationAgent {
             System.out.println("[JAVA_AGENT] LOG Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
         }));
 
-
         System.out.println("[JAVA_AGENT] LOG Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+" output to '"+snapshotDirectory.getAbsolutePath()+"'");
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
-        new AgentBuilder.Default()
-            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-            .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
-            .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-            .with(new DebugListener(SpanCatcher.debug))
-            .type(not(nameContains("com.github.beothorn.agent")))
+        ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent");
+        List<String> excludes = argumentExcludes(argument);
+        for (String exclude: excludes) {
+            exclusions = exclusions.or(nameContains(exclude));
+        }
+        AgentBuilder.Identified.Narrowable withoutExtraExcludes = new AgentBuilder.Default()
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+                .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+                .with(new DebugListener(SpanCatcher.debug))
+                .type(not(exclusions));
+        withoutExtraExcludes
             .transform(new AgentBuilder.Transformer() {
                 public DynamicType.Builder<?> transform(
                         DynamicType.Builder<?> builder,
@@ -117,6 +127,18 @@ public class MethodInstrumentationAgent {
 
     public static boolean argumentHasDebugMode(String argument){
         return argument.contains("mode:debug");
+    }
+
+    public static List<String> argumentExcludes(String argument){
+        Matcher matcher = Pattern.compile("exclude:([^,]+)")
+                .matcher(argument);
+
+        ArrayList<String> result = new ArrayList<>();
+
+        while (matcher.find()) {
+            result.add(matcher.group(1));
+        }
+        return result;
     }
 
     public static Optional<String> outputFileOnArgument(String argument){
