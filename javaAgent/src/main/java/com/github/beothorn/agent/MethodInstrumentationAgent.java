@@ -2,6 +2,7 @@ package com.github.beothorn.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.NamedElement;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
@@ -13,6 +14,7 @@ import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -76,19 +78,32 @@ public class MethodInstrumentationAgent {
             System.out.println("[JAVA_AGENT] LOG Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
         }));
 
-        System.out.println("[JAVA_AGENT] LOG Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+" output to '"+snapshotDirectory.getAbsolutePath()+"'");
+        List<String> excludes = argumentExcludes(argument);
+        List<String> filters = argumentFilter(argument);
+        System.out.println("[JAVA_AGENT] LOG Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+
+                " output to '"+snapshotDirectory.getAbsolutePath()+"' " +
+                "excludes:"+Arrays.toString(excludes.toArray())+" filters:"+Arrays.toString(filters.toArray()));
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
         ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent");
-        List<String> excludes = argumentExcludes(argument);
         for (String exclude: excludes) {
             exclusions = exclusions.or(nameContains(exclude));
         }
+        ElementMatcher.Junction<TypeDescription> withExclusions = not(exclusions);
+
+        if(!filters.isEmpty()){
+            ElementMatcher.Junction<NamedElement> namedElementJunction = nameContains(filters.get(0));
+            for (int i = 1; i < filters.size(); i++) {
+                namedElementJunction = namedElementJunction.or(nameContains(filters.get(i)));
+            }
+            withExclusions = withExclusions.and(namedElementJunction);
+        }
+
         AgentBuilder.Identified.Narrowable withoutExtraExcludes = new AgentBuilder.Default()
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
                 .with(new DebugListener(SpanCatcher.debug))
-                .type(not(exclusions));
+                .type(withExclusions);
         withoutExtraExcludes
             .transform(new AgentBuilder.Transformer() {
                 public DynamicType.Builder<?> transform(
@@ -133,8 +148,18 @@ public class MethodInstrumentationAgent {
         Matcher matcher = Pattern.compile("exclude:([^,]+)")
                 .matcher(argument);
 
-        ArrayList<String> result = new ArrayList<>();
+        return getAllStringsForMatcher(matcher);
+    }
 
+    public static List<String> argumentFilter(String argument){
+        Matcher matcher = Pattern.compile("filter:([^,]+)")
+                .matcher(argument);
+
+        return getAllStringsForMatcher(matcher);
+    }
+
+    private static ArrayList<String> getAllStringsForMatcher(Matcher matcher) {
+        ArrayList<String> result = new ArrayList<>();
         while (matcher.find()) {
             result.add(matcher.group(1));
         }
