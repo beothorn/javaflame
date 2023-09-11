@@ -57,4 +57,15 @@ class MethodInstrumentationAgentTest {
         assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentExcludes("exclude:foo.bar,fda,exclude:bar.baz,acd,wfae").toArray()));
     }
 
+    @Test
+    void whenItHasFilter(){
+        assertEquals("[]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("").toArray()));
+        assertEquals("[]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("xxx").toArray()));
+        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar").toArray()));
+        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar,xxx").toArray()));
+        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("xxx,filter:foo.bar").toArray()));
+        assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar,filter:bar.baz").toArray()));
+        assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar,fda,filter:bar.baz,acd,wfae").toArray()));
+    }
+
 }
