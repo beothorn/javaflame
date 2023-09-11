@@ -87,13 +87,7 @@ public class MethodInstrumentationAgent {
                         ClassLoader classLoader,
                         JavaModule module
                 ) {
-                    return transform(
-                        builder,
-                        typeDescription,
-                        classLoader,
-                        module,
-                        null
-                    );
+                    return getBuilder(builder, typeDescription);
                 }
 
                 @Override
@@ -104,8 +98,12 @@ public class MethodInstrumentationAgent {
                     JavaModule module,
                     ProtectionDomain protectionDomain
                 ) {
+                    return getBuilder(builder, typeDescription);
+                }
+
+                private DynamicType.Builder<?> getBuilder(DynamicType.Builder<?> builder, TypeDescription typeDescription) {
                     if(SpanCatcher.debug){
-                        System.out.println("[JAVA_AGENT] LOG Transform '"+typeDescription.getCanonicalName()+"'");
+                        System.out.println("[JAVA_AGENT] LOG Transform '"+ typeDescription.getCanonicalName()+"'");
                     }
                     return builder.visit(advice.on(ElementMatchers.isMethod()));
                 }
