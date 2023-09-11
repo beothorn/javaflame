@@ -10,6 +10,7 @@ import net.bytebuddy.utility.JavaModule;
 import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
+import java.security.ProtectionDomain;
 import java.util.Optional;
 
 import static net.bytebuddy.matcher.ElementMatchers.nameContains;
@@ -23,7 +24,7 @@ public class MethodInstrumentationAgent {
         String argumentParameter,
         Instrumentation instrumentation
     ) {
-        System.out.println("[JAVA_AGENT] Agent loaded");
+        System.out.println("[JAVA_AGENT] LOG Agent loaded");
         String argument = argumentParameter == null ? "" : argumentParameter;
         boolean detailed = argumentHasDetailedMode(argument);
         SpanCatcher.debug = argumentHasDebugMode(argument);
@@ -34,9 +35,9 @@ public class MethodInstrumentationAgent {
                 .filter(f -> f.exists() || f.isDirectory());
 
         if(maybeFilePath.isPresent() && file.isEmpty()){
-            System.err.println("[JAVA_AGENT] Bad directory: '"+maybeFilePath.get()+"'");
-            System.err.println("[JAVA_AGENT] Directory needs to exist!");
-            System.err.println("[JAVA_AGENT] Will use temporary instead");
+            System.err.println("[JAVA_AGENT] ERROR Bad directory: '"+maybeFilePath.get()+"'");
+            System.err.println("[JAVA_AGENT] ERROR Directory needs to exist!");
+            System.err.println("[JAVA_AGENT] ERROR Will use temporary instead");
         }
 
         File javaFlameDirectory;
@@ -67,35 +68,48 @@ public class MethodInstrumentationAgent {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            System.out.println("[JAVA_AGENT] Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
+            System.out.println("[JAVA_AGENT] LOG Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
         }));
 
 
-        System.out.println("[JAVA_AGENT] Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+" output to '"+snapshotDirectory.getAbsolutePath()+"'");
+        System.out.println("[JAVA_AGENT] LOG Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+" output to '"+snapshotDirectory.getAbsolutePath()+"'");
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
-        AgentBuilder agentBuilder = new AgentBuilder.Default()
-                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-                .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
-                .with(AgentBuilder.TypeStrategy.Default.REDEFINE);
-        if(SpanCatcher.debug){
-            agentBuilder = agentBuilder.with(new DebugListener());
-        }
-        agentBuilder
+        new AgentBuilder.Default()
+            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+            .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+            .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+            .with(new DebugListener(SpanCatcher.debug))
             .type(not(nameContains("com.github.beothorn.agent")))
-            .transform(
-                (
-                    builder,
-                    typeDescription,
-                    classLoader,
-                    module,
-                    protectionDomain
-                ) -> {
+            .transform(new AgentBuilder.Transformer() {
+                public DynamicType.Builder<?> transform(
+                        DynamicType.Builder<?> builder,
+                        TypeDescription typeDescription,
+                        ClassLoader classLoader,
+                        JavaModule module
+                ) {
+                    return transform(
+                        builder,
+                        typeDescription,
+                        classLoader,
+                        module,
+                        null
+                    );
+                }
+
+                @Override
+                public DynamicType.Builder<?> transform(
+                    DynamicType.Builder<?> builder,
+                    TypeDescription typeDescription,
+                    ClassLoader classLoader,
+                    JavaModule module,
+                    ProtectionDomain protectionDomain
+                ) {
                     if(SpanCatcher.debug){
-                        System.out.println("[JAVA_AGENT] Transform '"+typeDescription.getCanonicalName()+"'");
+                        System.out.println("[JAVA_AGENT] LOG Transform '"+typeDescription.getCanonicalName()+"'");
                     }
                     return builder.visit(advice.on(ElementMatchers.isMethod()));
                 }
-            )
+            })
             .installOn(instrumentation);
     }
 
@@ -124,7 +138,7 @@ public class MethodInstrumentationAgent {
         File indexHtmlOut = new File(snapshotDirectory.getAbsolutePath(), fileToBeExtracted);
         try(InputStream in = MethodInstrumentationAgent.class.getResourceAsStream(fileToBeExtracted)){
             if(in == null){
-                throw new RuntimeException("Jar is corrupted, missing file '"+ fileToBeExtracted +"'");
+                throw new RuntimeException("[JAVA_AGENT] ERROR Jar is corrupted, missing file '"+ fileToBeExtracted +"'");
             }
             try(FileOutputStream out = new FileOutputStream(indexHtmlOut)){
                 out.write(in.readAllBytes());
@@ -134,6 +148,12 @@ public class MethodInstrumentationAgent {
 
     private static class DebugListener implements AgentBuilder.Listener {
 
+        private final boolean debug;
+
+        DebugListener(boolean debug){
+            this.debug = debug;
+        }
+
         @Override
         public void onDiscovery(
                 String typeName,
@@ -141,7 +161,7 @@ public class MethodInstrumentationAgent {
                 JavaModule module,
                 boolean loaded
         ) {
-            System.out.println("[JAVA_AGENT] onDiscovery(String typeName='"+typeName+"', " +
+            if(debug) System.out.println("[JAVA_AGENT] LOG onDiscovery(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
@@ -149,7 +169,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded, DynamicType dynamicType) {
-            System.out.println("[JAVA_AGENT] onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
+            if(debug) System.out.println("[JAVA_AGENT] LOG onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"', " +
@@ -158,7 +178,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onIgnored(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded) {
-            System.out.println("[JAVA_AGENT] onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
+            if(debug) System.out.println("[JAVA_AGENT] LOG onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
@@ -166,7 +186,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {
-            System.out.println("[JAVA_AGENT] onError(String typeName='"+typeName+"', " +
+            System.err.println("[JAVA_AGENT] ERROR onError(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"', " +
@@ -175,7 +195,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onComplete(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded) {
-            System.out.println("[JAVA_AGENT] onComplete(String typeName='"+typeName+"', " +
+            if(debug) System.out.println("[JAVA_AGENT] LOG onComplete(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
