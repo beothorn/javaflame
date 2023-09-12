@@ -27,6 +27,15 @@ class MethodInstrumentationAgentTest {
     }
 
     @Test
+    void whenItHasNoConstructor(){
+        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("mode:noconstructor,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,mode:noconstructor"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,mode:noconstructor,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("mode:noconstructor"));
+        assertFalse(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,modse:noconstructor"));
+    }
+
+    @Test
     void commandFile(){
         assertEquals(
             "C:/foo/bar",

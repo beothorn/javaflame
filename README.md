@@ -14,6 +14,7 @@ No servers or open connections, just plug the agent and get the results.
 This is slower but a great view for debugging.
 Example: `java -javaagent:javaAgent.jar=mode:detailed,out:/tmp/flameOut -jar yourApp.jar`
 - mode:debug Will print every method call.
+- mode:noconstructor Will ignore constructors
 - exclude:qualifed.name.part Will exclude classes which contain the qualified name on them.
 - filter:qualified.name.part Will instrument only classes that contains this string on their qualified name. You probably want to set this to you app package to avoid out of memory with huge spans.
 - out: Specifies the output directory. Example: `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar`

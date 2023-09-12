@@ -3,10 +3,10 @@ package com.github.beothorn.agent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.NamedElement;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
 
 import java.io.*;
@@ -20,8 +20,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.bytebuddy.matcher.ElementMatchers.nameContains;
-import static net.bytebuddy.matcher.ElementMatchers.not;
+import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class MethodInstrumentationAgent {
 
@@ -80,9 +79,14 @@ public class MethodInstrumentationAgent {
 
         List<String> excludes = argumentExcludes(argument);
         List<String> filters = argumentFilter(argument);
-        System.out.println("[JAVA_AGENT] LOG Modes: debug:"+SpanCatcher.debug+" detailed:"+detailed+
-                " output to '"+snapshotDirectory.getAbsolutePath()+"' " +
-                "excludes:"+Arrays.toString(excludes.toArray())+" filters:"+Arrays.toString(filters.toArray()));
+        boolean noConstructorMode = argumentHasNoConstructorMode(argument);
+        System.out.println("[JAVA_AGENT] LOG Modes: "
+                + "debug:" + SpanCatcher.debug
+                + " detailed:" + detailed
+                + " noConstructorMode:" + noConstructorMode
+                + " output to '" + snapshotDirectory.getAbsolutePath() + "'"
+                + " excludes:" + Arrays.toString(excludes.toArray())
+                + " filters:" + Arrays.toString(filters.toArray()));
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
         ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent");
         for (String exclude: excludes) {
@@ -130,7 +134,11 @@ public class MethodInstrumentationAgent {
                     if(SpanCatcher.debug){
                         System.out.println("[JAVA_AGENT] LOG Transform '"+ typeDescription.getCanonicalName()+"'");
                     }
-                    return builder.visit(advice.on(ElementMatchers.isMethod()));
+                    ElementMatcher.Junction<MethodDescription> matcher = isMethod();
+                    if(noConstructorMode){
+                        matcher = matcher.and(not(isConstructor()));
+                    }
+                    return builder.visit(advice.on(matcher));
                 }
             })
             .installOn(instrumentation);
@@ -142,6 +150,10 @@ public class MethodInstrumentationAgent {
 
     public static boolean argumentHasDebugMode(String argument){
         return argument.contains("mode:debug");
+    }
+
+    public static boolean argumentHasNoConstructorMode(String argument){
+        return argument.contains("mode:noconstructor");
     }
 
     public static List<String> argumentExcludes(String argument){
