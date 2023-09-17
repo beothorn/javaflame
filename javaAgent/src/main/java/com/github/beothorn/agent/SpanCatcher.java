@@ -8,10 +8,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
+import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
+
 public class SpanCatcher {
     public static final Map<String, ArrayDeque<Span>> stackPerThread = new ConcurrentHashMap<>();
-
-    public static boolean debug = false;
 
     @Advice.OnMethodEnter
     public static long enter(@Advice.Origin Method method) {
@@ -20,17 +21,13 @@ public class SpanCatcher {
             final String threadName = Thread.currentThread().getName();
             return onEnter(threadName, methodName);
         } catch (Exception e){
-            if(debug){
-                System.err.println("[JAVA_AGENT] ERROR "+e.getMessage());
-            }
+            log(DEBUG, e.getMessage());
             return 0;
         }
     }
 
     public static long onEnter(final String threadName, final String methodName){
-        if(debug){
-            System.out.println("[JAVA_AGENT] Enter @"+threadName+": "+methodName);
-        }
+        log(DEBUG, "Enter @"+threadName+": "+methodName);
         final ArrayDeque<Span> stack = stackPerThread.getOrDefault(threadName, new ArrayDeque<>());
         stack.push(Span.span(methodName));
         stackPerThread.put(threadName, stack);
@@ -44,9 +41,7 @@ public class SpanCatcher {
             final String threadName = Thread.currentThread().getName();
             onLeave(threadName, start, currentTimeMillis);
         } catch (Exception e){
-            if(debug){
-                System.err.println("[JAVA_AGENT] ERROR "+e.getMessage());
-            }
+            log(DEBUG, e.getMessage());
         }
     }
 
@@ -56,9 +51,7 @@ public class SpanCatcher {
         long executionTime = currentTimeMillis - start;
         current.value(executionTime);
         Span parent = stack.peek();
-        if(debug){
-            System.out.println("[JAVA_AGENT] Leave @"+threadName+": "+current.description());
-        }
+        log(DEBUG, "Leave @"+threadName+": "+current.description());
         if(parent == null){
             stack.push(current);
         }else{

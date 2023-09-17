@@ -20,20 +20,52 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class MethodInstrumentationAgent {
 
     private static File snapshotDirectory;
 
+    public enum LogLevel{
+        NONE(1),
+        ERROR(2),
+        INFO(3),
+        WARN(4),
+        DEBUG(5);
+
+        private final Integer level;
+
+        LogLevel(int level) {
+            this.level = level;
+        }
+
+        public boolean shouldPrint(LogLevel level) {
+            return level.level <= this.level ;
+        }
+    }
+
+    private static LogLevel currentLevel = ERROR;
+
+    public static void log(LogLevel level, String log){
+        if(currentLevel.shouldPrint(level)){
+            if(level.equals(ERROR)){
+                System.err.println("[JAVA_AGENT] "+level.name()+" "+log);
+            }else{
+                System.out.println("[JAVA_AGENT] "+level.name()+" "+log);
+            }
+        }
+    }
+
     public static void premain(
         String argumentParameter,
         Instrumentation instrumentation
     ) {
-        System.out.println("[JAVA_AGENT] LOG Agent loaded");
         String argument = argumentParameter == null ? "" : argumentParameter;
+
+        currentLevel = argumentLogLevel(argument);
+        log(INFO, "Agent loaded");
         boolean detailed = argumentHasDetailedMode(argument);
-        SpanCatcher.debug = argumentHasDebugMode(argument);
         Optional<String> maybeFilePath = outputFileOnArgument(argument);
 
         Optional<File> file = maybeFilePath
@@ -41,9 +73,9 @@ public class MethodInstrumentationAgent {
                 .filter(f -> f.exists() || f.isDirectory());
 
         if(maybeFilePath.isPresent() && file.isEmpty()){
-            System.err.println("[JAVA_AGENT] ERROR Bad directory: '"+maybeFilePath.get()+"'");
-            System.err.println("[JAVA_AGENT] ERROR Directory needs to exist!");
-            System.err.println("[JAVA_AGENT] ERROR Will use temporary instead");
+            log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
+            log(ERROR, "Directory needs to exist!");
+            log(ERROR, "Will use temporary instead");
         }
 
         File javaFlameDirectory;
@@ -56,7 +88,7 @@ public class MethodInstrumentationAgent {
         try {
             snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
             if(!snapshotDirectory.mkdir()){
-                System.err.println("[JAVA_AGENT] Could not create dir "+snapshotDirectory.getAbsolutePath());
+                log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
             }
             extractFromResources(snapshotDirectory, "index.html");
             extractFromResources(snapshotDirectory, "d3.v7.js");
@@ -74,21 +106,23 @@ public class MethodInstrumentationAgent {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            System.out.println("[JAVA_AGENT] LOG Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
+            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
         }));
 
         List<String> excludes = argumentExcludes(argument);
         List<String> filters = argumentFilter(argument);
         boolean noConstructorMode = argumentHasNoConstructorMode(argument);
-        System.out.println("[JAVA_AGENT] LOG Modes: "
-                + "debug:" + SpanCatcher.debug
+        boolean coreClassesMode = argumentHasIncludeCoreClasses(argument);
+        log(DEBUG, " logLevel :" + currentLevel.name()
                 + " detailed:" + detailed
                 + " noConstructorMode:" + noConstructorMode
+                + " coreClassesMode:" + coreClassesMode
                 + " output to '" + snapshotDirectory.getAbsolutePath() + "'"
                 + " excludes:" + Arrays.toString(excludes.toArray())
                 + " filters:" + Arrays.toString(filters.toArray()));
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
-        ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent");
+        ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent")
+                .or(nameContains("net.bytebuddy"));
         for (String exclude: excludes) {
             exclusions = exclusions.or(nameContains(exclude));
         }
@@ -102,11 +136,17 @@ public class MethodInstrumentationAgent {
             withExclusions = withExclusions.and(namedElementJunction);
         }
 
-        AgentBuilder.Identified.Narrowable withoutExtraExcludes = new AgentBuilder.Default()
+        AgentBuilder agentBuilder = new AgentBuilder.Default();
+
+        if(coreClassesMode){
+            agentBuilder = agentBuilder.ignore(none());
+        }
+
+        AgentBuilder.Identified.Narrowable withoutExtraExcludes = agentBuilder
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                .with(new DebugListener(SpanCatcher.debug))
+                .with(new DebugListener())
                 .type(withExclusions);
         withoutExtraExcludes
             .transform(new AgentBuilder.Transformer() {
@@ -131,9 +171,7 @@ public class MethodInstrumentationAgent {
                 }
 
                 private DynamicType.Builder<?> getBuilder(DynamicType.Builder<?> builder, TypeDescription typeDescription) {
-                    if(SpanCatcher.debug){
-                        System.out.println("[JAVA_AGENT] LOG Transform '"+ typeDescription.getCanonicalName()+"'");
-                    }
+                    log(DEBUG, "Transform '"+ typeDescription.getCanonicalName()+"'");
                     ElementMatcher.Junction<MethodDescription> matcher = isMethod();
                     if(noConstructorMode){
                         matcher = matcher.and(not(isConstructor()));
@@ -148,8 +186,8 @@ public class MethodInstrumentationAgent {
         return argument.contains("mode:detailed");
     }
 
-    public static boolean argumentHasDebugMode(String argument){
-        return argument.contains("mode:debug");
+    public static boolean argumentHasIncludeCoreClasses(String argument){
+        return argument.contains("mode:coreClasses");
     }
 
     public static boolean argumentHasNoConstructorMode(String argument){
@@ -168,6 +206,17 @@ public class MethodInstrumentationAgent {
                 .matcher(argument);
 
         return getAllStringsForMatcher(matcher);
+    }
+
+    public static LogLevel argumentLogLevel(String argument){
+        Matcher matcher = Pattern.compile("log:([^,]+)")
+                .matcher(argument);
+
+        if(matcher.find()) {
+            return LogLevel.valueOf(matcher.group(1));
+        }
+
+        return INFO;
     }
 
     private static ArrayList<String> getAllStringsForMatcher(Matcher matcher) {
@@ -205,12 +254,6 @@ public class MethodInstrumentationAgent {
 
     private static class DebugListener implements AgentBuilder.Listener {
 
-        private final boolean debug;
-
-        DebugListener(boolean debug){
-            this.debug = debug;
-        }
-
         @Override
         public void onDiscovery(
                 String typeName,
@@ -218,7 +261,7 @@ public class MethodInstrumentationAgent {
                 JavaModule module,
                 boolean loaded
         ) {
-            if(debug) System.out.println("[JAVA_AGENT] LOG onDiscovery(String typeName='"+typeName+"', " +
+            log(DEBUG, "onDiscovery(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
@@ -226,7 +269,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded, DynamicType dynamicType) {
-            if(debug) System.out.println("[JAVA_AGENT] LOG onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
+            log(DEBUG, "onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"', " +
@@ -235,7 +278,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onIgnored(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded) {
-            if(debug) System.out.println("[JAVA_AGENT] LOG onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
+            log(DEBUG, "onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
@@ -243,7 +286,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {
-            System.err.println("[JAVA_AGENT] ERROR onError(String typeName='"+typeName+"', " +
+            log(WARN, "onError(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"', " +
@@ -252,7 +295,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onComplete(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded) {
-            if(debug) System.out.println("[JAVA_AGENT] LOG onComplete(String typeName='"+typeName+"', " +
+            log(DEBUG, "onComplete(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
