@@ -6,6 +6,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 
+import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
+import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
+
 public class SpanCatcherDetailed {
 
     @Advice.OnMethodEnter
@@ -34,9 +37,7 @@ public class SpanCatcherDetailed {
             final String threadName = Thread.currentThread().getName();
             return SpanCatcher.onEnter(threadName, prettyCall.toString());
         } catch (Exception e){
-            if(SpanCatcher.debug){
-                System.err.println("[JAVA_AGENT] ERROR "+e.getMessage());
-            }
+            log(DEBUG, e.getMessage());
             return 0;
         }
     }
@@ -48,9 +49,7 @@ public class SpanCatcherDetailed {
             final String threadName = Thread.currentThread().getName();
             SpanCatcher.onLeave(threadName, start, currentTimeMillis);
         }catch (Exception e){
-            if(SpanCatcher.debug){
-                System.err.println("[JAVA_AGENT] ERROR "+e.getMessage());
-            }
+            log(DEBUG, e.getMessage());
         }
     }
 }

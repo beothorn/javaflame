@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
+import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MethodInstrumentationAgentTest {
@@ -18,12 +19,12 @@ class MethodInstrumentationAgentTest {
     }
 
     @Test
-    void whenItHasCommandDebug(){
-        assertTrue(MethodInstrumentationAgent.argumentHasDebugMode("mode:debug,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDebugMode("asdas,mode:debug"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDebugMode("asdas,mode:debug,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDebugMode("mode:debug"));
-        assertFalse(MethodInstrumentationAgent.argumentHasDebugMode("asdas,modse:debug"));
+    void whenItHasIncludeCoreClasses(){
+        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("mode:coreClasses,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,mode:coreClasses"));
+        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,mode:coreClasses,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("mode:coreClasses"));
+        assertFalse(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,modse:coreClasses"));
     }
 
     @Test
@@ -33,6 +34,43 @@ class MethodInstrumentationAgentTest {
         assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,mode:noconstructor,asdasd"));
         assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("mode:noconstructor"));
         assertFalse(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,modse:noconstructor"));
+    }
+
+    @Test
+    void argumentLogLevel(){
+        assertEquals(INFO,MethodInstrumentationAgent.argumentLogLevel("asdasd"));
+        assertEquals(NONE,MethodInstrumentationAgent.argumentLogLevel("asdasd,log:NONE"));
+        assertEquals(DEBUG,MethodInstrumentationAgent.argumentLogLevel("log:DEBUG,dsf"));
+        assertEquals(DEBUG,MethodInstrumentationAgent.argumentLogLevel("safas,log:DEBUG,dsf"));
+    }
+
+    @Test
+    void logLevelPrintHierarchy(){
+        assertFalse(NONE.shouldPrint(ERROR));
+        assertFalse(NONE.shouldPrint(INFO));
+        assertFalse(NONE.shouldPrint(WARN));
+        assertFalse(NONE.shouldPrint(DEBUG));
+
+
+        assertTrue(ERROR.shouldPrint(ERROR));
+        assertFalse(ERROR.shouldPrint(INFO));
+        assertFalse(ERROR.shouldPrint(WARN));
+        assertFalse(ERROR.shouldPrint(DEBUG));
+
+        assertTrue(INFO.shouldPrint(ERROR));
+        assertTrue(INFO.shouldPrint(INFO));
+        assertFalse(INFO.shouldPrint(WARN));
+        assertFalse(INFO.shouldPrint(DEBUG));
+
+        assertTrue(WARN.shouldPrint(ERROR));
+        assertTrue(WARN.shouldPrint(INFO));
+        assertTrue(WARN.shouldPrint(WARN));
+        assertFalse(WARN.shouldPrint(DEBUG));
+
+        assertTrue(DEBUG.shouldPrint(ERROR));
+        assertTrue(DEBUG.shouldPrint(INFO));
+        assertTrue(DEBUG.shouldPrint(WARN));
+        assertTrue(DEBUG.shouldPrint(DEBUG));
     }
 
     @Test
