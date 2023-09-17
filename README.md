@@ -6,19 +6,32 @@ No servers or open connections, just plug the agent and get the results.
 
 ## Usage
 
-`java -javaagent:javaAgent.jar -jar yourApp.jar`  
+`java -javaagent:javaAgent.jar -jar yourApp.jar` 
+
+or with arguments:  
+
+`java -javaagent:javaAgent.jar=flags,configuration:value -jar yourApp.jar` 
+
+For example, this will silently output a flame graph including values.  
+
+`java -javaagent:javaAgent.jar=detailed,log:NONE,out:C:/graphs -jar yourApp.jar` 
 
 ## Arguments
 
-- log:NONE Specifies the log level. Available levels in order: NONE,ERROR,INFO,WARN,DEBUG
-- mode:detailed Specifies detailed mode, all parameter values will be recorded with a toString() call.  
+### Flags
+
+- detailed Specifies detailed mode, all parameter values will be recorded with a toString() call.  
 This is slower but a great view for debugging.
-Example: `java -javaagent:javaAgent.jar=mode:detailed,out:/tmp/flameOut -jar yourApp.jar`
-- mode:noconstructor Will ignore constructors
-- mode:coreClasses Will include java core classes. More useful in conjunction with filters to check, for example, network calls.
+Example: `java -javaagent:javaAgent.jar=detailed,out:/tmp/flameOut -jar yourApp.jar`
+- no_constructor Will ignore constructors
+- core_classes Will include java core classes. More useful in conjunction with filters to check, for example, network calls.
+
+### Configurations
+
+- log:LEVEL Specifies the log level. Available levels in order: NONE,ERROR,INFO,WARN,DEBUG
 - exclude:qualifed.name.part Will exclude classes which contain the qualified name on them.
 - filter:qualified.name.part Will instrument only classes that contains this string on their qualified name. You probably want to set this to you app package to avoid out of memory with huge spans.
-- out: Specifies the output directory. Example: `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar`
+- out:path Specifies the output directory. Example: `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar`
 
 # Screenshots
 

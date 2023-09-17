@@ -4,36 +4,46 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
+import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.allFlagsOnArgument;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MethodInstrumentationAgentTest {
 
     @Test
+    void listFlags(){
+        assertArrayEquals(new String[]{"no_constructor"},
+                allFlagsOnArgument("dtailed,no_constructor,foobar"));
+        assertArrayEquals(new String[]{"detailed", "no_constructor"},
+                allFlagsOnArgument("dtailed,no_constructor,detailed,foobar"));
+    }
+
+    @Test
     void whenItHasCommandDetailed(){
-        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("mode:detailed,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("asdas,mode:detailed"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("asdas,mode:detailed,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("mode:detailed"));
+        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("detailed,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("asdas,detailed"));
+        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("asdas,detailed,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("detailed"));
+        assertFalse(MethodInstrumentationAgent.argumentHasDetailedMode("include:com.detailed.foobar,modse:detailed"));
         assertFalse(MethodInstrumentationAgent.argumentHasDetailedMode("asdas,modse:detailed"));
     }
 
     @Test
     void whenItHasIncludeCoreClasses(){
-        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("mode:coreClasses,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,mode:coreClasses"));
-        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,mode:coreClasses,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("mode:coreClasses"));
-        assertFalse(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,modse:coreClasses"));
+        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("core_classes,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,core_classes"));
+        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,core_classes,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("core_classes"));
+        assertFalse(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,filter:core_classes"));
     }
 
     @Test
     void whenItHasNoConstructor(){
-        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("mode:noconstructor,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,mode:noconstructor"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,mode:noconstructor,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("mode:noconstructor"));
-        assertFalse(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,modse:noconstructor"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("no_constructor,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,no_constructor"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,no_constructor,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("no_constructor"));
+        assertFalse(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,modse:no_constructor"));
     }
 
     @Test
