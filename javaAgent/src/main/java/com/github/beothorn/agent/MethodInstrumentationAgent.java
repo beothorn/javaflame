@@ -20,12 +20,38 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.*;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class MethodInstrumentationAgent {
 
     private static File snapshotDirectory;
+
+    public enum Flag{
+
+        DETAILED("detailed"),
+        CORE_CLASSES("core_classes"),
+        NO_CONSTRUCTOR("no_constructor")
+        ;
+        public String flagAsString;
+
+        Flag(String flagAsString) {
+            this.flagAsString = flagAsString;
+        }
+
+        public boolean isOnArguments(String arguments){
+            return Pattern.compile("(^|,)" + this.flagAsString + "(,|$)")
+                    .matcher(arguments).find();
+        }
+
+        public static String[] allFlagsOnArgument(String arguments){
+            return Arrays.stream(Flag.values())
+                    .filter(f -> f.isOnArguments(arguments))
+                    .map(f -> f.flagAsString)
+                    .toArray(String[]::new);
+        }
+    }
 
     public enum LogLevel{
         NONE(1),
@@ -114,9 +140,7 @@ public class MethodInstrumentationAgent {
         boolean noConstructorMode = argumentHasNoConstructorMode(argument);
         boolean coreClassesMode = argumentHasIncludeCoreClasses(argument);
         log(DEBUG, " logLevel :" + currentLevel.name()
-                + " detailed:" + detailed
-                + " noConstructorMode:" + noConstructorMode
-                + " coreClassesMode:" + coreClassesMode
+                + " flags:" + Arrays.toString(Flag.allFlagsOnArgument(argument))
                 + " output to '" + snapshotDirectory.getAbsolutePath() + "'"
                 + " excludes:" + Arrays.toString(excludes.toArray())
                 + " filters:" + Arrays.toString(filters.toArray()));
@@ -183,15 +207,15 @@ public class MethodInstrumentationAgent {
     }
 
     public static boolean argumentHasDetailedMode(String argument){
-        return argument.contains("mode:detailed");
+        return DETAILED.isOnArguments(argument);
     }
 
     public static boolean argumentHasIncludeCoreClasses(String argument){
-        return argument.contains("mode:coreClasses");
+        return CORE_CLASSES.isOnArguments(argument);
     }
 
     public static boolean argumentHasNoConstructorMode(String argument){
-        return argument.contains("mode:noconstructor");
+        return NO_CONSTRUCTOR.isOnArguments(argument);
     }
 
     public static List<String> argumentExcludes(String argument){
@@ -250,6 +274,10 @@ public class MethodInstrumentationAgent {
                 out.write(in.readAllBytes());
             }
         }
+    }
+
+    private static boolean argumentContainsFlag(String argument, String flag) {
+        return Pattern.compile("(^|,)" + flag + "(,|$)").matcher(argument).find();
     }
 
     private static class DebugListener implements AgentBuilder.Listener {
