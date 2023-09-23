@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 public class Span{
     private final String name;
     private long value;
+    private Span parent;
     private List<Span> children;
 
     public static Span span(final String name){
@@ -26,8 +27,22 @@ public class Span{
         this.value = value;
     }
 
-    public void add(final Span children){
-        this.children.add(children);
+    public Span enter(final Span child){
+        child.parent = this;
+        children.add(child);
+        return child;
+    }
+
+    public Span getRoot(){
+        Span root = this;
+        while(root.parent != null){
+            root = root.parent;
+        }
+        return root;
+    }
+
+    public Span leave(){
+        return parent;
     }
 
     public String toJson(){

@@ -163,4 +163,34 @@ class SpanTest {
         assertEquals(expected, subject);
     }
 
+    @Test
+    void spanFlow(){
+        Span subject = span("root")
+                .enter(span("A"))
+                    .enter(span("AA"))
+                        .leave()
+                    .enter(span("AB"))
+                        .leave()
+                    .leave()
+                .enter(span("B"))
+                    .enter(span("BA"))
+                        .leave()
+                    .enter(span("BB"))
+                        .leave();
+
+        Span expected = span("root", 0, of(
+            span("A", 0, of(
+                span("AA", 0, of()),
+                span("AB", 0, of())
+            )),
+            span("B", 0, of(
+                span("BA", 0, of()),
+                span("BB", 0, of())
+            ))
+        ));
+
+        Span root = subject.getRoot();
+        assertEquals(expected, root);
+    }
+
 }
