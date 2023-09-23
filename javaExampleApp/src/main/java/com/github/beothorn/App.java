@@ -47,8 +47,8 @@ public class App {
         int i = 0;
         while (i < 213596){
             i++;
-            System.out.println(i);
             AnotherClass foo = new AnotherClass("foo");
+            foo.getValue();
         }
     }
 }
