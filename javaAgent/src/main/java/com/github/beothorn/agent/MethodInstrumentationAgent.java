@@ -102,6 +102,7 @@ public class MethodInstrumentationAgent {
             log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
             log(ERROR, "Directory needs to exist!");
             log(ERROR, "Will use temporary instead");
+
         }
 
         File javaFlameDirectory;
@@ -110,6 +111,8 @@ public class MethodInstrumentationAgent {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        log(INFO, "Output at "+javaFlameDirectory.getAbsolutePath());
 
         try {
             snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
@@ -124,16 +127,16 @@ public class MethodInstrumentationAgent {
             throw new RuntimeException(e);
         }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
-            try (FileWriter fw = new FileWriter(dataFile)){
-                fw.write("var data = "+SpanCatcher.getFinalCallStack());
-                fw.flush();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
-        }));
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+//            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
+//            try (FileWriter fw = new FileWriter(dataFile)){
+//                fw.write("var data = "+SpanCatcher.getFinalCallStack());
+//                fw.flush();
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
+//        }));
 
         List<String> excludes = argumentExcludes(argument);
         List<String> filters = argumentFilter(argument);
