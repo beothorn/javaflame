@@ -139,6 +139,7 @@ public class MethodInstrumentationAgent {
         List<String> filters = argumentFilter(argument);
         boolean noConstructorMode = argumentHasNoConstructorMode(argument);
         boolean coreClassesMode = argumentHasIncludeCoreClasses(argument);
+        SpanCatcher.snapshotDirectoryAbsolutePath = snapshotDirectory.getAbsolutePath();
         log(DEBUG, " logLevel :" + currentLevel.name()
                 + " flags:" + Arrays.toString(Flag.allFlagsOnArgument(argument))
                 + " output to '" + snapshotDirectory.getAbsolutePath() + "'"

@@ -44,9 +44,11 @@ public class App {
 
     public static void main(String[] args) {
         System.out.println("Started");
-        System.out.println(functionThatCallsFunctions());
-        AnotherClass foo = new AnotherClass("foo");
-        System.out.println(foo.getValue());
-        System.out.println("Ended");
+        int i = 0;
+        while (i < 213596){
+            i++;
+            System.out.println(i);
+            AnotherClass foo = new AnotherClass("foo");
+        }
     }
 }
