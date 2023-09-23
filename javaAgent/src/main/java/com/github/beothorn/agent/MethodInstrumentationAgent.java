@@ -32,9 +32,9 @@ public class MethodInstrumentationAgent {
 
         DETAILED("detailed"),
         CORE_CLASSES("core_classes"),
-        NO_CONSTRUCTOR("no_constructor")
-        ;
-        public String flagAsString;
+        NO_CONSTRUCTOR("no_constructor");
+
+        public final String flagAsString;
 
         Flag(String flagAsString) {
             this.flagAsString = flagAsString;
@@ -177,8 +177,8 @@ public class MethodInstrumentationAgent {
                 public DynamicType.Builder<?> transform(
                         DynamicType.Builder<?> builder,
                         TypeDescription typeDescription,
-                        ClassLoader classLoader,
-                        JavaModule module
+                        ClassLoader ignoredClassLoader,
+                        JavaModule ignoredModule
                 ) {
                     return getBuilder(builder, typeDescription);
                 }
@@ -274,10 +274,6 @@ public class MethodInstrumentationAgent {
                 out.write(in.readAllBytes());
             }
         }
-    }
-
-    private static boolean argumentContainsFlag(String argument, String flag) {
-        return Pattern.compile("(^|,)" + flag + "(,|$)").matcher(argument).find();
     }
 
     private static class DebugListener implements AgentBuilder.Listener {
