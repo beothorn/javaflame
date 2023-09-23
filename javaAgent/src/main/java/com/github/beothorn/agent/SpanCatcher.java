@@ -11,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.INFO;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 import static com.github.beothorn.agent.Span.span;
 
@@ -24,18 +23,15 @@ public class SpanCatcher {
         Thread spanSnapshot = new Thread(() -> {
             try {
                 while (true) {
-                    File dataFile = new File(snapshotDirectoryAbsolutePath, "data.js");
+                    File dataFile = new File(snapshotDirectoryAbsolutePath, "data"+System.currentTimeMillis()+".js");
                     try (FileWriter fw = new FileWriter(dataFile)) {
-                        String content = "var data = " + SpanCatcher.getFinalCallStack();
-                        System.out.println(content);
-
+                        String content = "var data = " + SpanCatcher.getOldCallStack();
                         fw.write(content);
                         fw.flush();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    log(INFO, "Flamegraph output to '" + snapshotDirectoryAbsolutePath + "'");
-                    Thread.sleep(5000L);
+                    Thread.sleep(200L);
                 }
             } catch (InterruptedException e) {
                 // Do nothing
@@ -93,11 +89,24 @@ public class SpanCatcher {
         log(DEBUG, "Leave @"+threadName+": "+stack.description());
     }
 
+    public static String getOldCallStack() {
+
+        Map<String, Span> oldStackPerThread = new ConcurrentHashMap<>();
+
+        SpanCatcher.stackPerThread.forEach((key, value) -> {
+            if(value != null) value.removePastSpans().ifPresent(p -> {
+                oldStackPerThread.put(key, p);
+            });
+        });
+
+        return "["+oldStackPerThread
+                .entrySet()
+                .stream()
+                .map(eS -> "{\"thread\":\""+eS.getKey()+"\",\"span\":"+eS.getValue().getRoot().toJson()+"}")
+                .collect(Collectors.joining(","))+"]";
+    }
+
     public static String getFinalCallStack() {
-
-//        final Map<String, ArrayDeque<Span>> oldStackPerThread = new ConcurrentHashMap<>();
-
-
         return "["+SpanCatcher.stackPerThread
                 .entrySet()
                 .stream()
