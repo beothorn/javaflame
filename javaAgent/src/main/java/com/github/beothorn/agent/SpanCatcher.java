@@ -2,9 +2,6 @@ package com.github.beothorn.agent;
 
 import net.bytebuddy.asm.Advice;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,30 +14,6 @@ import static com.github.beothorn.agent.Span.span;
 public class SpanCatcher {
     public static final Map<String, Span> stackPerThread = new ConcurrentHashMap<>();
 
-    public static String snapshotDirectoryAbsolutePath;
-
-    static {
-        Thread spanSnapshot = new Thread(() -> {
-            try {
-                while (true) {
-                    File dataFile = new File(snapshotDirectoryAbsolutePath, "data"+System.currentTimeMillis()+".js");
-                    try (FileWriter fw = new FileWriter(dataFile)) {
-                        String content = "var data = " + SpanCatcher.getOldCallStack();
-                        fw.write(content);
-                        fw.flush();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    Thread.sleep(200L);
-                }
-            } catch (InterruptedException e) {
-                // Do nothing
-            }
-        });
-        spanSnapshot.setDaemon(true);
-        spanSnapshot.start();
-    }
-
     @Advice.OnMethodEnter
     public static long enter(@Advice.Origin Method method) {
         try {
@@ -49,7 +22,7 @@ public class SpanCatcher {
             return onEnter(threadName, methodName);
         } catch (Exception e){
             log(DEBUG, e.getMessage());
-            return 0;
+            return -1;
         }
     }
 
@@ -79,7 +52,7 @@ public class SpanCatcher {
 
     public static void onLeave(final String threadName, final long start, final long currentTimeMillis) {
         final Span stack = stackPerThread.get(threadName);
-        long executionTime = currentTimeMillis - start;
+        long executionTime = (start == -1)? 0 : currentTimeMillis - start;
         stack.value(executionTime);
         Span leave = stack.leave();
         if(leave == null){

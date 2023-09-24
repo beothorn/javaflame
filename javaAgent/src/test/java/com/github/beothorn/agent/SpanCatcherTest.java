@@ -10,6 +10,7 @@ class SpanCatcherTest {
 
     @Test
     void happyDay(){
+        SpanCatcher.stackPerThread.clear();
         onEnter("main", "a"); // main: a
         onEnter("main", "aa"); // main: a -> aa
         onLeave("main", 0, 10); // main: a
@@ -26,6 +27,7 @@ class SpanCatcherTest {
 
         assertEquals("[" +
                 "{\"thread\":\"t\",\"span\":{\"children\":[{\"name\":\"b\",\"value\":10}],\"name\":\"a\",\"value\":10}}," +
-                "{\"thread\":\"main\",\"span\":{\"children\":[{\"name\":\"aa\",\"value\":10},{\"name\":\"ab\",\"value\":10},{\"children\":[{\"name\":\"aca\",\"value\":10}],\"name\":\"ac\",\"value\":10}],\"name\":\"a\",\"value\":0}}]", SpanCatcher.getFinalCallStack());
+                "{\"thread\":\"main\",\"span\":{\"children\":[{\"name\":\"aa\",\"value\":10},{\"name\":\"ab\",\"value\":10},{\"children\":[{\"name\":\"aca\",\"value\":10}],\"name\":\"ac\",\"value\":10}],\"name\":\"a\",\"value\":0}}]",
+                SpanCatcher.getFinalCallStack());
     }
 }

@@ -26,12 +26,14 @@ public class SpanCatcherDetailed {
                 } else {
                     argToString = allArguments[i].toString();
                 }
-                prettyCall.append(
-                                parameter.getType().getName())
+                prettyCall.append(parameter.getType().getName())
                         .append(" ")
                         .append(parameter.getName())
                         .append(" = ")
                         .append(argToString);
+                if(i < parameters.length-1){
+                    prettyCall.append(", ");
+                }
             }
             prettyCall.append(")");
             final String threadName = Thread.currentThread().getName();

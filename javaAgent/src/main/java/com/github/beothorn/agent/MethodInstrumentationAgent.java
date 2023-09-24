@@ -32,7 +32,8 @@ public class MethodInstrumentationAgent {
 
         DETAILED("detailed"),
         CORE_CLASSES("core_classes"),
-        NO_CONSTRUCTOR("no_constructor");
+        NO_CONSTRUCTOR("no_constructor"),
+        NO_SNAPSHOTS("no_snapshots");
 
         public final String flagAsString;
 
@@ -127,22 +128,21 @@ public class MethodInstrumentationAgent {
             throw new RuntimeException(e);
         }
 
-//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-//            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
-//            try (FileWriter fw = new FileWriter(dataFile)){
-//                fw.write("var data = "+SpanCatcher.getFinalCallStack());
-//                fw.flush();
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
-//        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
+            try (FileWriter fw = new FileWriter(dataFile)){
+                fw.write("var data = "+SpanCatcher.getFinalCallStack());
+                fw.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
+        }));
 
         List<String> excludes = argumentExcludes(argument);
         List<String> filters = argumentFilter(argument);
         boolean noConstructorMode = argumentHasNoConstructorMode(argument);
         boolean coreClassesMode = argumentHasIncludeCoreClasses(argument);
-        SpanCatcher.snapshotDirectoryAbsolutePath = snapshotDirectory.getAbsolutePath();
         log(DEBUG, " logLevel :" + currentLevel.name()
                 + " flags:" + Arrays.toString(Flag.allFlagsOnArgument(argument))
                 + " output to '" + snapshotDirectory.getAbsolutePath() + "'"
@@ -208,6 +208,29 @@ public class MethodInstrumentationAgent {
                 }
             })
             .installOn(instrumentation);
+
+        Thread snapshotThread = new Thread(() -> {
+            try {
+                while (true) {
+                    File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data"+System.currentTimeMillis()+".js");
+                    try (FileWriter fw = new FileWriter(dataFile)) {
+                        String content = "var data = " + SpanCatcher.getOldCallStack();
+                        fw.write(content);
+                        fw.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Thread.sleep(1000L);
+                }
+            } catch (InterruptedException e) {
+                // Do nothing, this will never be interrupted
+            }
+        });
+
+        if(!argumentHasNoSnapshotsMode(argument)){
+            snapshotThread.setDaemon(true);
+            snapshotThread.start();
+        }
     }
 
     public static boolean argumentHasDetailedMode(String argument){
@@ -220,6 +243,10 @@ public class MethodInstrumentationAgent {
 
     public static boolean argumentHasNoConstructorMode(String argument){
         return NO_CONSTRUCTOR.isOnArguments(argument);
+    }
+
+    public static boolean argumentHasNoSnapshotsMode(String argument){
+        return NO_SNAPSHOTS.isOnArguments(argument);
     }
 
     public static List<String> argumentExcludes(String argument){
