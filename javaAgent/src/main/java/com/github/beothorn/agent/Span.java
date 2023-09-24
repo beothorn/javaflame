@@ -52,7 +52,11 @@ public class Span{
         String childrenAsJson = children.stream()
                 .map(Span::toJson)
                 .collect(Collectors.joining(","));
-        return "{\"children\":["+childrenAsJson+"],\"name\":\""+name+"\",\"value\":"+value+"}";
+        return "{" +
+                    "\"name\":\""+name+"\"," +
+                    "\"value\":"+value+"," +
+                    "\"children\":["+childrenAsJson+"]"
+                +"}";
     }
 
     public String description(){

@@ -104,30 +104,30 @@ public class DummyProgram {
             "{" +
                 "\"thread\":\"main\"," +
                 "\"span\":{" +
+                    "\"name\":\"integration.DummyProgram.run()\"," +
+                    "\"value\":0," +
                     "\"children\":[" +
                         "{" +
+                            "\"name\":\"integration.DummyProgram.a(int arg0 = 1)\"," +
+                            "\"value\":0," +
                             "\"children\":[" +
                                 "{" +
                                     "\"name\":\"integration.DummyProgram.aa(int arg0 = 2)\"," +
                                     "\"value\":0" +
                                 "}" +
-                            "]," +
-                            "\"name\":\"integration.DummyProgram.a(int arg0 = 1)\"," +
-                            "\"value\":0" +
+                            "]" +
                         "}," +
                         "{" +
+                            "\"name\":\"integration.DummyProgram.b(int arg0 = 1, int arg1 = 2)\"," +
+                            "\"value\":0," +
                             "\"children\":[" +
                                 "{" +
                                     "\"name\":\"integration.DummyProgram.bb(int arg0 = 2, int arg1 = 3)\"," +
                                     "\"value\":0" +
                                 "}" +
-                            "]," +
-                            "\"name\":\"integration.DummyProgram.b(int arg0 = 1, int arg1 = 2)\"," +
-                            "\"value\":0" +
+                            "]" +
                         "}" +
-                    "]," +
-                    "\"name\":\"integration.DummyProgram.run()\"," +
-                    "\"value\":0" +
+                    "]" +
                 "}" +
             "}" +
         "]", SpanCatcher.getFinalCallStack());
