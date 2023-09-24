@@ -10,10 +10,15 @@ public class AnotherClass {
     }
 
     public String getValue() {
+        int j = getJ();
+        return value + j;
+    }
+
+    private int getJ() {
         int j = 0;
         for (int i = 0; i < 100000000; i++) {
             j++;
         }
-        return value + j;
+        return j;
     }
 }
