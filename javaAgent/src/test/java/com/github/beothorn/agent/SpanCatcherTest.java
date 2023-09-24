@@ -25,9 +25,49 @@ class SpanCatcherTest {
         onLeave("t", 20, 30);  // t: no root
         onLeave("main", 30, 40); // main: a
 
-        assertEquals("[" +
-                "{\"thread\":\"t\",\"span\":{\"children\":[{\"name\":\"b\",\"value\":10}],\"name\":\"a\",\"value\":10}}," +
-                "{\"thread\":\"main\",\"span\":{\"children\":[{\"name\":\"aa\",\"value\":10},{\"name\":\"ab\",\"value\":10},{\"children\":[{\"name\":\"aca\",\"value\":10}],\"name\":\"ac\",\"value\":10}],\"name\":\"a\",\"value\":0}}]",
-                SpanCatcher.getFinalCallStack());
+        String threadT = "{" +
+            "\"thread\":\"t\"," +
+            "\"span\":{" +
+                "\"name\":\"a\"," +
+                "\"value\":10," +
+                "\"children\":[" +
+                    "{" +
+                        "\"name\":\"b\"," +
+                        "\"value\":10" +
+                    "}" +
+                "]" +
+            "}" +
+        "}";
+        String threadMain = "{" +
+            "\"thread\":\"main\"," +
+            "\"span\":{" +
+                "\"name\":\"a\"," +
+                "\"value\":0," +
+                "\"children\":[" +
+                    "{" +
+                        "\"name\":\"aa\"," +
+                        "\"value\":10" +
+                    "}," +
+                    "{" +
+                        "\"name\":\"ab\"," +
+                        "\"value\":10" +
+                    "}," +
+                    "{" +
+                        "\"name\":\"ac\"," +
+                        "\"value\":10," +
+                        "\"children\":[" +
+                            "{" +
+                                "\"name\":\"aca\"," +
+                                "\"value\":10" +
+                            "}" +
+                        "]" +
+                    "}" +
+                "]" +
+            "}" +
+        "}";
+        assertEquals(
+            "[" + threadT + "," + threadMain +"]",
+            SpanCatcher.getFinalCallStack()
+        );
     }
 }

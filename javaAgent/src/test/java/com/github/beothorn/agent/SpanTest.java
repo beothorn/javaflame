@@ -16,7 +16,20 @@ class SpanTest {
             span("fooA", 5, of()),
             span("fooB", 5, of())
         ));
-        String expected = "{\"children\":[{\"name\":\"fooA\",\"value\":5},{\"name\":\"fooB\",\"value\":5}],\"name\":\"foo\",\"value\":10}";
+        String expected = "{" +
+            "\"name\":\"foo\"," +
+            "\"value\":10," +
+            "\"children\":[" +
+                "{" +
+                    "\"name\":\"fooA\"," +
+                    "\"value\":5" +
+                "}," +
+                "{" +
+                    "\"name\":\"fooB\"," +
+                    "\"value\":5" +
+                "}" +
+            "]" +
+        "}";
         assertEquals(expected, subject.toJson());
     }
 
