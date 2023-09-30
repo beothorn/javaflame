@@ -8,6 +8,8 @@ import java.util.Arrays;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
+import static com.github.beothorn.agent.SpanCatcher.onEnter;
+import static com.github.beothorn.agent.SpanCatcher.onLeave;
 
 public class SpanCatcherDetailed {
 
@@ -37,7 +39,9 @@ public class SpanCatcherDetailed {
             }
             prettyCall.append(")");
             final String threadName = Thread.currentThread().getName();
-            return SpanCatcher.onEnter(threadName, prettyCall.toString());
+            long entryTime = System.currentTimeMillis();
+            onEnter(threadName, prettyCall.toString(), entryTime);
+            return entryTime;
         } catch (Exception e){
             log(DEBUG, e.getMessage());
             return 0;
@@ -47,9 +51,9 @@ public class SpanCatcherDetailed {
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(@Advice.Enter long start) {
         try{
-            long currentTimeMillis = System.currentTimeMillis();
+            long exitTime = System.currentTimeMillis();
             final String threadName = Thread.currentThread().getName();
-            SpanCatcher.onLeave(threadName, start, currentTimeMillis);
+            onLeave(threadName, exitTime);
         }catch (Exception e){
             log(DEBUG, e.getMessage());
         }

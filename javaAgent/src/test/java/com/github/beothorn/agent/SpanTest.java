@@ -12,21 +12,27 @@ class SpanTest {
 
     @Test
     void happyDayJson(){
-        Span subject = span("foo", 10, of(
-            span("fooA", 5, of()),
-            span("fooB", 5, of())
+        Span subject = span("foo", 0, 2, of(
+            span("fooA", 0, 1),
+            span("fooB", 1, 2)
         ));
         String expected = "{" +
             "\"name\":\"foo\"," +
-            "\"value\":10," +
+            "\"entryTime\":0," +
+            "\"exitTime\":2," +
+            "\"value\":2," +
             "\"children\":[" +
                 "{" +
                     "\"name\":\"fooA\"," +
-                    "\"value\":5" +
+                    "\"entryTime\":0," +
+                    "\"exitTime\":1," +
+                    "\"value\":1" +
                 "}," +
                 "{" +
                     "\"name\":\"fooB\"," +
-                    "\"value\":5" +
+                    "\"entryTime\":1," +
+                    "\"exitTime\":2," +
+                    "\"value\":1" +
                 "}" +
             "]" +
         "}";
@@ -35,23 +41,23 @@ class SpanTest {
 
     @Test
     void equalities(){
-        Span subjectA = span("root", 10, of(
-            span("A", 5, of()),
-            span("B", 5, of())
+        Span subjectA = span("root", 0, 2, of(
+            span("A", 0, 1),
+            span("B", 1, 2)
         ));
-        Span subjectAEquals = span("root", 10, of(
-            span("A", 5, of()),
-            span("B", 5, of())
+        Span subjectAEquals = span("root", 0, 2, of(
+            span("A", 0, 1),
+            span("B", 1, 2)
         ));
-        Span subjectANotEquals = span("root", 10, of(
-            span("A", 5, of()),
-            span("B", 5, of()),
-            span("C", 5, of())
+        Span subjectANotEquals = span("root", 0, 3, of(
+            span("A", 0, 1),
+            span("B", 1, 2),
+            span("C", 2, 3)
         ));
-        Span subjectANotEqualsDeep = span("root", 10, of(
-            span("A", 5, of()),
-            span("B", 5, of(
-                span("C", 5, of())
+        Span subjectANotEqualsDeep = span("root", 0, 2, of(
+            span("A", 0, 1),
+            span("B", 1, 2, of(
+                span("C", 1, 2)
             ))
         ));
         assertEquals(subjectA, subjectAEquals);
@@ -61,37 +67,37 @@ class SpanTest {
 
     @Test
     void equalitiesDeep(){
-        Span subjectA = span("root", 10, of(
-            span("A", 5, of(
-                span("AA", 5, of(
-                    span("AAA", 5, of())
+        Span subjectA = span("root", 0, 2, of(
+            span("A", 0, 1,  of(
+                span("AA", 0, 1, of(
+                    span("AAA", 0, 1)
                 ))
             )),
-            span("B", 5, of())
+            span("B", 1, 2)
         ));
-        Span subjectAEquals = span("root", 10, of(
-            span("A", 5, of(
-                span("AA", 5, of(
-                    span("AAA", 5, of())
+        Span subjectAEquals = span("root", 0, 2, of(
+            span("A", 0, 1, of(
+                span("AA", 0, 1, of(
+                    span("AAA", 0, 1)
                 ))
             )),
-            span("B", 5, of())
+            span("B", 1, 2)
         ));
-        Span subjectANotEquals = span("root", 10, of(
-            span("A", 5, of(
-                span("AA", 5, of())
+        Span subjectANotEquals = span("root", 0, 2, of(
+            span("A", 0, 1, of(
+                span("AA", 0, 1)
             )),
-            span("B", 5, of())
+            span("B", 1, 2)
         ));
-        Span subjectANotEqualsDeep = span("root", 10, of(
-            span("A", 5, of(
-                span("AA", 5, of(
-                    span("AAA", 5, of(
-                        span("AAAA", 5, of())
+        Span subjectANotEqualsDeep = span("root", 0, 2, of(
+            span("A", 0, 1, of(
+                span("AA", 0, 1, of(
+                    span("AAA", 0, 1, of(
+                        span("AAAA", 0, 1)
                     ))
                 ))
             )),
-            span("B", 5, of())
+            span("B", 1, 2)
         ));
         assertEquals(subjectA, subjectAEquals);
         assertNotEquals(subjectA, subjectANotEquals);
@@ -101,19 +107,19 @@ class SpanTest {
 
     @Test
     void shallowRemoveOldSpans(){
-        Span subject = span("root", 10, of(
-            span("A", 5, of()),
-            span("B", 5, of()),
-            span("C", 5, of()),
-            span("D", 5, of())
+        Span subject = span("root", 0, 4, of(
+            span("A", 0, 1),
+            span("B", 1, 2),
+            span("C", 2, 3),
+            span("D", 3, 4)
         ));
-        Span expectedOnlyOld = span("root", 10, of(
-            span("A", 5, of()),
-            span("B", 5, of()),
-            span("C", 5, of())
+        Span expectedOnlyOld = span("root", 0, 4, of(
+            span("A", 0, 1),
+            span("B", 1, 2),
+            span("C", 2, 3)
         ));
-        Span expectedWithoutOld = span("root", 10, of(
-            span("D", 5, of())
+        Span expectedWithoutOld = span("root", 0, 4, of(
+            span("D", 3, 4)
         ));
         Span actualOnlyOld = subject.removePastSpans().orElseThrow();
         assertEquals(expectedWithoutOld, subject);
@@ -122,28 +128,28 @@ class SpanTest {
 
     @Test
     void happyDayRemoveOldSpans(){
-        Span subject = span("foo", 10, of(
-            span("fooA", 5, of(
-                span("fooAA", 5, of()),
-                span("fooAB", 5, of())
+        Span subject = span("foo", 0, 2, of(
+            span("fooA", 0, 2, of(
+                span("fooAA", 0, 1),
+                span("fooAB", 1, 2)
             )),
-            span("fooB", 5, of(
-                span("fooBA", 5, of()),
-                span("fooBB", 5, of())
+            span("fooB", 2, 4, of(
+                span("fooBA", 2, 3),
+                span("fooBB", 3, 4)
             ))
         ));
-        Span expectedOnlyOld = span("foo", 10, of(
-            span("fooA", 5, of(
-                span("fooAA", 5, of()),
-                span("fooAB", 5, of())
+        Span expectedOnlyOld = span("foo", 0, 2, of(
+            span("fooA", 0, 2, of(
+                span("fooAA", 0, 1),
+                span("fooAB", 1, 2)
             )),
-            span("fooB", 5, of(
-                span("fooBA", 5, of())
+            span("fooB", 2, 4, of(
+                span("fooBA", 2, 3)
             ))
         ));
-        Span expectedWithoutOld = span("foo", 10, of(
-            span("fooB", 5, of(
-                span("fooBB", 5, of())
+        Span expectedWithoutOld = span("foo", 0, 2, of(
+            span("fooB", 2, 4, of(
+                span("fooBB", 3, 4)
             ))
         ));
 
@@ -155,17 +161,17 @@ class SpanTest {
 
     @Test
     void removeWithoutOldSpans(){
-        Span subject = span("foo", 10, of(
-            span("fooA", 5, of(
-                span("fooAA", 5, of(
-                    span("fooAAA", 5, of())
+        Span subject = span("foo", 0, 1, of(
+            span("fooA", 0, 1, of(
+                span("fooAA", 0, 1, of(
+                    span("fooAAA", 0, 1)
                 ))
             ))
         ));
-        Span expected = span("foo", 10, of(
-            span("fooA", 5, of(
-                span("fooAA", 5, of(
-                    span("fooAAA", 5, of())
+        Span expected = span("foo", 0, 1, of(
+            span("fooA", 0, 1, of(
+                span("fooAA", 0, 1, of(
+                    span("fooAAA", 0, 1)
                 ))
             ))
         ));
@@ -178,27 +184,27 @@ class SpanTest {
 
     @Test
     void spanFlow(){
-        Span subject = span("root")
-                .enter("A")
-                    .enter("AA")
-                        .leave()
-                    .enter("AB")
-                        .leave()
-                    .leave()
-                .enter("B")
-                    .enter("BA")
-                        .leave()
-                    .enter("BB")
-                        .leave();
+        Span subject = span("root", 0)
+                .enter("A", 0)
+                    .enter("AA", 0)
+                        .leave(1)
+                    .enter("AB", 1)
+                        .leave(2)
+                    .leave(2)
+                .enter("B", 2)
+                    .enter("BA", 2)
+                        .leave(3)
+                    .enter("BB", 3)
+                        .leave(4);
 
-        Span expected = span("root", 0, of(
-            span("A", 0, of(
-                span("AA", 0, of()),
-                span("AB", 0, of())
+        Span expected = span("root", 0, 4, of(
+            span("A", 0, 2, of(
+                span("AA", 0, 1),
+                span("AB", 1, 2)
             )),
-            span("B", 0, of(
-                span("BA", 0, of()),
-                span("BB", 0, of())
+            span("B", 2, 4, of(
+                span("BA", 2, 3),
+                span("BB", 3, 4)
             ))
         ));
 

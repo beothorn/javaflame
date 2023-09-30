@@ -4,43 +4,89 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Span{
+
     private final String name;
-    private long value;
     private Span parent;
     private List<Span> children;
-    public long start;
+    public final long entryTime;
+    public long exitTime;
 
-    public static Span span(final String name){
-        return new Span(0, name, 0, new ArrayList<>());
+    public static Span span(
+        final String name,
+        final long entryTime
+    ){
+        return new Span(
+            name,
+            entryTime,
+            0,
+            null,
+            new ArrayList<>()
+        );
     }
 
-    public static Span span(final long start, final String name){
-        return new Span(start, name, 0, new ArrayList<>());
+    public static Span span(
+        final String name,
+        final long entryTime,
+        final Span parent
+    ){
+        return new Span(
+            name,
+            entryTime,
+            0,
+            parent,
+            new ArrayList<>()
+        );
     }
 
-    public static Span span(final String name, final long value, final List<Span> children){
-        return new Span(0, name, value, children);
+    public static Span span(
+            final String name,
+            final long entryTime,
+            final long exitTime,
+            final List<Span> children
+    ){
+        return new Span(
+                name,
+                entryTime,
+                exitTime,
+                null,
+                children
+        );
     }
 
-    public static Span span(final int start, final String name, final long value, final List<Span> children){
-        return new Span(start, name, value, children);
+    public static Span span(
+            final String name,
+            final long entryTime,
+            final long exitTime
+    ){
+        return new Span(
+                name,
+                entryTime,
+                exitTime,
+                null,
+                new ArrayList<>()
+        );
     }
 
-    private Span(final long start, final String name, final long value, final List<Span> children){
-        this.start = start;
+    private Span(
+        final String name,
+        final long entryTime,
+        final long exitTime,
+        final Span parent,
+        final List<Span> children
+    ){
         this.name = name;
-        this.value = value;
+        this.entryTime = entryTime;
+        this.exitTime = exitTime;
+        this.parent = parent;
         this.children = new ArrayList<>(children);
+        this.children.forEach(c -> c.parent = this);
     }
 
-    public void value(final long value){
-        this.value = value;
-    }
-
-    public Span enter(final String methodName){
-        // Sum child values here
-        Span child = span(methodName);
-        child.parent = this;
+    public Span enter(
+        final String methodName,
+        final long entryTime
+    ){
+        Span child = span(methodName, entryTime, this);
         children.add(child);
         return child;
     }
@@ -53,37 +99,44 @@ public class Span{
         return root;
     }
 
-    public Span leave(){
+    public Span leave(final long exitTime){
+        this.exitTime = exitTime;
         return parent;
+    }
+
+    private long duration(){
+        return (entryTime == -1)? 0 : exitTime - entryTime;
     }
 
     public String toJson(){
         if(children.isEmpty()){
             return "{" +
-                        "\"start\":"+start+"," +
                         "\"name\":\""+name+"\"," +
-                        "\"value\":"+value+
+                        "\"entryTime\":"+ entryTime +"," +
+                        "\"exitTime\":"+ exitTime +"," +
+                        "\"value\":"+ duration() +
                     "}";
         }
         String childrenAsJson = children.stream()
                 .map(Span::toJson)
                 .collect(Collectors.joining(","));
         return "{" +
-                    "\"start\":\""+start+"\"," +
                     "\"name\":\""+name+"\"," +
-                    "\"value\":"+value+"," +
+                    "\"entryTime\":"+ entryTime +"," +
+                    "\"exitTime\":"+ exitTime +"," +
+                    "\"value\":"+ duration() +"," +
                     "\"children\":["+childrenAsJson+"]"+
                 "}";
     }
 
     public String description(){
-        return name + ": "+value;
+        return name + ": "+ duration();
     }
 
     @Override
     public String toString() {
-        if(children.isEmpty()) return name+": "+value;
-        return name+": "+value+" "+Arrays.toString(children.toArray());
+        if(children.isEmpty()) return name+": "+ duration();
+        return name+": "+ duration() +" "+Arrays.toString(children.toArray());
     }
 
     @Override
@@ -96,7 +149,7 @@ public class Span{
         }
 
         if(children.isEmpty()){
-            return value == span.value && Objects.equals(name, span.name);
+            return entryTime == span.entryTime && Objects.equals(name, span.name);
         }
 
         for (int i = 0; i < children.size(); i++) {
@@ -110,27 +163,49 @@ public class Span{
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, value, children);
+        return Objects.hash(name, entryTime, children);
     }
 
+    /***
+     * Remove old spans and keep only the current active span.
+     * This is the last child branch.
+     *
+     * @return the non active branch
+     */
     public Optional<Span> removePastSpans(){
         if(children.isEmpty()){
+            // If it has no children, there is nothing to remove
+            // return nothing removed
             return Optional.empty();
         }
 
+        // The last child is the active, all others will be removed
         Span activeChild = children.remove(children.size() - 1);
 
+        // We also want the active child to remove old spans
+        // The spans for the other children are all old, only the ctive child may keep some
         Optional<Span> activeChildrenPastSpans = activeChild.removePastSpans();
 
-        if(!children.isEmpty() || activeChildrenPastSpans.isPresent()){
-            List<Span> oldChildren = children;
-            activeChildrenPastSpans.map(oldChildren::add);
-            children = Arrays.asList(activeChild);
-            return Optional.of(span(name, value, oldChildren));
+        boolean thereIsNoMoreChildren = children.isEmpty();
+        boolean noSpanWasRemoved = activeChildrenPastSpans.isEmpty();
+        boolean thereAreNoOldSpansToReturn = thereIsNoMoreChildren && noSpanWasRemoved;
+
+        if(thereAreNoOldSpansToReturn){
+            // nothing changed, put child back
+            children.add(activeChild);
+            return Optional.empty();
         }
 
-        // nothing changed
-        children = Arrays.asList(activeChild);
-        return Optional.empty();
+        List<Span> oldChildren = children;
+        activeChildrenPastSpans.map(oldChildren::add);
+        children = new ArrayList<>();
+        children.add(activeChild);
+        return Optional.of(new Span(
+            name,
+            entryTime,
+            exitTime,
+            null,
+            oldChildren
+        ));
     }
 }

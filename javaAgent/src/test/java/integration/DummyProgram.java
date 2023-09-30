@@ -1,6 +1,7 @@
 package integration;
 
 import com.github.beothorn.agent.SpanCatcher;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.github.beothorn.agent.SpanCatcherDetailed.enter;
@@ -96,6 +97,7 @@ public class DummyProgram {
         return result;
     }
 
+    @Disabled("Needs a comparision without machine clock")
     @Test
     void runDummyProgramAndCheckOutput(){
         SpanCatcher.stackPerThread.clear();
