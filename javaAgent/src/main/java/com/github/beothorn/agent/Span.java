@@ -8,16 +8,26 @@ public class Span{
     private long value;
     private Span parent;
     private List<Span> children;
+    public long start;
 
     public static Span span(final String name){
-        return new Span(name, 0, new ArrayList<>());
+        return new Span(0, name, 0, new ArrayList<>());
+    }
+
+    public static Span span(final long start, final String name){
+        return new Span(start, name, 0, new ArrayList<>());
     }
 
     public static Span span(final String name, final long value, final List<Span> children){
-        return new Span(name, value, children);
+        return new Span(0, name, value, children);
     }
 
-    private Span(final String name, final long value, final List<Span> children){
+    public static Span span(final int start, final String name, final long value, final List<Span> children){
+        return new Span(start, name, value, children);
+    }
+
+    private Span(final long start, final String name, final long value, final List<Span> children){
+        this.start = start;
         this.name = name;
         this.value = value;
         this.children = new ArrayList<>(children);
@@ -27,7 +37,9 @@ public class Span{
         this.value = value;
     }
 
-    public Span enter(final Span child){
+    public Span enter(final String methodName){
+        // Sum child values here
+        Span child = span(methodName);
         child.parent = this;
         children.add(child);
         return child;
@@ -47,16 +59,21 @@ public class Span{
 
     public String toJson(){
         if(children.isEmpty()){
-            return "{\"name\":\""+name+"\",\"value\":"+value+"}";
+            return "{" +
+                        "\"start\":"+start+"," +
+                        "\"name\":\""+name+"\"," +
+                        "\"value\":"+value+
+                    "}";
         }
         String childrenAsJson = children.stream()
                 .map(Span::toJson)
                 .collect(Collectors.joining(","));
         return "{" +
+                    "\"start\":\""+start+"\"," +
                     "\"name\":\""+name+"\"," +
                     "\"value\":"+value+"," +
-                    "\"children\":["+childrenAsJson+"]"
-                +"}";
+                    "\"children\":["+childrenAsJson+"]"+
+                "}";
     }
 
     public String description(){

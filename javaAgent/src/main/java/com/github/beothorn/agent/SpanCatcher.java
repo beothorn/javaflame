@@ -33,7 +33,7 @@ public class SpanCatcher {
         if(stack == null){
             stackPerThread.put(threadName, span(methodName));
         } else {
-            Span enter = stack.enter(span(methodName));
+            Span enter = stack.enter(methodName);
             stackPerThread.put(threadName, enter);
         }
         return System.currentTimeMillis();

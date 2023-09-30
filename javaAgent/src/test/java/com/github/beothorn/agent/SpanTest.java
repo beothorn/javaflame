@@ -179,16 +179,16 @@ class SpanTest {
     @Test
     void spanFlow(){
         Span subject = span("root")
-                .enter(span("A"))
-                    .enter(span("AA"))
+                .enter("A")
+                    .enter("AA")
                         .leave()
-                    .enter(span("AB"))
+                    .enter("AB")
                         .leave()
                     .leave()
-                .enter(span("B"))
-                    .enter(span("BA"))
+                .enter("B")
+                    .enter("BA")
                         .leave()
-                    .enter(span("BB"))
+                    .enter("BB")
                         .leave();
 
         Span expected = span("root", 0, of(
