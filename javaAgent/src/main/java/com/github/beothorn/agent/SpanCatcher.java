@@ -15,46 +15,48 @@ public class SpanCatcher {
     public static final Map<String, Span> stackPerThread = new ConcurrentHashMap<>();
 
     @Advice.OnMethodEnter
-    public static long enter(@Advice.Origin Method method) {
+    public static void enter(@Advice.Origin Method method) {
         try {
             String methodName = method.getName();
             final String threadName = Thread.currentThread().getName();
-            return onEnter(threadName, methodName);
+            long entryTime = System.currentTimeMillis();
+            onEnter(threadName, methodName, entryTime);
         } catch (Exception e){
+            // Should never get here, but if it does, execution needs to go on
             log(DEBUG, e.getMessage());
-            return -1;
         }
     }
 
-    public static long onEnter(final String threadName, final String methodName){
+    public static void onEnter(
+        final String threadName,
+        final String methodName,
+        final long entryTime
+    ){
         log(DEBUG, "Enter @"+threadName+": "+methodName);
 
         final Span stack = stackPerThread.get(threadName);
         if(stack == null){
-            stackPerThread.put(threadName, span(methodName));
+            stackPerThread.put(threadName, span(methodName, entryTime));
         } else {
-            Span enter = stack.enter(methodName);
+            Span enter = stack.enter(methodName, entryTime);
             stackPerThread.put(threadName, enter);
         }
-        return System.currentTimeMillis();
     }
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
-    public static void exit(@Advice.Enter long start) {
+    public static void exit() {
         try {
             long currentTimeMillis = System.currentTimeMillis();
             final String threadName = Thread.currentThread().getName();
-            onLeave(threadName, start, currentTimeMillis);
+            onLeave(threadName, currentTimeMillis);
         } catch (Exception e){
             log(DEBUG, e.getMessage());
         }
     }
 
-    public static void onLeave(final String threadName, final long start, final long currentTimeMillis) {
+    public static void onLeave(final String threadName, final long exitTime) {
         final Span stack = stackPerThread.get(threadName);
-        long executionTime = (start == -1)? 0 : currentTimeMillis - start;
-        stack.value(executionTime);
-        Span leave = stack.leave();
+        Span leave = stack.leave(exitTime);
         if(leave == null){
             return;
         }

@@ -11,29 +11,34 @@ class SpanCatcherTest {
     @Test
     void happyDay(){
         SpanCatcher.stackPerThread.clear();
-        onEnter("main", "a"); // main: a
-        onEnter("main", "aa"); // main: a -> aa
-        onLeave("main", 0, 10); // main: a
-        onEnter("main", "ab"); // main: a -> ab
-        onEnter("t", "a"); // t: a
-        onEnter("t", "b"); // t: a -> b
-        onLeave("t", 10, 20); // t: a
-        onLeave("main", 10, 20); // main: a
-        onEnter("main", "ac"); // main: a -> ac
-        onEnter("main", "aca"); // main: a -> ac -> aca
-        onLeave("main", 20, 30); // main: a -> ac
-        onLeave("t", 20, 30);  // t: no root
-        onLeave("main", 30, 40); // main: a
+        onEnter("main", "a",  0); // main: a
+        onEnter("main", "aa", 0); // main: a -> aa
+        onLeave("main", 1); // main: a
+        onEnter("main", "ab", 1); // main: a -> ab
+        onEnter("t", "a", 0); // t: a
+        onEnter("t", "b", 0); // t: a -> b
+        onLeave("t", 1); // t: a
+        onLeave("main", 2); // main: a
+        onEnter("main", "ac", 2); // main: a -> ac
+        onEnter("main", "aca", 2); // main: a -> ac -> aca
+        onLeave("main", 3); // main: a -> ac
+        onLeave("t", 1);  // t: no root
+        onLeave("main", 3); // main: a
+        onLeave("main", 3); // main: exit a
 
         String threadT = "{" +
             "\"thread\":\"t\"," +
             "\"span\":{" +
                 "\"name\":\"a\"," +
-                "\"value\":10," +
+                "\"entryTime\":0," +
+                "\"exitTime\":1," +
+                "\"value\":1," +
                 "\"children\":[" +
                     "{" +
                         "\"name\":\"b\"," +
-                        "\"value\":10" +
+                        "\"entryTime\":0," +
+                        "\"exitTime\":1," +
+                        "\"value\":1" +
                     "}" +
                 "]" +
             "}" +
@@ -42,23 +47,33 @@ class SpanCatcherTest {
             "\"thread\":\"main\"," +
             "\"span\":{" +
                 "\"name\":\"a\"," +
-                "\"value\":0," +
+                "\"entryTime\":0," +
+                "\"exitTime\":3," +
+                "\"value\":3," +
                 "\"children\":[" +
                     "{" +
                         "\"name\":\"aa\"," +
-                        "\"value\":10" +
+                        "\"entryTime\":0," +
+                        "\"exitTime\":1," +
+                        "\"value\":1" +
                     "}," +
                     "{" +
                         "\"name\":\"ab\"," +
-                        "\"value\":10" +
+                        "\"entryTime\":1," +
+                        "\"exitTime\":2," +
+                        "\"value\":1" +
                     "}," +
                     "{" +
                         "\"name\":\"ac\"," +
-                        "\"value\":10," +
+                        "\"entryTime\":2," +
+                        "\"exitTime\":3," +
+                        "\"value\":1," +
                         "\"children\":[" +
                             "{" +
                                 "\"name\":\"aca\"," +
-                                "\"value\":10" +
+                                "\"entryTime\":2," +
+                                "\"exitTime\":3," +
+                                "\"value\":1" +
                             "}" +
                         "]" +
                     "}" +
