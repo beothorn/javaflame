@@ -3,9 +3,6 @@
  */
 package com.github.beothorn;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 public class App {
     public static int functionThatCallsFunctions(){
         int foo = 0;
@@ -45,10 +42,15 @@ public class App {
     public static void main(String[] args) {
         System.out.println("Started");
         int i = 0;
-        while (i < 213596){
+        while (true){
             i++;
             AnotherClass foo = new AnotherClass("foo");
             foo.getValue();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

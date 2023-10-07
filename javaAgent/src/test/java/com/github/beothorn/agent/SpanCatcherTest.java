@@ -28,6 +28,7 @@ class SpanCatcherTest {
 
         String threadT = "{" +
             "\"thread\":\"t\"," +
+            "\"snapshotTime\":0,"+
             "\"span\":{" +
                 "\"name\":\"a\"," +
                 "\"entryTime\":0," +
@@ -45,6 +46,7 @@ class SpanCatcherTest {
         "}";
         String threadMain = "{" +
             "\"thread\":\"main\"," +
+            "\"snapshotTime\":0,"+
             "\"span\":{" +
                 "\"name\":\"a\"," +
                 "\"entryTime\":0," +
@@ -83,6 +85,8 @@ class SpanCatcherTest {
         assertEquals(
             "[" + threadT + "," + threadMain +"]",
             SpanCatcher.getFinalCallStack()
+                    .replaceAll("\n", "")
+                    .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
         );
     }
 }

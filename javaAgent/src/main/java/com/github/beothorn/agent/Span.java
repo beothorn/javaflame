@@ -1,7 +1,6 @@
 package com.github.beothorn.agent;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Span{
 
@@ -115,18 +114,24 @@ public class Span{
                         "\"entryTime\":"+ entryTime +"," +
                         "\"exitTime\":"+ exitTime +"," +
                         "\"value\":"+ duration() +
-                    "}";
+                    "}\n";
         }
-        String childrenAsJson = children.stream()
-                .map(Span::toJson)
-                .collect(Collectors.joining(","));
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(children.get(0).toJson());
+        for (int i = 1; i < children.size(); i++) {
+            sb.append(",");
+            sb.append(children.get(i).toJson());
+        }
+
+        String childrenAsJson = sb.toString();
         return "{" +
                     "\"name\":\""+name+"\"," +
                     "\"entryTime\":"+ entryTime +"," +
                     "\"exitTime\":"+ exitTime +"," +
                     "\"value\":"+ duration() +"," +
                     "\"children\":["+childrenAsJson+"]"+
-                "}";
+                "}\n";
     }
 
     public String description(){

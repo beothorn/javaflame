@@ -36,7 +36,8 @@ class SpanTest {
                 "}" +
             "]" +
         "}";
-        assertEquals(expected, subject.toJson());
+        assertEquals(expected, subject.toJson()
+                .replaceAll("\n", ""));
     }
 
     @Test
