@@ -65,7 +65,6 @@ public class SpanCatcher {
     }
 
     public static String getOldCallStack() {
-
         Map<String, Span> oldStackPerThread = new ConcurrentHashMap<>();
 
         SpanCatcher.stackPerThread.forEach((key, value) -> {
@@ -74,18 +73,22 @@ public class SpanCatcher {
             });
         });
 
-        return "["+oldStackPerThread
-                .entrySet()
-                .stream()
-                .map(eS -> "{\"thread\":\""+eS.getKey()+"\",\"span\":"+eS.getValue().getRoot().toJson()+"}")
-                .collect(Collectors.joining(","))+"]";
+        return getSnapshot(oldStackPerThread);
+    }
+
+    private static String getSnapshot(Map<String, Span> stackPerThreadToPrint) {
+        return "[\n" + stackPerThreadToPrint
+            .entrySet()
+            .stream()
+            .map(eS -> "{"
+                    + "\"thread\":\"" + eS.getKey() + "\","
+                    + "\"snapshotTime\":" + System.currentTimeMillis() + ","
+                    + "\"span\":" + eS.getValue().getRoot().toJson()
+                + "}")
+            .collect(Collectors.joining(",")) + "\n]";
     }
 
     public static String getFinalCallStack() {
-        return "["+SpanCatcher.stackPerThread
-                .entrySet()
-                .stream()
-                .map(eS -> "{\"thread\":\""+eS.getKey()+"\",\"span\":"+eS.getValue().getRoot().toJson()+"}")
-                .collect(Collectors.joining(","))+"]";
+        return getSnapshot(SpanCatcher.stackPerThread);
     }
 }

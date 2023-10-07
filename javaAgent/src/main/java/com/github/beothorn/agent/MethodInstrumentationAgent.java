@@ -103,7 +103,6 @@ public class MethodInstrumentationAgent {
             log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
             log(ERROR, "Directory needs to exist!");
             log(ERROR, "Will use temporary instead");
-
         }
 
         File javaFlameDirectory;
@@ -115,40 +114,83 @@ public class MethodInstrumentationAgent {
 
         log(INFO, "Output at "+javaFlameDirectory.getAbsolutePath());
 
-        try {
-            snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
-            if(!snapshotDirectory.mkdir()){
-                log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
-            }
-            extractFromResources(snapshotDirectory, "index.html");
-            extractFromResources(snapshotDirectory, "d3.v7.js");
-            extractFromResources(snapshotDirectory, "d3-flamegraph.css");
-            extractFromResources(snapshotDirectory, "d3-flamegraph.min.js");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeHtmlFiles(javaFlameDirectory);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
-            try (FileWriter fw = new FileWriter(dataFile)){
-                fw.write("var data = "+SpanCatcher.getFinalCallStack());
-                fw.flush();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
-        }));
+        addShutdownHookToWriteDataOnJVMShutdown();
 
         List<String> excludes = argumentExcludes(argument);
         List<String> filters = argumentFilter(argument);
-        boolean noConstructorMode = argumentHasNoConstructorMode(argument);
-        boolean coreClassesMode = argumentHasIncludeCoreClasses(argument);
+
         log(DEBUG, " logLevel :" + currentLevel.name()
                 + " flags:" + Arrays.toString(Flag.allFlagsOnArgument(argument))
                 + " output to '" + snapshotDirectory.getAbsolutePath() + "'"
                 + " excludes:" + Arrays.toString(excludes.toArray())
                 + " filters:" + Arrays.toString(filters.toArray()));
+
+        ElementMatcher.Junction<TypeDescription> argumentsMatcher = getMatcherFromAruments(excludes, filters);
+
+        AgentBuilder agentBuilder = new AgentBuilder.Default();
+
+        boolean coreClassesMode = argumentHasIncludeCoreClasses(argument);
+        if(coreClassesMode){
+            agentBuilder = agentBuilder.ignore(none());
+        }
+
+        boolean noConstructorMode = argumentHasNoConstructorMode(argument);
         Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
+        AgentBuilder.Identified.Narrowable withoutExtraExcludes = agentBuilder
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+                .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+                .with(new DebugListener())
+                .type(argumentsMatcher);
+        withoutExtraExcludes
+            .transform(new IntroduceMethodInterception(noConstructorMode, advice))
+            .installOn(instrumentation);
+
+        Thread snapshotThread = new Thread(() -> {
+            try {
+                while (true) {
+                    File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
+                    if(dataFile.exists()){
+                        RandomAccessFile raf = new RandomAccessFile(dataFile, "rw");
+                        long length = raf.length();
+                        long pos = length - 3; // 3 bytes = \n];
+                        raf.seek(pos);
+                        System.out.println(length-pos);
+                        raf.writeBytes("\n"+SpanCatcher.getOldCallStack()+",\n];");
+                        raf.close();
+                        log(INFO, "Snapshot '"+ dataFile.getAbsolutePath()+"'");
+                    } else {
+                        try (FileWriter fw = new FileWriter(dataFile)) {
+                            String content = "var data = " + SpanCatcher.getOldCallStack()+";";
+                            fw.write(content);
+                            fw.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        log(INFO, "Snapshot '"+ dataFile.getAbsolutePath()+"'");
+                    }
+
+                    Thread.sleep(1000L);
+                }
+            } catch (InterruptedException e) {
+                // Do nothing, this will never be interrupted
+                e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        if(!argumentHasNoSnapshotsMode(argument)){
+            snapshotThread.setDaemon(true);
+            snapshotThread.start();
+        }
+    }
+
+    private static ElementMatcher.Junction<TypeDescription> getMatcherFromAruments(List<String> excludes, List<String> filters) {
         ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent")
                 .or(nameContains("net.bytebuddy"));
         for (String exclude: excludes) {
@@ -163,73 +205,35 @@ public class MethodInstrumentationAgent {
             }
             withExclusions = withExclusions.and(namedElementJunction);
         }
+        return withExclusions;
+    }
 
-        AgentBuilder agentBuilder = new AgentBuilder.Default();
+    private static void addShutdownHookToWriteDataOnJVMShutdown() {
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+//            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
+//            try (FileWriter fw = new FileWriter(dataFile)){
+//                fw.write("var data = "+SpanCatcher.getFinalCallStack());
+//                fw.flush();
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//            log(INFO, "Final stack '"+ dataFile.getAbsolutePath()+"'");
+//            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
+//        }));
+    }
 
-        if(coreClassesMode){
-            agentBuilder = agentBuilder.ignore(none());
-        }
-
-        AgentBuilder.Identified.Narrowable withoutExtraExcludes = agentBuilder
-                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-                .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
-                .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                .with(new DebugListener())
-                .type(withExclusions);
-        withoutExtraExcludes
-            .transform(new AgentBuilder.Transformer() {
-                public DynamicType.Builder<?> transform(
-                        DynamicType.Builder<?> builder,
-                        TypeDescription typeDescription,
-                        ClassLoader ignoredClassLoader,
-                        JavaModule ignoredModule
-                ) {
-                    return getBuilder(builder, typeDescription);
-                }
-
-                @Override
-                public DynamicType.Builder<?> transform(
-                    DynamicType.Builder<?> builder,
-                    TypeDescription typeDescription,
-                    ClassLoader classLoader,
-                    JavaModule module,
-                    ProtectionDomain protectionDomain
-                ) {
-                    return getBuilder(builder, typeDescription);
-                }
-
-                private DynamicType.Builder<?> getBuilder(DynamicType.Builder<?> builder, TypeDescription typeDescription) {
-                    log(DEBUG, "Transform '"+ typeDescription.getCanonicalName()+"'");
-                    ElementMatcher.Junction<MethodDescription> matcher = isMethod();
-                    if(noConstructorMode){
-                        matcher = matcher.and(not(isConstructor()));
-                    }
-                    return builder.visit(advice.on(matcher));
-                }
-            })
-            .installOn(instrumentation);
-
-        Thread snapshotThread = new Thread(() -> {
-            try {
-                while (true) {
-                    File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data"+System.currentTimeMillis()+".js");
-                    try (FileWriter fw = new FileWriter(dataFile)) {
-                        String content = "var data = " + SpanCatcher.getOldCallStack();
-                        fw.write(content);
-                        fw.flush();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    Thread.sleep(1000L);
-                }
-            } catch (InterruptedException e) {
-                // Do nothing, this will never be interrupted
+    private static void writeHtmlFiles(File javaFlameDirectory) {
+        try {
+            snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
+            if(!snapshotDirectory.mkdir()){
+                log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
             }
-        });
-
-        if(!argumentHasNoSnapshotsMode(argument)){
-            snapshotThread.setDaemon(true);
-            snapshotThread.start();
+            extractFromResources(snapshotDirectory, "index.html");
+            extractFromResources(snapshotDirectory, "d3.v7.js");
+            extractFromResources(snapshotDirectory, "d3-flamegraph.css");
+            extractFromResources(snapshotDirectory, "d3-flamegraph.min.js");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -354,6 +358,45 @@ public class MethodInstrumentationAgent {
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
+        }
+    }
+
+    private static class IntroduceMethodInterception implements AgentBuilder.Transformer {
+        private final boolean noConstructorMode;
+        private final Advice advice;
+
+        public IntroduceMethodInterception(boolean noConstructorMode, Advice advice) {
+            this.noConstructorMode = noConstructorMode;
+            this.advice = advice;
+        }
+
+        public DynamicType.Builder<?> transform(
+                DynamicType.Builder<?> builder,
+                TypeDescription typeDescription,
+                ClassLoader ignoredClassLoader,
+                JavaModule ignoredModule
+        ) {
+            return getBuilder(builder, typeDescription);
+        }
+
+        @Override
+        public DynamicType.Builder<?> transform(
+            DynamicType.Builder<?> builder,
+            TypeDescription typeDescription,
+            ClassLoader classLoader,
+            JavaModule module,
+            ProtectionDomain protectionDomain
+        ) {
+            return getBuilder(builder, typeDescription);
+        }
+
+        private DynamicType.Builder<?> getBuilder(DynamicType.Builder<?> builder, TypeDescription typeDescription) {
+            log(DEBUG, "Transform '"+ typeDescription.getCanonicalName()+"'");
+            ElementMatcher.Junction<MethodDescription> matcher = isMethod();
+            if(noConstructorMode){
+                matcher = matcher.and(not(isConstructor()));
+            }
+            return builder.visit(advice.on(matcher));
         }
     }
 }
