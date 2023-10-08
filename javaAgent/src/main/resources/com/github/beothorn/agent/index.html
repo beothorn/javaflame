@@ -1,31 +1,33 @@
+<html>
+
 <head>
     <link rel="stylesheet" type="text/css" href="d3-flamegraph.css">
-  </head>
-  <body>
-    <div id="charts"></div>
-    <script type="text/javascript" src="d3.v7.js"></script>
-    <script type="text/javascript" src="d3-flamegraph.min.js"></script>
-    <script type="text/javascript" src="data.js"></script>
-    <script type="text/javascript" src="code.js"></script>
-    <script type="text/javascript">
+</head>
+<body>
+<div id="charts"></div>
+<script type="text/javascript" src="d3.v7.js"></script>
+<script type="text/javascript" src="d3-flamegraph.min.js"></script>
+<script type="text/javascript" src="data.js"></script>
+<script type="text/javascript" src="code.js"></script>
+<script type="text/javascript">
 
-      const charts = document.getElementById("charts");
+    const charts = document.getElementById("charts");
 
-      // join data and filter here
+    // join data and filter here
 
-      for(let i = 0; i < data.length; i++){
-          const newDiv = document.createElement("div");
-          newDiv.id = "chart"+i;
-          const threadName = document.createElement("h1");
-          threadName.appendChild(document.createTextNode(data[i].thread));
-          newDiv.appendChild(threadName);
-          charts.appendChild(newDiv);
-          var chart = flamegraph().width(960);
+    for(let i = 0; i < data.length; i++){
+        const newDiv = document.createElement("div");
+        newDiv.id = "chart"+i;
+        const threadName = document.createElement("h1");
+        threadName.appendChild(document.createTextNode(data[i].thread));
+        newDiv.appendChild(threadName);
+        charts.appendChild(newDiv);
+        var chart = flamegraph().width(960);
 
-          d3.select("#"+newDiv.id)
-              .datum(data[i].span)
-              .call(chart);
-      }
-    </script>
-  </body>
-  
+        d3.select("#"+newDiv.id)
+            .datum(data[i].span)
+            .call(chart);
+    }
+</script>
+</body>
+</html>

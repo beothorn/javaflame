@@ -1,7 +1,6 @@
 package integration;
 
 import com.github.beothorn.agent.SpanCatcher;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.github.beothorn.agent.SpanCatcherDetailed.enter;
@@ -97,7 +96,6 @@ public class DummyProgram {
         return result;
     }
 
-    @Disabled("Needs a comparision without machine clock")
     @Test
     void runDummyProgramAndCheckOutput(){
         SpanCatcher.stackPerThread.clear();
@@ -105,26 +103,37 @@ public class DummyProgram {
         assertEquals("[" +
             "{" +
                 "\"thread\":\"main\"," +
+                "\"snapshotTime\":0," +
                 "\"span\":{" +
                     "\"name\":\"integration.DummyProgram.run()\"," +
+                    "\"entryTime\":0," +
+                    "\"exitTime\":0," +
                     "\"value\":0," +
                     "\"children\":[" +
                         "{" +
                             "\"name\":\"integration.DummyProgram.a(int arg0 = 1)\"," +
+                            "\"entryTime\":0," +
+                            "\"exitTime\":0," +
                             "\"value\":0," +
                             "\"children\":[" +
                                 "{" +
                                     "\"name\":\"integration.DummyProgram.aa(int arg0 = 2)\"," +
+                                    "\"entryTime\":0," +
+                                    "\"exitTime\":0," +
                                     "\"value\":0" +
                                 "}" +
                             "]" +
                         "}," +
                         "{" +
                             "\"name\":\"integration.DummyProgram.b(int arg0 = 1, int arg1 = 2)\"," +
+                            "\"entryTime\":0," +
+                            "\"exitTime\":0," +
                             "\"value\":0," +
                             "\"children\":[" +
                                 "{" +
                                     "\"name\":\"integration.DummyProgram.bb(int arg0 = 2, int arg1 = 3)\"," +
+                                    "\"entryTime\":0," +
+                                    "\"exitTime\":0," +
                                     "\"value\":0" +
                                 "}" +
                             "]" +
@@ -132,7 +141,13 @@ public class DummyProgram {
                     "]" +
                 "}" +
             "}" +
-        "]", SpanCatcher.getFinalCallStack());
+        "]", SpanCatcher.getFinalCallStack()
+                .replaceAll("\n", "")
+                .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
+                .replaceAll("\"entryTime\":[0-9]+,", "\"entryTime\":0,")
+                .replaceAll("\"exitTime\":[0-9]+,", "\"exitTime\":0,")
+                .replaceAll("\"value\":[0-9]+,", "\"value\":0,")
+        );
     }
 
 }
