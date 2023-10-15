@@ -68,7 +68,7 @@ public class SpanCatcher {
         Map<String, Span> oldStackPerThread = new ConcurrentHashMap<>();
 
         SpanCatcher.stackPerThread.forEach((key, value) -> {
-            if(value != null) value.removePastSpans().ifPresent(p -> {
+            if(value != null) value.removeFinishedFunction().ifPresent(p -> {
                 oldStackPerThread.put(key, p);
             });
         });

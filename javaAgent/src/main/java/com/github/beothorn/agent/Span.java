@@ -17,7 +17,7 @@ public class Span{
         return new Span(
             name,
             entryTime,
-            0,
+            -1,
             null,
             new ArrayList<>()
         );
@@ -31,7 +31,7 @@ public class Span{
         return new Span(
             name,
             entryTime,
-            0,
+            -1,
             parent,
             new ArrayList<>()
         );
@@ -104,7 +104,11 @@ public class Span{
     }
 
     private long duration(){
-        return (entryTime == -1)? 0 : exitTime - entryTime;
+        if(exitTime == -1){
+            // If has not exited yet, 
+            return 0;
+        }
+        return exitTime - entryTime;
     }
 
     public String toJson(){
@@ -177,7 +181,7 @@ public class Span{
      *
      * @return the non active branch
      */
-    public Optional<Span> removePastSpans(){
+    public Optional<Span> removeFinishedFunction(){
         if(children.isEmpty()){
             // If it has no children, there is nothing to remove
             // return nothing removed
@@ -189,7 +193,7 @@ public class Span{
 
         // We also want the active child to remove old spans
         // The spans for the other children are all old, only the ctive child may keep some
-        Optional<Span> activeChildrenPastSpans = activeChild.removePastSpans();
+        Optional<Span> activeChildrenPastSpans = activeChild.removeFinishedFunction();
 
         boolean thereIsNoMoreChildren = children.isEmpty();
         boolean noSpanWasRemoved = activeChildrenPastSpans.isEmpty();
