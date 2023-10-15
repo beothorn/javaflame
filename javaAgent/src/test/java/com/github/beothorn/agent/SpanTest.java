@@ -122,7 +122,47 @@ class SpanTest {
         Span expectedWithoutOld = span("root", 0, 4, of(
             span("D", 3, 4)
         ));
-        Span actualOnlyOld = subject.removePastSpans().orElseThrow();
+        Span actualOnlyOld = subject.removeFinishedFunction().orElseThrow();
+        assertEquals(expectedWithoutOld, subject);
+        assertEquals(expectedOnlyOld, actualOnlyOld);
+    }
+
+    @Test
+    void doNotRemoveUnfinished(){
+        // If the function is not finished, it should not be removed.
+        // Functions with exitTime == -1 are not finished.
+        Span subject = span("root", 0, -1, of(
+            span("A", 0, -1)
+        ));
+        Span expected = span("root", 0, -1, of(
+            span("A", 0, -1)
+        ));
+        assertTrue(subject.removeFinishedFunction().isEmpty());
+        assertEquals(expected, subject);
+    }
+
+    @Test
+    void addUnfinishedIfAFinishedIsIncluded(){
+        // If the function is not finished, it should not be removed.
+        // Functions with exitTime == -1 are not finished except when a child function is finished.
+        Span subject = span("root", 0, -1, of(
+            span("A", 0, -1, of(
+                span("AA", 0, 1),
+                span("AB", 0, -1)
+            ))
+        ));
+        Span expectedWithoutOld = span("root", 0, -1, of(
+            span("A", 0, -1, of(
+                span("AB", 0, -1)
+            ))
+        ));
+        Span expectedOnlyOld = span("root", 0, -1, of(
+            span("A", 0, -1, of(
+                span("AA", 0, 1)
+            ))
+        ));
+
+        Span actualOnlyOld = subject.removeFinishedFunction().orElseThrow();
         assertEquals(expectedWithoutOld, subject);
         assertEquals(expectedOnlyOld, actualOnlyOld);
     }
@@ -154,7 +194,7 @@ class SpanTest {
             ))
         ));
 
-        Span actualOld = subject.removePastSpans().orElseThrow();
+        Span actualOld = subject.removeFinishedFunction().orElseThrow();
 
         assertEquals(expectedWithoutOld, subject);
         assertEquals(expectedOnlyOld, actualOld);
@@ -177,7 +217,7 @@ class SpanTest {
             ))
         ));
 
-        Optional<Span> actualOld = subject.removePastSpans();
+        Optional<Span> actualOld = subject.removeFinishedFunction();
 
         assertTrue(actualOld.isEmpty());
         assertEquals(expected, subject);
