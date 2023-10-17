@@ -13,20 +13,20 @@ const tests = {
                 "snapshotTime": 0,
                 "span": {
                     "name": "functionMain",
-                    "entryTime":0,
+                    "entryTime":1000,
                     "exitTime":-1, // -1 means that the span has not exited.
                     "value":0, // while not finished, the value is 0. value is duration.
                     "children":[
                         {
                             "name": "functionA",
-                            "entryTime":0,
+                            "entryTime":1000,
                             "exitTime":-1, // -1 means that the span has not exited.
                             "value":0,
                             "children":[
                                 {
                                     "name": "functionAA",
-                                    "entryTime":0,
-                                    "exitTime":100, // >-1 means that the span has exited.
+                                    "entryTime":1000,
+                                    "exitTime":1100, // >-1 means that the span has exited.
                                     "value":100,
                                 }
                             ]
@@ -35,23 +35,23 @@ const tests = {
                 }
             },{
                 "thread": "main",
-                "snapshotTime": 101,
+                "snapshotTime": 1101,
                 "span": {
                     "name": "functionMain",
-                    "entryTime":0,
+                    "entryTime":1000,
                     "exitTime":-1, // program will always exit with the main function unfinished.
                     "value":0,
                     "children":[
                         {
                             "name": "functionA",
-                            "entryTime":123, // same as the previous entry time, so still executing functionA.
-                            "exitTime":1, // 1 means that the span has exited.
-                            "value":1,
+                            "entryTime":1000, // same as the previous entry time, so still executing functionA.
+                            "exitTime":1250, // >1 means that the span has exited.
+                            "value":250,
                             "children":[
                                 {
                                     "name": "functionAB",
-                                    "entryTime":100,
-                                    "exitTime":250, // >-1 means that the span has exited.
+                                    "entryTime":1100,
+                                    "exitTime":1250, // >-1 means that the span has exited.
                                     "value":150,
                                 }
                             ]
@@ -64,28 +64,28 @@ const tests = {
         const expected = [
             {
                 "thread": "main",
-                "snapshotTime": 101, // snapshot 101 is the same as the last snapshot.
+                "snapshotTime": 1101, // snapshot 1101 is the same as the last snapshot.
                 "span": {
                     "name": "functionMain",
-                    "entryTime":0,
-                    "exitTime":250, // exit time is the same as the last child exit time.
+                    "entryTime":1000,
+                    "exitTime":1250, // exit time is the same as the last child exit time.
                     "value":250, // exit time minus entry time
                     "children":[
                         {
                             "name": "functionA",
-                            "entryTime":0,
-                            "exitTime":250, // exit time is the same as the last child exit time.
+                            "entryTime":1000,
+                            "exitTime":1250, // exit time is the same as the last child exit time.
                             "value":250,
                             "children":[
                                 {
                                     "name": "functionAA",
-                                    "entryTime":0,
-                                    "exitTime":100,
+                                    "entryTime":1000,
+                                    "exitTime":1100,
                                     "value":100,
                                 },{
                                     "name": "functionAB",
-                                    "entryTime":100,
-                                    "exitTime":250,
+                                    "entryTime":1100,
+                                    "exitTime":1250,
                                     "value":150,
                                 },
                             ]
@@ -129,9 +129,11 @@ let assertObj = {
             throw new Error(outputMsg);
         }
     },
-    deepEquals: (msg, actual, expected) => {
+    deepEquals: (msg, expected, actual) => {
         if(JSON.stringify(actual) !== JSON.stringify(expected)){
-            const outputMsg = `${msg} is not equal to ${JSON.stringify(expected)}`;
+            const outputMsg = `${msg} is not equal to expected. 
+                expected: ${JSON.stringify(expected)}
+                actual  : ${JSON.stringify(actual)}`;
             failure(outputMsg);
             throw new Error(outputMsg);
         }
