@@ -207,17 +207,17 @@ public class MethodInstrumentationAgent {
     }
 
     private static void addShutdownHookToWriteDataOnJVMShutdown() {
-//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-//            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
-//            try (FileWriter fw = new FileWriter(dataFile)){
-//                fw.write("var data = "+SpanCatcher.getFinalCallStack());
-//                fw.flush();
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//            log(INFO, "Final stack '"+ dataFile.getAbsolutePath()+"'");
-//            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
-//        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "jvmShutdownData.js");
+            try (FileWriter fw = new FileWriter(dataFile)){
+                fw.write("var data = "+SpanCatcher.getFinalCallStack());
+                fw.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            log(INFO, "Final stack '"+ dataFile.getAbsolutePath()+"'");
+            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
+        }));
     }
 
     private static void writeHtmlFiles(File javaFlameDirectory) {

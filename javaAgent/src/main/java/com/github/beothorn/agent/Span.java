@@ -55,6 +55,20 @@ public class Span{
     public static Span span(
             final String name,
             final long entryTime,
+            final List<Span> children
+    ){
+        return new Span(
+                name,
+                entryTime,
+                -1,
+                null,
+                children
+        );
+    }
+
+    public static Span span(
+            final String name,
+            final long entryTime,
             final long exitTime
     ){
         return new Span(
@@ -191,8 +205,22 @@ public class Span{
         // The last child is the active, all others will be removed
         Span activeChild = children.remove(children.size() - 1);
 
+        if(activeChild.exitTime != -1){
+            // If active is also done, remove all children
+            List<Span> oldChildren = children;
+            oldChildren.add(activeChild);
+            children = new ArrayList<>();
+            return Optional.of(new Span(
+                    name,
+                    entryTime,
+                    exitTime,
+                    parent,
+                    oldChildren
+            ));
+        }
+
         // We also want the active child to remove old spans
-        // The spans for the other children are all old, only the ctive child may keep some
+        // The spans for the other children are all old, only the active child may keep some
         Optional<Span> activeChildrenPastSpans = activeChild.removeFinishedFunction();
 
         boolean thereIsNoMoreChildren = children.isEmpty();
