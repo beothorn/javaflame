@@ -16,7 +16,7 @@ For example, this will silently output a flame graph including values.
 
 `java -javaagent:javaAgent.jar=detailed,log:NONE,out:C:/graphs -jar yourApp.jar` 
 
-Anything without exclusions will generae a lot of data. Either it will not render or you will need to filter it first.
+Anything without exclusions will generate lots of data. Either it will not render or you will need to filter it first.
 
 ## Arguments
 
