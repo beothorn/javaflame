@@ -2,7 +2,7 @@
 
 Simple and easy flame graph for java.  
 No servers or open connections, just plug the agent and get the results.  
-[Latest release v5.0.0](https://github.com/beothorn/javaflame/releases/download/v5.0.0/javaAgent.jar)
+[Latest release v6.0.0](https://github.com/beothorn/javaflame/releases/download/v6.0.0/javaAgent.jar)
 
 ## Usage
 
@@ -15,6 +15,8 @@ or with arguments:
 For example, this will silently output a flame graph including values.  
 
 `java -javaagent:javaAgent.jar=detailed,log:NONE,out:C:/graphs -jar yourApp.jar` 
+
+Anything without exclusions will generae a lot of data. Either it will not render or you will need to filter it first.
 
 ## Arguments
 
@@ -53,6 +55,5 @@ https://bytebuddy.net
 
 - agent parameter: snapshot interval
 - timestamps on spans
-- join spans on page
 - timestamp filter
 - search

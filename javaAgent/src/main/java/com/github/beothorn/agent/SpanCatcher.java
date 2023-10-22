@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.ERROR;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 import static com.github.beothorn.agent.Span.span;
 
@@ -64,7 +63,7 @@ public class SpanCatcher {
         final Span stack = getCurrentRunning(threadName);
         Span leave = stack.leave(exitTime);
         if(leave == null){
-            log(ERROR, "Leaving root loop on "+threadName+" last stack: "+stack.description());
+            log(DEBUG, "Leaving root loop on "+threadName+" last stack: "+stack.description());
             stack.exitTime = exitTime;
             return;
         }
