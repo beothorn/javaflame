@@ -96,6 +96,22 @@ const tests = {
         ];
         
         assert.deepEquals("Merged snapshots", expected, mergeSnapshots(data));
+    },
+    "Filter by snapshot time": (assert) => {
+        const data = [
+            {
+                "thread": "main",
+                "snapshotTime": 0,
+                "span": {
+                    "name": "functionMain",
+                    "entryTime":0,
+                    "exitTime":-1,
+                    "value":0,
+                    "children":[
+                    ]
+                }
+            }
+        ];
     }
 };
 

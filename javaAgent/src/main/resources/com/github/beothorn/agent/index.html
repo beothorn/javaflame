@@ -14,18 +14,19 @@
     const charts = document.getElementById("charts");
 
     // join data and filter here
+    const mergedData = mergeSnapshots(data);
 
-    for(let i = 0; i < data.length; i++){
+    for(let i = 0; i < mergedData.length; i++){
         const newDiv = document.createElement("div");
         newDiv.id = "chart"+i;
         const threadName = document.createElement("h1");
-        threadName.appendChild(document.createTextNode(data[i].thread));
+        threadName.appendChild(document.createTextNode(mergedData[i].thread));
         newDiv.appendChild(threadName);
         charts.appendChild(newDiv);
         var chart = flamegraph().width(960);
 
         d3.select("#"+newDiv.id)
-            .datum(data[i].span)
+            .datum(mergedData[i].span)
             .call(chart);
     }
 </script>

@@ -1,16 +1,21 @@
 package com.github.beothorn.agent;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.github.beothorn.agent.SpanCatcher.onEnter;
 import static com.github.beothorn.agent.SpanCatcher.onLeave;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SpanCatcherTest {
 
+    @BeforeEach
+    void setUp() {
+        SpanCatcher.stackPerThread.clear();
+    }
+
     @Test
     void happyDay(){
-        SpanCatcher.stackPerThread.clear();
         onEnter("main", "a",  0); // main: a
         onEnter("main", "aa", 0); // main: a -> aa
         onLeave("main", 1); // main: a
@@ -30,16 +35,24 @@ class SpanCatcherTest {
             "\"thread\":\"t\"," +
             "\"snapshotTime\":0,"+
             "\"span\":{" +
-                "\"name\":\"a\"," +
+                "\"name\":\"tRoot\"," +
                 "\"entryTime\":0," +
-                "\"exitTime\":1," +
-                "\"value\":1," +
+                "\"exitTime\":-1," +
+                "\"value\":0," +
                 "\"children\":[" +
                     "{" +
-                        "\"name\":\"b\"," +
+                        "\"name\":\"a\"," +
                         "\"entryTime\":0," +
                         "\"exitTime\":1," +
-                        "\"value\":1" +
+                        "\"value\":1," +
+                        "\"children\":[" +
+                            "{" +
+                                "\"name\":\"b\"," +
+                                "\"entryTime\":0," +
+                                "\"exitTime\":1," +
+                                "\"value\":1" +
+                            "}" +
+                        "]" +
                     "}" +
                 "]" +
             "}" +
@@ -48,34 +61,42 @@ class SpanCatcherTest {
             "\"thread\":\"main\"," +
             "\"snapshotTime\":0,"+
             "\"span\":{" +
-                "\"name\":\"a\"," +
+                "\"name\":\"mainRoot\"," +
                 "\"entryTime\":0," +
-                "\"exitTime\":3," +
-                "\"value\":3," +
+                "\"exitTime\":-1," +
+                "\"value\":0," +
                 "\"children\":[" +
                     "{" +
-                        "\"name\":\"aa\"," +
+                        "\"name\":\"a\"," +
                         "\"entryTime\":0," +
-                        "\"exitTime\":1," +
-                        "\"value\":1" +
-                    "}," +
-                    "{" +
-                        "\"name\":\"ab\"," +
-                        "\"entryTime\":1," +
-                        "\"exitTime\":2," +
-                        "\"value\":1" +
-                    "}," +
-                    "{" +
-                        "\"name\":\"ac\"," +
-                        "\"entryTime\":2," +
                         "\"exitTime\":3," +
-                        "\"value\":1," +
+                        "\"value\":3," +
                         "\"children\":[" +
                             "{" +
-                                "\"name\":\"aca\"," +
+                                "\"name\":\"aa\"," +
+                                "\"entryTime\":0," +
+                                "\"exitTime\":1," +
+                                "\"value\":1" +
+                            "}," +
+                            "{" +
+                                "\"name\":\"ab\"," +
+                                "\"entryTime\":1," +
+                                "\"exitTime\":2," +
+                                "\"value\":1" +
+                            "}," +
+                            "{" +
+                                "\"name\":\"ac\"," +
                                 "\"entryTime\":2," +
                                 "\"exitTime\":3," +
-                                "\"value\":1" +
+                                "\"value\":1," +
+                                "\"children\":[" +
+                                    "{" +
+                                        "\"name\":\"aca\"," +
+                                        "\"entryTime\":2," +
+                                        "\"exitTime\":3," +
+                                        "\"value\":1" +
+                                    "}" +
+                                "]" +
                             "}" +
                         "]" +
                     "}" +
@@ -87,6 +108,37 @@ class SpanCatcherTest {
             SpanCatcher.getFinalCallStack()
                     .replaceAll("\n", "")
                     .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
+        );
+    }
+
+    @Test
+    void getOldCallStackHappyDay(){
+        onEnter("someThread", "A",  0);
+        onLeave("someThread", 1);
+        onEnter("someThread", "B",  2);
+        assertEquals("[" +
+            "{" +
+                "\"thread\":\"someThread\"," +
+                "\"snapshotTime\":0," +
+                "\"span\":{" +
+                    "\"name\":\"someThreadRoot\"," +
+                    "\"entryTime\":0," +
+                    "\"exitTime\":-1," +
+                    "\"value\":0," +
+                    "\"children\":[" +
+                        "{" +
+                            "\"name\":\"A\"," +
+                            "\"entryTime\":0," +
+                            "\"exitTime\":1," +
+                            "\"value\":1" +
+                        "}" +
+                    "]" +
+                "}" +
+            "}" +
+        "]",
+        SpanCatcher.getOldCallStack()
+                .replaceAll("\n", "")
+                .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
         );
     }
 }

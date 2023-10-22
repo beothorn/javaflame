@@ -1,12 +1,10 @@
-// get al thread names
+// get all thread names
 // for each thread join
 // filter function
 // join last child, first child if same start and name
 
 function mergeSnapshots(data) {
     let threadNames = Array.from(new Set(data.flatMap(s => s.thread)));
-
-    // data.flatMap(e => e.filter(ee => ee.thread == "main"))
 
     let result = [];
     
@@ -56,8 +54,6 @@ function mergeSpans(spanA, spanB) {
 }
 
 function mergeChildren(childrenA, childrenB){
-    // concatenate lists
-
     // if last children from childrenA name and entry time is the same as first children from childrenB
     // merge spans
     const lastSpanOnChildrenA = childrenA[childrenA.length - 1];
