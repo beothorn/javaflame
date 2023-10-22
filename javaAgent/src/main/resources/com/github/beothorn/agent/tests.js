@@ -8,57 +8,61 @@ const tests = {
         Then functionA end and functionA is called again.
         */
         const data = [
-            {
-                "thread": "main",
-                "snapshotTime": 0,
-                "span": {
-                    "name": "functionMain",
-                    "entryTime":1000,
-                    "exitTime":-1, // -1 means that the span has not exited.
-                    "value":0, // while not finished, the value is 0. value is duration.
-                    "children":[
-                        {
-                            "name": "functionA",
-                            "entryTime":1000,
-                            "exitTime":-1, // -1 means that the span has not exited.
-                            "value":0,
-                            "children":[
-                                {
-                                    "name": "functionAA",
-                                    "entryTime":1000,
-                                    "exitTime":1100, // >-1 means that the span has exited.
-                                    "value":100,
-                                }
-                            ]
-                        }
-                    ]
+            [
+                {
+                    "thread": "main",
+                    "snapshotTime": 0,
+                    "span": {
+                        "name": "functionMain",
+                        "entryTime":1000,
+                        "exitTime":-1, // -1 means that the span has not exited.
+                        "value":0, // while not finished, the value is 0. value is duration.
+                        "children":[
+                            {
+                                "name": "functionA",
+                                "entryTime":1000,
+                                "exitTime":-1, // -1 means that the span has not exited.
+                                "value":0,
+                                "children":[
+                                    {
+                                        "name": "functionAA",
+                                        "entryTime":1000,
+                                        "exitTime":1100, // >-1 means that the span has exited.
+                                        "value":100,
+                                    }
+                                ]
+                            }
+                        ]
+                    }
                 }
-            },{
-                "thread": "main",
-                "snapshotTime": 1101,
-                "span": {
-                    "name": "functionMain",
-                    "entryTime":1000,
-                    "exitTime":-1, // program will always exit with the main function unfinished.
-                    "value":0,
-                    "children":[
-                        {
-                            "name": "functionA",
-                            "entryTime":1000, // same as the previous entry time, so still executing functionA.
-                            "exitTime":1250, // >1 means that the span has exited.
-                            "value":250,
-                            "children":[
-                                {
-                                    "name": "functionAB",
-                                    "entryTime":1100,
-                                    "exitTime":1250, // >-1 means that the span has exited.
-                                    "value":150,
-                                }
-                            ]
-                        }
-                    ]
-                }
-            },
+            ],[
+                {
+                    "thread": "main",
+                    "snapshotTime": 1101,
+                    "span": {
+                        "name": "functionMain",
+                        "entryTime":1000,
+                        "exitTime":-1, // program will always exit with the main function unfinished.
+                        "value":0,
+                        "children":[
+                            {
+                                "name": "functionA",
+                                "entryTime":1000, // same as the previous entry time, so still executing functionA.
+                                "exitTime":1250, // >1 means that the span has exited.
+                                "value":250,
+                                "children":[
+                                    {
+                                        "name": "functionAB",
+                                        "entryTime":1100,
+                                        "exitTime":1250, // >-1 means that the span has exited.
+                                        "value":150,
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+            ]
         ];
 
         const expected = [

@@ -4,12 +4,16 @@
 // join last child, first child if same start and name
 
 function mergeSnapshots(data) {
-    let threadNames = Array.from(new Set(data.flatMap(s => s.thread)));
+    let threadNames = new Set(
+        data.map(d => 
+            Array.from(new Set(d.flatMap(s => s.thread)))
+        ).flatMap(s => s)
+    );
 
     let result = [];
     
     for(let threadName of threadNames){
-        const snapshotsFromThread = data.filter(s => s.thread === threadName);
+        const snapshotsFromThread = data.map(d => d.filter(s => s.thread === threadName)).flatMap(s => s);
         const firstSnapshot = snapshotsFromThread[0];
         const lastSnapshot = snapshotsFromThread[snapshotsFromThread.length - 1];
         if(firstSnapshot.span.name !== lastSnapshot.span.name){
