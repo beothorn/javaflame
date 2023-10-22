@@ -105,36 +105,44 @@ public class DummyProgram {
                 "\"thread\":\"main\"," +
                 "\"snapshotTime\":0," +
                 "\"span\":{" +
-                    "\"name\":\"integration.DummyProgram.run()\"," +
+                    "\"name\":\"mainRoot\"," +
                     "\"entryTime\":0," +
-                    "\"exitTime\":0," +
+                    "\"exitTime\":-1," +
                     "\"value\":0," +
                     "\"children\":[" +
                         "{" +
-                            "\"name\":\"integration.DummyProgram.a(int arg0 = 1)\"," +
+                            "\"name\":\"integration.DummyProgram.run()\"," +
                             "\"entryTime\":0," +
                             "\"exitTime\":0," +
                             "\"value\":0," +
                             "\"children\":[" +
                                 "{" +
-                                    "\"name\":\"integration.DummyProgram.aa(int arg0 = 2)\"," +
+                                    "\"name\":\"integration.DummyProgram.a(int arg0 = 1)\"," +
                                     "\"entryTime\":0," +
                                     "\"exitTime\":0," +
-                                    "\"value\":0" +
-                                "}" +
-                            "]" +
-                        "}," +
-                        "{" +
-                            "\"name\":\"integration.DummyProgram.b(int arg0 = 1, int arg1 = 2)\"," +
-                            "\"entryTime\":0," +
-                            "\"exitTime\":0," +
-                            "\"value\":0," +
-                            "\"children\":[" +
+                                    "\"value\":0," +
+                                    "\"children\":[" +
+                                        "{" +
+                                            "\"name\":\"integration.DummyProgram.aa(int arg0 = 2)\"," +
+                                            "\"entryTime\":0," +
+                                            "\"exitTime\":0," +
+                                            "\"value\":0" +
+                                        "}" +
+                                    "]" +
+                                "}," +
                                 "{" +
-                                    "\"name\":\"integration.DummyProgram.bb(int arg0 = 2, int arg1 = 3)\"," +
+                                    "\"name\":\"integration.DummyProgram.b(int arg0 = 1, int arg1 = 2)\"," +
                                     "\"entryTime\":0," +
                                     "\"exitTime\":0," +
-                                    "\"value\":0" +
+                                    "\"value\":0," +
+                                    "\"children\":[" +
+                                        "{" +
+                                            "\"name\":\"integration.DummyProgram.bb(int arg0 = 2, int arg1 = 3)\"," +
+                                            "\"entryTime\":0," +
+                                            "\"exitTime\":0," +
+                                            "\"value\":0" +
+                                        "}" +
+                                    "]" +
                                 "}" +
                             "]" +
                         "}" +
@@ -146,7 +154,7 @@ public class DummyProgram {
                 .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
                 .replaceAll("\"entryTime\":[0-9]+,", "\"entryTime\":0,")
                 .replaceAll("\"exitTime\":[0-9]+,", "\"exitTime\":0,")
-                .replaceAll("\"value\":[0-9]+,", "\"value\":0,")
+                .replaceAll("\"value\":[0-9]+", "\"value\":0")
         );
     }
 

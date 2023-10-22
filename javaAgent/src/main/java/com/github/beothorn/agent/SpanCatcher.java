@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
+import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.ERROR;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 import static com.github.beothorn.agent.Span.span;
 
@@ -34,13 +35,18 @@ public class SpanCatcher {
     ){
         log(DEBUG, "Enter @"+threadName+": "+methodName);
 
-        final Span stack = stackPerThread.get(threadName);
+        Span stack = getCurrentRunning(threadName);
         if(stack == null){
-            stackPerThread.put(threadName, span(methodName, entryTime));
-        } else {
-            Span enter = stack.enter(methodName, entryTime);
-            stackPerThread.put(threadName, enter);
+            stackPerThread.put(threadName, span(threadName + "Root", entryTime));
         }
+        stack = getCurrentRunning(threadName);
+
+        Span newCurrentRunning = stack.enter(methodName, entryTime);
+        stackPerThread.put(threadName, newCurrentRunning);
+    }
+
+    private static Span getCurrentRunning(String threadName) {
+        return stackPerThread.get(threadName);
     }
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
@@ -55,9 +61,11 @@ public class SpanCatcher {
     }
 
     public static void onLeave(final String threadName, final long exitTime) {
-        final Span stack = stackPerThread.get(threadName);
+        final Span stack = getCurrentRunning(threadName);
+        System.out.println("EXIT "+threadName);
         Span leave = stack.leave(exitTime);
         if(leave == null){
+            log(ERROR, "Leaving root loop on "+threadName+" last stack: "+stack.description());
             return;
         }
         stackPerThread.put(threadName, leave);
@@ -68,9 +76,8 @@ public class SpanCatcher {
         Map<String, Span> oldStackPerThread = new ConcurrentHashMap<>();
 
         SpanCatcher.stackPerThread.forEach((key, value) -> {
-            if(value != null) value.removeFinishedFunction().ifPresent(p -> {
-                oldStackPerThread.put(key, p);
-            });
+            if(value != null) value.getRoot().removeFinishedFunction()
+                    .ifPresent(p -> oldStackPerThread.put(key, p));
         });
 
         return getSnapshot(oldStackPerThread);

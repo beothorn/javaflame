@@ -152,18 +152,18 @@ public class MethodInstrumentationAgent {
             try {
                 while (true) {
                     File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
+                    final String oldCallStack = SpanCatcher.getOldCallStack();
                     if(dataFile.exists()){
                         RandomAccessFile raf = new RandomAccessFile(dataFile, "rw");
                         long length = raf.length();
                         long pos = length - 3; // 3 bytes = \n];
                         raf.seek(pos);
-                        System.out.println(length-pos);
-                        raf.writeBytes("\n"+SpanCatcher.getOldCallStack()+",\n];");
+                        raf.writeBytes("\n"+ oldCallStack +",\n];");
                         raf.close();
                         log(INFO, "Snapshot '"+ dataFile.getAbsolutePath()+"'");
                     } else {
                         try (FileWriter fw = new FileWriter(dataFile)) {
-                            String content = "var data = " + SpanCatcher.getOldCallStack()+";";
+                            String content = "var data = " + oldCallStack +";";
                             fw.write(content);
                             fw.flush();
                         } catch (IOException e) {
@@ -176,8 +176,6 @@ public class MethodInstrumentationAgent {
                 }
             } catch (InterruptedException e) {
                 // Do nothing, this will never be interrupted
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -229,6 +227,7 @@ public class MethodInstrumentationAgent {
                 log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
             }
             extractFromResources(snapshotDirectory, "index.html");
+            extractFromResources(snapshotDirectory, "code.js");
             extractFromResources(snapshotDirectory, "d3.v7.js");
             extractFromResources(snapshotDirectory, "d3-flamegraph.css");
             extractFromResources(snapshotDirectory, "d3-flamegraph.min.js");
