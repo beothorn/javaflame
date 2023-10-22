@@ -65,6 +65,7 @@ public class SpanCatcher {
         Span leave = stack.leave(exitTime);
         if(leave == null){
             log(ERROR, "Leaving root loop on "+threadName+" last stack: "+stack.description());
+            stack.exitTime = exitTime;
             return;
         }
         stackPerThread.put(threadName, leave);

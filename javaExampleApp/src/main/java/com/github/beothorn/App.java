@@ -3,6 +3,10 @@
  */
 package com.github.beothorn;
 
+import com.github.junrar.Junrar;
+import com.github.junrar.exception.RarException;
+
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class App {
@@ -18,12 +22,14 @@ public class App {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws RarException, IOException {
         // new thread that print all numbers up to 100
         new Thread(() -> {
             for (int i = 0; i < 100; i++) {
                 printNumber(i);
             }
         }).start();
+
+        Junrar.extract("/tmp/foo.rar", "/tmp");
     }
 }

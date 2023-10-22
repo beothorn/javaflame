@@ -108,19 +108,19 @@ class SpanTest {
 
     @Test
     void shallowRemoveOldSpans(){
-        Span subject = span("root", 0, 4, of(
+        Span subject = span("root", 0, of(
             span("A", 0, 1),
             span("B", 1, 2),
             span("C", 2, 3),
-            span("D", 3, 4)
+            span("D", 3)
         ));
-        Span expectedOnlyOld = span("root", 0, 4, of(
+        Span expectedOnlyOld = span("root", 0, of(
             span("A", 0, 1),
             span("B", 1, 2),
             span("C", 2, 3)
         ));
         Span expectedWithoutOld = span("root", 0, 4, of(
-            span("D", 3, 4)
+            span("D", 3, -1)
         ));
         Span actualOnlyOld = subject.removeFinishedFunction().orElseThrow();
         assertEquals(expectedWithoutOld, subject);
@@ -131,11 +131,11 @@ class SpanTest {
     void doNotRemoveUnfinished(){
         // If the function is not finished, it should not be removed.
         // Functions with exitTime == -1 are not finished.
-        Span subject = span("root", 0, -1, of(
-            span("A", 0, -1)
+        Span subject = span("root", 0, of(
+            span("A", 0)
         ));
-        Span expected = span("root", 0, -1, of(
-            span("A", 0, -1)
+        Span expected = span("root", 0, of(
+            span("A", 0)
         ));
         assertTrue(subject.removeFinishedFunction().isEmpty());
         assertEquals(expected, subject);
@@ -145,19 +145,19 @@ class SpanTest {
     void addUnfinishedIfAFinishedIsIncluded(){
         // If the function is not finished, it should not be removed.
         // Functions with exitTime == -1 are not finished except when a child function is finished.
-        Span subject = span("root", 0, -1, of(
-            span("A", 0, -1, of(
+        Span subject = span("root", 0, of(
+            span("A", 0, of(
                 span("AA", 0, 1),
-                span("AB", 0, -1)
+                span("AB", 0)
             ))
         ));
-        Span expectedWithoutOld = span("root", 0, -1, of(
-            span("A", 0, -1, of(
-                span("AB", 0, -1)
+        Span expectedWithoutOld = span("root", 0, of(
+            span("A", 0, of(
+                span("AB", 0)
             ))
         ));
-        Span expectedOnlyOld = span("root", 0, -1, of(
-            span("A", 0, -1, of(
+        Span expectedOnlyOld = span("root", 0, of(
+            span("A", 0, of(
                 span("AA", 0, 1)
             ))
         ));
@@ -169,28 +169,28 @@ class SpanTest {
 
     @Test
     void happyDayRemoveOldSpans(){
-        Span subject = span("foo", 0, 2, of(
+        Span subject = span("foo", 0, of(
             span("fooA", 0, 2, of(
                 span("fooAA", 0, 1),
                 span("fooAB", 1, 2)
             )),
-            span("fooB", 2, 4, of(
+            span("fooB", 2, of(
                 span("fooBA", 2, 3),
-                span("fooBB", 3, 4)
+                span("fooBB", 3)
             ))
         ));
-        Span expectedOnlyOld = span("foo", 0, 2, of(
+        Span expectedOnlyOld = span("foo", 0, of(
             span("fooA", 0, 2, of(
                 span("fooAA", 0, 1),
                 span("fooAB", 1, 2)
             )),
-            span("fooB", 2, 4, of(
+            span("fooB", 2, of(
                 span("fooBA", 2, 3)
             ))
         ));
-        Span expectedWithoutOld = span("foo", 0, 2, of(
-            span("fooB", 2, 4, of(
-                span("fooBB", 3, 4)
+        Span expectedWithoutOld = span("foo", 0, of(
+            span("fooB", 2, of(
+                span("fooBB", 3)
             ))
         ));
 
@@ -202,17 +202,17 @@ class SpanTest {
 
     @Test
     void removeWithoutOldSpans(){
-        Span subject = span("foo", 0, 1, of(
-            span("fooA", 0, 1, of(
-                span("fooAA", 0, 1, of(
-                    span("fooAAA", 0, 1)
+        Span subject = span("foo", 0, of(
+            span("fooA", 0, of(
+                span("fooAA", 0, of(
+                    span("fooAAA", 0)
                 ))
             ))
         ));
-        Span expected = span("foo", 0, 1, of(
-            span("fooA", 0, 1, of(
-                span("fooAA", 0, 1, of(
-                    span("fooAAA", 0, 1)
+        Span expected = span("foo", 0, of(
+            span("fooA", 0, of(
+                span("fooAA", 0, of(
+                    span("fooAAA", 0)
                 ))
             ))
         ));
@@ -238,7 +238,7 @@ class SpanTest {
                     .enter("BB", 3)
                         .leave(4);
 
-        Span expected = span("root", 0, 4, of(
+        Span expected = span("root", 0, of(
             span("A", 0, 2, of(
                 span("AA", 0, 1),
                 span("AB", 1, 2)
@@ -251,6 +251,26 @@ class SpanTest {
 
         Span root = subject.getRoot();
         assertEquals(expected, root);
+    }
+
+    @Test
+    void removeFinishedFunctionWithNoChildren(){
+        Span subject = span("foo", 0, of(
+            span("fooA", 0, 2, of(
+                    span("fooAA", 0, 1)
+            ))
+        ));
+        Span expectedOnlyOld = span("foo", 0, of(
+                span("fooA", 0, 2, of(
+                        span("fooAA", 0, 1)
+                ))
+        ));
+        Span expectedWithoutOld = span("foo", 0, 2);
+
+        Span actualOld = subject.removeFinishedFunction().orElseThrow();
+
+        assertEquals(expectedWithoutOld, subject);
+        assertEquals(expectedOnlyOld, actualOld);
     }
 
 }
