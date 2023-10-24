@@ -150,6 +150,7 @@ public class DummyProgram {
                 "}" +
             "}" +
         "]", SpanCatcher.getFinalCallStack()
+                .orElseThrow()
                 .replaceAll("\n", "")
                 .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
                 .replaceAll("\"entryTime\":[0-9]+,", "\"entryTime\":0,")

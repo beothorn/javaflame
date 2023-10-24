@@ -28,6 +28,8 @@ public class MethodInstrumentationAgent {
 
     private static File snapshotDirectory;
 
+    private static long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
+
     public enum Flag{
 
         DETAILED("detailed"),
@@ -149,36 +151,37 @@ public class MethodInstrumentationAgent {
             .installOn(instrumentation);
 
         Thread snapshotThread = new Thread(() -> {
-            try {
-                while (true) {
-                    File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
-                    final String oldCallStack = SpanCatcher.getOldCallStack();
-                    if(dataFile.exists()){
-                        RandomAccessFile raf = new RandomAccessFile(dataFile, "rw");
-                        long length = raf.length();
-                        long pos = length - 3; // 3 bytes = \n];
-                        raf.seek(pos);
-                        raf.writeBytes("\n"+ oldCallStack +",\n];");
-                        raf.close();
-                        log(INFO, "Snapshot '"+ dataFile.getAbsolutePath()+"'");
-                    } else {
-                        try (FileWriter fw = new FileWriter(dataFile)) {
-                            String content = "var data = " + oldCallStack +";";
-                            fw.write(content);
-                            fw.flush();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+            while (true) {
+                File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
+                SpanCatcher.getOldCallStack().ifPresent(oldCallStack -> {
+                    try {
+                        if (dataFile.exists()) {
+                            RandomAccessFile raf = new RandomAccessFile(dataFile, "rw");
+                            long length = raf.length();
+                            long pos = length - 3; // 3 bytes = \n];
+                            raf.seek(pos);
+                            raf.writeBytes("\n" + oldCallStack + ",\n];");
+                            raf.close();
+                            log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
+                        } else {
+                            try (FileWriter fw = new FileWriter(dataFile)) {
+                                String content = "var data = " + oldCallStack + ";";
+                                fw.write(content);
+                                fw.flush();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
                         }
-                        log(INFO, "Snapshot '"+ dataFile.getAbsolutePath()+"'");
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-
-                    Thread.sleep(1000L);
+                });
+                try {
+                    Thread.sleep(SAVE_SNAPSHOT_INTERVAL_MILLIS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (InterruptedException e) {
-                // Do nothing, this will never be interrupted
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         });
 
@@ -208,14 +211,17 @@ public class MethodInstrumentationAgent {
 
     private static void addShutdownHookToWriteDataOnJVMShutdown() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            File dataFile = new File(snapshotDirectory.getAbsolutePath(), "jvmShutdownData.js");
-            try (FileWriter fw = new FileWriter(dataFile)){
-                fw.write("var data = "+SpanCatcher.getFinalCallStack());
-                fw.flush();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            log(INFO, "Final stack '"+ dataFile.getAbsolutePath()+"'");
+            SpanCatcher.getFinalCallStack().ifPresent(stack -> {
+                File dataFile = new File(snapshotDirectory.getAbsolutePath(), "jvmShutdownData.js");
+                try (FileWriter fw = new FileWriter(dataFile)){
+                    fw.write("var data = "+stack);
+                    fw.flush();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                log(INFO, "Final stack '"+ dataFile.getAbsolutePath()+"'");
+            });
+
             log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
         }));
     }

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import static com.github.beothorn.agent.SpanCatcher.onEnter;
 import static com.github.beothorn.agent.SpanCatcher.onLeave;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SpanCatcherTest {
 
@@ -106,6 +107,7 @@ class SpanCatcherTest {
         assertEquals(
             "[" + threadT + "," + threadMain +"]",
             SpanCatcher.getFinalCallStack()
+                    .orElseThrow()
                     .replaceAll("\n", "")
                     .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
         );
@@ -137,8 +139,16 @@ class SpanCatcherTest {
             "}" +
         "]",
         SpanCatcher.getOldCallStack()
+                .orElseThrow()
                 .replaceAll("\n", "")
                 .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
         );
+    }
+
+    @Test
+    void shouldNotPrintEmptyCallStack(){
+        assertTrue(SpanCatcher.stackPerThread.isEmpty());
+        assertTrue(SpanCatcher.getOldCallStack().isEmpty());
+        assertTrue(SpanCatcher.getFinalCallStack().isEmpty());
     }
 }
