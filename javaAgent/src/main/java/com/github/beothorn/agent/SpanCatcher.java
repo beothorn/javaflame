@@ -4,6 +4,7 @@ import net.bytebuddy.asm.Advice;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -71,7 +72,9 @@ public class SpanCatcher {
         log(DEBUG, "Leave @"+threadName+": "+stack.description());
     }
 
-    public static String getOldCallStack() {
+    public static Optional<String> getOldCallStack() {
+        if(SpanCatcher.stackPerThread.isEmpty()) return Optional.empty();
+
         Map<String, Span> oldStackPerThread = new ConcurrentHashMap<>();
 
         SpanCatcher.stackPerThread.forEach((key, value) -> {
@@ -79,7 +82,9 @@ public class SpanCatcher {
                     .ifPresent(p -> oldStackPerThread.put(key, p));
         });
 
-        return getSnapshot(oldStackPerThread);
+        if(oldStackPerThread.isEmpty()) return Optional.empty();
+
+        return Optional.of(getSnapshot(oldStackPerThread));
     }
 
     private static String getSnapshot(Map<String, Span> stackPerThreadToPrint) {
@@ -94,7 +99,9 @@ public class SpanCatcher {
             .collect(Collectors.joining(",")) + "\n]";
     }
 
-    public static String getFinalCallStack() {
-        return getSnapshot(SpanCatcher.stackPerThread);
+    public static Optional<String> getFinalCallStack() {
+        if(SpanCatcher.stackPerThread.isEmpty()) return Optional.empty();
+
+        return Optional.of(getSnapshot(SpanCatcher.stackPerThread));
     }
 }
