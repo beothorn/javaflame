@@ -4,7 +4,7 @@
 
 Simple and easy flame graph for java.  
 No servers or open connections, just plug the agent and get the results.  
-[Latest release v6.0.0](https://github.com/beothorn/javaflame/releases/download/v6.0.0/javaAgent.jar)
+[Latest release v7.0.0](https://github.com/beothorn/javaflame/releases/download/v7.0.0/javaAgent.jar)
 
 # Screenshots
 
