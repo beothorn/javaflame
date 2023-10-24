@@ -152,9 +152,9 @@ public class MethodInstrumentationAgent {
 
         Thread snapshotThread = new Thread(() -> {
             while (true) {
-                File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
                 SpanCatcher.getOldCallStack().ifPresent(oldCallStack -> {
                     try {
+                        File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
                         if (dataFile.exists()) {
                             RandomAccessFile raf = new RandomAccessFile(dataFile, "rw");
                             long length = raf.length();
@@ -165,7 +165,7 @@ public class MethodInstrumentationAgent {
                             log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
                         } else {
                             try (FileWriter fw = new FileWriter(dataFile)) {
-                                String content = "var data = " + oldCallStack + ";";
+                                String content = "var data = [" + oldCallStack + ",\n];";
                                 fw.write(content);
                                 fw.flush();
                             } catch (IOException e) {
