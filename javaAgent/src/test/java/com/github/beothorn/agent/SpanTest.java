@@ -41,6 +41,18 @@ class SpanTest {
     }
 
     @Test
+    void jsonWithEscapedValues(){
+        Span subject = span("foo(String a=\"a\nb\tc\")", 0, 2);
+        String expected = "{" +
+                "\"name\":\"foo(String a=\\\"a\\nb\\tc\\\")\"," +
+                "\"entryTime\":0," +
+                "\"exitTime\":2," +
+                "\"value\":2" +
+                "}\n";
+        assertEquals(expected, subject.toJson());
+    }
+
+    @Test
     void equalities(){
         Span subjectA = span("root", 0, 2, of(
             span("A", 0, 1),

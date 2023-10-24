@@ -126,9 +126,13 @@ public class Span{
     }
 
     public String toJson(){
+        String nameEscaped = name
+                .replaceAll("\"", "\\\\\"")
+                .replaceAll("\n", "\\\\n")
+                .replaceAll("\t", "\\\\t");
         if(children.isEmpty()){
             return "{" +
-                        "\"name\":\""+name+"\"," +
+                        "\"name\":\""+ nameEscaped +"\"," +
                         "\"entryTime\":"+ entryTime +"," +
                         "\"exitTime\":"+ exitTime +"," +
                         "\"value\":"+ duration() +
@@ -144,7 +148,7 @@ public class Span{
 
         String childrenAsJson = sb.toString();
         return "{" +
-                    "\"name\":\""+name+"\"," +
+                    "\"name\":\""+ nameEscaped +"\"," +
                     "\"entryTime\":"+ entryTime +"," +
                     "\"exitTime\":"+ exitTime +"," +
                     "\"value\":"+ duration() +"," +
