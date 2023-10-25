@@ -42,9 +42,25 @@ class SpanTest {
 
     @Test
     void jsonWithEscapedValues(){
-        Span subject = span("foo(String a=\"a\nb\tc\")", 0, 2);
+        String name = "\" \n \\ \t \\\"";
+        Span subject = span(name, 0, 2);
         String expected = "{" +
-                "\"name\":\"foo(String a=\\\"a\\nb\\tc\\\")\"," +
+                "\"name\":\"\\\" \\n \\\\ \\t \\\\\\\"\"," +
+                "\"entryTime\":0," +
+                "\"exitTime\":2," +
+                "\"value\":2" +
+                "}\n";
+        assertEquals(expected, subject.toJson());
+    }
+
+    @Test
+    void jsonWithJsonArg(){
+        // Sometimes a json is passed as a string to a function.
+        // We should be able to render it on data.js
+        String name = "{\n\t\"id\": \"123\"}";
+        Span subject = span(name, 0, 2);
+        String expected = "{" +
+                "\"name\":\"{\\n\\t\\\"id\\\": \\\"123\\\"}\"," +
                 "\"entryTime\":0," +
                 "\"exitTime\":2," +
                 "\"value\":2" +
