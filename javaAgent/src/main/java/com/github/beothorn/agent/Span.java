@@ -127,8 +127,10 @@ public class Span{
 
     public String toJson(){
         String nameEscaped = name
+                .replaceAll("\\\\", "\\\\\\\\")
                 .replaceAll("\"", "\\\\\"")
                 .replaceAll("\n", "\\\\n")
+                .replaceAll("\r", "\\\\r")
                 .replaceAll("\t", "\\\\t");
         if(children.isEmpty()){
             return "{" +
