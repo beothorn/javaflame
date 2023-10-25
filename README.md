@@ -1,6 +1,6 @@
 # Javaflame
 
-![logo](https://github.com/beothorn/javaflame/blob/main/logo.jpg?raw=true)
+![logo](https://github.com/beothorn/javaflame/blob/main/logo.svg?raw=true)
 
 Simple and easy flame graph for java.  
 No servers or open connections, just plug the agent and get the results.  
