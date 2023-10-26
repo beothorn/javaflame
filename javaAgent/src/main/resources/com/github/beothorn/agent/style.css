@@ -1,6 +1,8 @@
 .threadChartLight {
-    border: 1px solid #fff;
+    background: #fff;
+    border: 1px solid #000;
 }
 .threadChartDark {
-    border: 1px solid #eee;
+    background: #eee;
+    border: 1px solid #000;
 }
