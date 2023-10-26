@@ -1,3 +1,7 @@
+body {
+    background: #ccc;
+}
+
 .threadChartLight {
     background: #fff;
     border: 1px solid #000;
