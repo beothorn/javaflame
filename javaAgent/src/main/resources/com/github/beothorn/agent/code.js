@@ -58,13 +58,15 @@ function mergeSpans(spanA, spanB) {
 }
 
 function mergeChildren(childrenA, childrenB){
+    if(childrenB.length == 0) return childrenA;
     // if last children from childrenA name and entry time is the same as first children from childrenB
     // merge spans
     const lastSpanOnChildrenA = childrenA[childrenA.length - 1];
     const firstSpanOnChildrenB = childrenB[0];
     if(lastSpanOnChildrenA.name === firstSpanOnChildrenB.name 
-        && lastSpanOnChildrenA.entryTime === firstSpanOnChildrenB.entryTime){
-            const intersection = mergeSpans(lastSpanOnChildrenA, firstSpanOnChildrenB);
+        && lastSpanOnChildrenA.entryTime === firstSpanOnChildrenB.entryTime
+    ){
+        const intersection = mergeSpans(lastSpanOnChildrenA, firstSpanOnChildrenB);
         const childrenAExceptLast = childrenA.slice(0, childrenA.length - 1);
         const childrenBExceptFirst = childrenB.slice(1);
         return childrenAExceptLast.concat(intersection).concat(childrenBExceptFirst);
