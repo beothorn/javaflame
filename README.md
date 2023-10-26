@@ -1,7 +1,5 @@
 # Javaflame
 
-![logo](https://github.com/beothorn/javaflame/blob/main/logo.svg?raw=true)
-
 Simple and easy flame graph for java.  
 No servers or open connections, just plug the agent and get the results.  
 [Latest release v7.0.1](https://github.com/beothorn/javaflame/releases/download/v7.0.1/javaAgent.jar)
