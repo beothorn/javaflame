@@ -116,6 +116,46 @@ const tests = {
                 }
             }
         ];
+        // TODO
+    },
+    "Merge childen": (assert) => {
+        const actual = mergeChildren([{
+            "name": "functionMain",
+            "entryTime":0,
+            "exitTime":50,
+            "value":0
+        }], [{
+            "name": "functionMain",
+            "entryTime":0,
+            "exitTime":200,
+            "value":150
+        }]);
+
+        const expected = [{
+            "name": "functionMain",
+            "entryTime":0,
+            "exitTime":200,
+            "value":150
+        }];
+        
+        assert.deepEquals("Merged children", expected, actual);
+    },
+    "Merge of two snapshots with empty children": (assert) => {
+        const actual = mergeChildren([{
+            "name": "functionMain",
+            "entryTime":0,
+            "exitTime":50,
+            "value":50
+        }], []);
+
+        const expected = [{
+            "name": "functionMain",
+            "entryTime":0,
+            "exitTime":50,
+            "value":50
+        }];
+        
+        assert.deepEquals("Merged children", expected, actual);
     }
 };
 
