@@ -2,8 +2,10 @@
 
 <head>
     <link rel="stylesheet" type="text/css" href="d3-flamegraph.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
+<img width="100px" src="./logo.svg"><img/>
 <div id="charts"></div>
 <script type="text/javascript" src="d3.v7.js"></script>
 <script type="text/javascript" src="d3-flamegraph.min.js"></script>
@@ -18,12 +20,20 @@
 
     for(let i = 0; i < mergedData.length; i++){
         const newDiv = document.createElement("div");
+        if(i%2==0){
+            newDiv.className = "threadChartLight";
+        }else{
+            newDiv.className = "threadChartDark";
+        }
         newDiv.id = "chart"+i;
         const threadName = document.createElement("h1");
         threadName.appendChild(document.createTextNode(mergedData[i].thread));
         newDiv.appendChild(threadName);
         charts.appendChild(newDiv);
-        var chart = flamegraph().width(960);
+        // get div charts width
+        const chartsWidth = charts.offsetWidth;
+
+        var chart = flamegraph().width(chartsWidth - 2); // minus border
 
         d3.select("#"+newDiv.id)
             .datum(mergedData[i].span)
