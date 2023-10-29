@@ -5,13 +5,55 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-<img width="100px" src="./logo.svg"><img/>
+
+<div id="header" class="box">
+    <img id="logo" width="100px" src="./logo.svg"/>
+    <div id="metadata">
+        <p>Javaflame v7.1.0</p>
+        <p id="arguments"></p>
+        <p>First snapshot timestamp: <span id="startTimestamp"></span></p>
+        <p>Last snapshot timestamp: &nbsp;<span id="finalTimestamp"></span></p>
+    </div>
+</div>
+
 <div id="charts"></div>
 <script type="text/javascript" src="d3.v7.js"></script>
 <script type="text/javascript" src="d3-flamegraph.min.js"></script>
 <script type="text/javascript" src="data.js"></script>
 <script type="text/javascript" src="code.js"></script>
 <script type="text/javascript">
+
+    const argumentsField = document.getElementById("arguments");
+    argumentsField.innerHTML = executionMetadata;
+
+    const firstSnapshot = document.getElementById("startTimestamp");
+    const firstSnapshotTimestamp = data[0][0].snapshotTime;
+    const firstSnapshotDate = new Date(firstSnapshotTimestamp);
+    const firstSnapshotTimestampFormatted = 
+        `${firstSnapshotDate.getFullYear()}-`+
+        `${firstSnapshotDate.getMonth()+1}-`+
+        `${firstSnapshotDate.getDate()} `+
+        `${firstSnapshotDate.getHours()}:`+
+        `${firstSnapshotDate.getMinutes()}:`+
+        `${firstSnapshotDate.getSeconds()}.`+
+        `${firstSnapshotDate.getMilliseconds()}`;
+    firstSnapshot.appendChild(document.createTextNode(firstSnapshotTimestampFormatted));
+
+    const finalSnapshot = document.getElementById("finalTimestamp");
+    const finalSnapshotTimestamp = data[data.length-1][0].snapshotTime;
+    
+    const lastSnapshot = document.getElementById("finalTimestamp");
+    const lastSnapshotTimestamp = data[data.length-1][0].snapshotTime;
+    const lastSnapshotDate = new Date(lastSnapshotTimestamp);
+    const lastSnapshotTimestampFormatted = 
+        `${lastSnapshotDate.getFullYear()}-`+
+        `${lastSnapshotDate.getMonth()+1}-`+
+        `${lastSnapshotDate.getDate()} `+
+        `${lastSnapshotDate.getHours()}:`+
+        `${lastSnapshotDate.getMinutes()}:`+
+        `${lastSnapshotDate.getSeconds()}.`+
+        `${lastSnapshotDate.getMilliseconds()}`;
+    lastSnapshot.appendChild(document.createTextNode(lastSnapshotTimestampFormatted));
 
     const charts = document.getElementById("charts");
 
@@ -20,20 +62,17 @@
 
     for(let i = 0; i < mergedData.length; i++){
         const newDiv = document.createElement("div");
-        if(i%2==0){
-            newDiv.className = "threadChartLight";
-        }else{
-            newDiv.className = "threadChartDark";
-        }
+        newDiv.classList.add("box");
         newDiv.id = "chart"+i;
         const threadName = document.createElement("h1");
+        threadName.classList.add("threadName");
         threadName.appendChild(document.createTextNode(mergedData[i].thread));
         newDiv.appendChild(threadName);
         charts.appendChild(newDiv);
         // get div charts width
         const chartsWidth = charts.offsetWidth;
 
-        var chart = flamegraph().width(chartsWidth - 2); // minus border
+        var chart = flamegraph().width(chartsWidth - 10); // minus border
 
         d3.select("#"+newDiv.id)
             .datum(mergedData[i].span)

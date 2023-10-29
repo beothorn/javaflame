@@ -28,7 +28,7 @@ public class MethodInstrumentationAgent {
 
     private static File snapshotDirectory;
 
-    private static long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
+    private static final long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
 
     public enum Flag{
 
@@ -123,11 +123,17 @@ public class MethodInstrumentationAgent {
         List<String> excludes = argumentExcludes(argument);
         List<String> filters = argumentFilter(argument);
 
-        log(DEBUG, " logLevel :" + currentLevel.name()
-                + " flags:" + Arrays.toString(Flag.allFlagsOnArgument(argument))
+        String executionMetadata = "logLevel :" + currentLevel.name()
+                + " flags:" + Arrays.toString(allFlagsOnArgument(argument))
                 + " output to '" + snapshotDirectory.getAbsolutePath() + "'"
                 + " excludes:" + Arrays.toString(excludes.toArray())
-                + " filters:" + Arrays.toString(filters.toArray()));
+                + " filters:" + Arrays.toString(filters.toArray());
+        log(DEBUG, executionMetadata);
+
+        String executionMetadataFormatted = "<p>Flags: " + Arrays.toString(allFlagsOnArgument(argument)) + "</p>"
+                + "<p>Output: '" + snapshotDirectory.getAbsolutePath() + "'</p>"
+                + "<p>Excludes: " + Arrays.toString(excludes.toArray()) + "</p>"
+                + "<p>Filters: " + Arrays.toString(filters.toArray()) + "</p>";
 
         ElementMatcher.Junction<TypeDescription> argumentsMatcher = getMatcherFromAruments(excludes, filters);
 
@@ -165,7 +171,8 @@ public class MethodInstrumentationAgent {
                             log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
                         } else {
                             try (FileWriter fw = new FileWriter(dataFile)) {
-                                String content = "var data = [" + oldCallStack + ",\n];";
+                                String content = "var executionMetadata = \""+executionMetadataFormatted+"\";\n" +
+                                        "var data = [" + oldCallStack + ",\n];";
                                 fw.write(content);
                                 fw.flush();
                             } catch (IOException e) {
