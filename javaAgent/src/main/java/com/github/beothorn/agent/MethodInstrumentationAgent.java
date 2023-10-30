@@ -135,7 +135,7 @@ public class MethodInstrumentationAgent {
                 + "<p>Excludes: " + Arrays.toString(excludes.toArray()) + "</p>"
                 + "<p>Filters: " + Arrays.toString(filters.toArray()) + "</p>";
 
-        ElementMatcher.Junction<TypeDescription> argumentsMatcher = getMatcherFromAruments(excludes, filters);
+        ElementMatcher.Junction<TypeDescription> argumentsMatcher = getMatcherFromArguments(excludes, filters);
 
         AgentBuilder agentBuilder = new AgentBuilder.Default();
 
@@ -198,7 +198,10 @@ public class MethodInstrumentationAgent {
         }
     }
 
-    private static ElementMatcher.Junction<TypeDescription> getMatcherFromAruments(List<String> excludes, List<String> filters) {
+    private static ElementMatcher.Junction<TypeDescription> getMatcherFromArguments(
+            List<String> excludes,
+            List<String> filters
+    ) {
         ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent")
                 .or(nameContains("net.bytebuddy"));
         for (String exclude: excludes) {

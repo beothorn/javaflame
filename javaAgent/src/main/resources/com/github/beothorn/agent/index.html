@@ -9,13 +9,13 @@
 <div id="header" class="box">
     <img id="logo" width="100px" src="./logo.svg"/>
     <div id="metadata">
-        <p>Javaflame v7.1.0</p>
+        <p>Javaflame v8.0.0</p>
         <p id="arguments"></p>
         <p>First snapshot timestamp: <span id="startTimestamp"></span></p>
         <p>Last snapshot timestamp: &nbsp;<span id="finalTimestamp"></span></p>
     </div>
 </div>
-
+<div id="errorOutput"></div>
 <div id="charts"></div>
 <script type="text/javascript" src="d3.v7.js"></script>
 <script type="text/javascript" src="d3-flamegraph.min.js"></script>
@@ -29,7 +29,7 @@
     const firstSnapshot = document.getElementById("startTimestamp");
     const firstSnapshotTimestamp = data[0][0].snapshotTime;
     const firstSnapshotDate = new Date(firstSnapshotTimestamp);
-    const firstSnapshotTimestampFormatted = 
+    const firstSnapshotTimestampFormatted =
         `${firstSnapshotDate.getFullYear()}-`+
         `${firstSnapshotDate.getMonth()+1}-`+
         `${firstSnapshotDate.getDate()} `+
@@ -41,11 +41,11 @@
 
     const finalSnapshot = document.getElementById("finalTimestamp");
     const finalSnapshotTimestamp = data[data.length-1][0].snapshotTime;
-    
+
     const lastSnapshot = document.getElementById("finalTimestamp");
     const lastSnapshotTimestamp = data[data.length-1][0].snapshotTime;
     const lastSnapshotDate = new Date(lastSnapshotTimestamp);
-    const lastSnapshotTimestampFormatted = 
+    const lastSnapshotTimestampFormatted =
         `${lastSnapshotDate.getFullYear()}-`+
         `${lastSnapshotDate.getMonth()+1}-`+
         `${lastSnapshotDate.getDate()} `+
@@ -74,9 +74,16 @@
 
         var chart = flamegraph().width(chartsWidth - 10); // minus border
 
-        d3.select("#"+newDiv.id)
-            .datum(mergedData[i].span)
-            .call(chart);
+        try {
+            d3.select("#"+newDiv.id)
+                .datum(mergedData[i].span)
+                .call(chart);
+        } catch (e) {
+            const errorOutput = document.getElementById("errorOutput");
+            errorOutput.appendChild(document.createTextNode(`There was an error loading the chart.`));
+            errorOutput.appendChild(document.createTextNode(`You can still open the devtools (F12) and type "mergedData" to see the graph as json.`));
+            errorOutput.appendChild(document.createTextNode(`The exception: ${e}`));
+        }
     }
 </script>
 </body>

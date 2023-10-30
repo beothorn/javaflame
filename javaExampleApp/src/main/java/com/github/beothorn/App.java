@@ -30,6 +30,10 @@ public class App {
             }
         }).start();
 
+        AnotherClass foo = new AnotherClass("Foo");
+        foo.getValue();
+        String x = foo.toString();
+
         Junrar.extract("/tmp/foo.rar", "/tmp");
     }
 }
