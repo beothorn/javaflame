@@ -1,6 +1,7 @@
 package com.github.beothorn.agent;
 
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -74,11 +75,29 @@ public class SpanCatcherDetailed {
     }
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
-    public static void exit(@Advice.Enter long start) {
+    public static void exit(
+        @Advice.Enter long start,
+        @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValueFromMethod
+    ) {
         try{
             long exitTime = System.currentTimeMillis();
             final String threadName = Thread.currentThread().getName();
-            onLeave(threadName, exitTime);
+
+            String returnValue = null;
+
+            // We avoid extracting detail when executing a toString for a parameter
+            // or else we risk creating a stack overflow
+            Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
+            if(createDetails){
+                shouldDetailThread.put(threadName, false);
+                try {
+                    returnValue = (returnValueFromMethod == null) ? "null" : returnValueFromMethod.toString();
+                } catch (Exception e) {
+                    returnValue = "RETURN_TOSTRING_EXCEPTION "+e;
+                }
+                shouldDetailThread.put(threadName, true);
+            }
+            onLeave(threadName, exitTime, returnValue);
         }catch (Exception e){
             log(DEBUG, e.getMessage());
         }

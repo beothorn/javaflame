@@ -30,9 +30,16 @@ public class App {
             }
         }).start();
 
+	printNumber(200000);
+
         AnotherClass foo = new AnotherClass("Foo");
         foo.getValue();
         String x = foo.toString();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         Junrar.extract("/tmp/foo.rar", "/tmp");
     }

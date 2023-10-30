@@ -9,6 +9,7 @@ public class Span{
     private List<Span> children;
     public final long entryTime;
     public long exitTime;
+    public String returnValue;
 
     public static Span span(
         final String name,
@@ -113,7 +114,15 @@ public class Span{
     }
 
     public Span leave(final long exitTime){
+        return leave(exitTime, null);
+    }
+
+    public Span leave(
+            final long exitTime,
+            final String returnValue
+    ){
         this.exitTime = exitTime;
+        this.returnValue = returnValue;
         return parent;
     }
 
@@ -126,7 +135,8 @@ public class Span{
     }
 
     public String toJson(){
-        String nameEscaped = name
+        String nameMaybeWithReturn = (returnValue == null) ? name : name + " => " + returnValue;
+        String nameEscaped = nameMaybeWithReturn
                 .replaceAll("\\\\", "\\\\\\\\")
                 .replaceAll("\"", "\\\\\"")
                 .replaceAll("\n", "\\\\n")

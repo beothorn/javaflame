@@ -27,7 +27,7 @@ public class DummyProgram {
         a(1);
         b(1, 2);
 
-        exit(-1);
+        exit(-1, null);
     }
 
     private int a(int p1){
@@ -42,7 +42,7 @@ public class DummyProgram {
 
         int result = aa(p1 + 1);
 
-        exit(-1);
+        exit(-1, null);
         return result;
     }
 
@@ -56,7 +56,7 @@ public class DummyProgram {
             throw new RuntimeException(e);
         }
 
-        exit(-1);
+        exit(-1, null);
         return p1 + 1;
     }
 
@@ -74,7 +74,7 @@ public class DummyProgram {
 
         int result = bb(p1 + 1, p2 + 1);
 
-        exit(-1);
+        exit(-1, null);
         return result;
     }
 
@@ -92,7 +92,7 @@ public class DummyProgram {
 
         int result = p1 + p2;
 
-        exit(-1);
+        exit(-1, null);
         return result;
     }
 

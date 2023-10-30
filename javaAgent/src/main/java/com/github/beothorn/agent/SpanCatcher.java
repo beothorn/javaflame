@@ -60,9 +60,20 @@ public class SpanCatcher {
         }
     }
 
-    public static void onLeave(final String threadName, final long exitTime) {
+    public static void onLeave(
+            final String threadName,
+            final long exitTime
+    ) {
+        onLeave(threadName, exitTime, null);
+    }
+
+    public static void onLeave(
+            final String threadName,
+            final long exitTime,
+            final String returnValue
+    ) {
         final Span stack = getCurrentRunning(threadName);
-        Span leave = stack.leave(exitTime);
+        Span leave = stack.leave(exitTime, returnValue);
         if(leave == null){
             log(DEBUG, "Leaving root loop on "+threadName+" last stack: "+stack.description());
             stack.exitTime = exitTime;
