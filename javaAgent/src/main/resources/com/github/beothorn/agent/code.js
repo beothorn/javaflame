@@ -74,3 +74,21 @@ function mergeChildren(childrenA, childrenB){
 
     return childrenA.concat(childrenB);
 }
+
+function increaseZeroValues(data) {
+    return data.map( d => ({
+      ...d,
+      "span": increaseSpanValue(d.span)
+    }));
+}
+
+function increaseSpanValue(span) {
+    let newSpan = {...span};
+    if(span.children && span.children.length > 0){
+        newSpan.children = span.children.map(increaseSpanValue);
+        newSpan.value = newSpan.children.map(c => c.value).reduce((a, b) => a + b);
+    } else {
+        if(newSpan.value == 0) newSpan.value = 1;
+    }
+    return newSpan;
+}

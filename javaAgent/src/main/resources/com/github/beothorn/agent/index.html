@@ -60,13 +60,15 @@
     // join data and filter here
     const mergedData = mergeSnapshots(data);
 
-    for(let i = 0; i < mergedData.length; i++){
+    const dataForGraph = increaseZeroValues(mergedData);
+
+    for(let i = 0; i < dataForGraph.length; i++){
         const newDiv = document.createElement("div");
         newDiv.classList.add("box");
         newDiv.id = "chart"+i;
         const threadName = document.createElement("h1");
         threadName.classList.add("threadName");
-        threadName.appendChild(document.createTextNode(mergedData[i].thread));
+        threadName.appendChild(document.createTextNode(dataForGraph[i].thread));
         newDiv.appendChild(threadName);
         charts.appendChild(newDiv);
         // get div charts width
@@ -76,7 +78,7 @@
 
         try {
             d3.select("#"+newDiv.id)
-                .datum(mergedData[i].span)
+                .datum(dataForGraph[i].span)
                 .call(chart);
         } catch (e) {
             const errorOutput = document.getElementById("errorOutput");

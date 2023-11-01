@@ -101,23 +101,6 @@ const tests = {
         
         assert.deepEquals("Merged snapshots", expected, mergeSnapshots(data));
     },
-    "Filter by snapshot time": (assert) => {
-        const data = [
-            {
-                "thread": "main",
-                "snapshotTime": 0,
-                "span": {
-                    "name": "functionMain",
-                    "entryTime":0,
-                    "exitTime":-1,
-                    "value":0,
-                    "children":[
-                    ]
-                }
-            }
-        ];
-        // TODO
-    },
     "Merge childen": (assert) => {
         const actual = mergeChildren([{
             "name": "functionMain",
@@ -156,6 +139,77 @@ const tests = {
         }];
         
         assert.deepEquals("Merged children", expected, actual);
+    },
+    "No zero valued entries": (assert) => {
+        const subject = [
+            {
+                "thread": "main",
+                "snapshotTime": 1000,
+                "span": {
+                    "name": "functionMain",
+                    "entryTime":1000,
+                    "exitTime":1000,
+                    "value":0,
+                    "children":[
+                        {
+                            "name": "functionA",
+                            "entryTime":1000,
+                            "exitTime":1000,
+                            "value":0,
+                            "children":[
+                                {
+                                    "name": "functionAA",
+                                    "entryTime":1000,
+                                    "exitTime":1000,
+                                    "value":0,
+                                },{
+                                    "name": "functionAB",
+                                    "entryTime":1000,
+                                    "exitTime":1000,
+                                    "value":0,
+                                },
+                            ]
+                        }
+                    ]
+                }
+            }
+        ];
+
+        const expected = [
+            {
+                "thread": "main",
+                "snapshotTime": 1000,
+                "span": {
+                    "name": "functionMain",
+                    "entryTime":1000,
+                    "exitTime":1000,
+                    "value":2,
+                    "children":[
+                        {
+                            "name": "functionA",
+                            "entryTime":1000,
+                            "exitTime":1000,
+                            "value":2,
+                            "children":[
+                                {
+                                    "name": "functionAA",
+                                    "entryTime":1000,
+                                    "exitTime":1000,
+                                    "value":1,
+                                },{
+                                    "name": "functionAB",
+                                    "entryTime":1000,
+                                    "exitTime":1000,
+                                    "value":1,
+                                },
+                            ]
+                        }
+                    ]
+                }
+            }
+        ];
+
+        assert.deepEquals("Data with replaced values", expected, increaseZeroValues(subject));
     }
 };
 
