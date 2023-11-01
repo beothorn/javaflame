@@ -100,6 +100,7 @@ public class DummyProgram {
     @Test
     void runDummyProgramAndCheckOutput(){
         FunctionCallRecorder.stackPerThread.clear();
+        FunctionCallRecorder.shouldPrintQualified = true;
         new DummyProgram().run();
         assertEquals("[" +
             "{" +

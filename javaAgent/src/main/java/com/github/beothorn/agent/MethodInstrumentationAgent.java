@@ -38,7 +38,8 @@ public class MethodInstrumentationAgent {
         NO_CAPTURING_VALUES("no_capturing_values"),
         CORE_CLASSES("core_classes"),
         NO_CONSTRUCTOR("no_constructor"),
-        NO_SNAPSHOTS("no_snapshots");
+        NO_SNAPSHOTS("no_snapshots"),
+        QUALIFIED_FUNCTIONS("qualified_functions");
 
         public final String flagAsString;
 
@@ -249,6 +250,10 @@ public class MethodInstrumentationAgent {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static boolean argumentHasQualifiedFunctions(String argument){
+        return QUALIFIED_FUNCTIONS.isOnArguments(argument);
     }
 
     public static boolean argumentHasNoCaptureValuesMode(String argument){
