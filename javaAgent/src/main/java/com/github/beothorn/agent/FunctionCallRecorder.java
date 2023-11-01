@@ -21,14 +21,10 @@ public class FunctionCallRecorder {
         try {
             StringBuilder prettyCall = new StringBuilder();
             String methodName = method.getName();
-            if ( FunctionCallRecorder.shouldPrintQualified ){
-                String ownerClass = method.getDeclaringClass().getName();
-                prettyCall.append(ownerClass)
-                        .append(".")
-                        .append(methodName);
-            } else {
-                prettyCall.append(methodName);
-            }
+            String ownerClass = getClassNameFor(method);
+            prettyCall.append(ownerClass)
+                    .append(".")
+                    .append(methodName);
 
             final String threadName = Thread.currentThread().getName();
             long entryTime = System.currentTimeMillis();
@@ -37,6 +33,17 @@ public class FunctionCallRecorder {
             // Should never get here, but if it does, execution needs to go on
             log(DEBUG, e.getMessage());
         }
+    }
+
+    public static String getClassNameFor(Method method) {
+        String ownerClass;
+        Class<?> declaringClass = method.getDeclaringClass();
+        if ( FunctionCallRecorder.shouldPrintQualified ){
+            ownerClass = declaringClass.getName();
+        } else {
+            ownerClass = declaringClass.getSimpleName();
+        }
+        return ownerClass;
     }
 
     public static void onEnter(

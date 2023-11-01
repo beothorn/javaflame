@@ -9,10 +9,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.github.beothorn.agent.FunctionCallRecorder.*;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
-import static com.github.beothorn.agent.FunctionCallRecorder.onEnter;
-import static com.github.beothorn.agent.FunctionCallRecorder.onLeave;
 
 public class FunctionCallRecorderWithValueCapturing {
 
@@ -26,15 +25,11 @@ public class FunctionCallRecorderWithValueCapturing {
         try {
             StringBuilder prettyCall = new StringBuilder();
             String methodName = method.getName();
-            if ( FunctionCallRecorder.shouldPrintQualified ){
-                String ownerClass = method.getDeclaringClass().getName();
-                prettyCall.append(ownerClass)
-                        .append(".")
-                        .append(methodName);
-            } else {
-                prettyCall.append(methodName);
-            }
-            prettyCall.append("(");
+            String ownerClass = getClassNameFor(method);
+            prettyCall.append(ownerClass)
+                    .append(".")
+                    .append(methodName)
+                    .append("(");
             Parameter[] parameters = method.getParameters();
             final String threadName = Thread.currentThread().getName();
 
@@ -49,8 +44,6 @@ public class FunctionCallRecorderWithValueCapturing {
                     argToString = getValueAsString(allArguments[i]);
                     String paramType = getTypeAsString(allArguments, i, parameter);
                     prettyCall.append(paramType)
-                            .append(" ")
-                            .append(parameter.getName())
                             .append(" = ")
                             .append(argToString);
                     if(i < parameters.length-1){
