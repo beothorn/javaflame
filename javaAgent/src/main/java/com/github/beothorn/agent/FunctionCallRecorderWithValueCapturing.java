@@ -38,20 +38,33 @@ public class FunctionCallRecorderWithValueCapturing {
                 for (int i = 0; i < parameters.length; i++) {
                     Parameter parameter = parameters[i];
                     String argToString;
-                    if(allArguments[i] == null){
-                        argToString = "null";
-                    } else {
-                        try {
-                            if (allArguments[i].getClass().isArray()) {
-                                argToString = Arrays.toString((Object[]) allArguments[i]);
-                            } else {
-                                argToString = allArguments[i].toString();
-                            }
-                        } catch (Exception e) {
-                            argToString = "ARG_TOSTRING_EXCEPTION "+e;
+                    argToString = getValueAsString(allArguments[i]);
+                    // if array
+                    String paramType;
+                    if (allArguments[i].getClass().isArray()){
+                        if (allArguments[i] instanceof boolean[]) {
+                            paramType = "boolean[]";
+                        } else if (allArguments[i]  instanceof byte[]) {
+                            paramType = "byte[]";
+                        } else if (allArguments[i]  instanceof char[]) {
+                            paramType = "char[]";
+                        } else if (allArguments[i]  instanceof double[]) {
+                            paramType = "double[]";
+                        } else if (allArguments[i]  instanceof float[]) {
+                            paramType = "float[]";
+                        } else if (allArguments[i]  instanceof int[]) {
+                            paramType = "int[]";
+                        } else if (allArguments[i]  instanceof short[]) {
+                            paramType = "short[]";
+                        } else if (allArguments[i]  instanceof long[]) {
+                            paramType = "long[]";
+                        } else {
+                            paramType = "Object[]";
                         }
+                    } else {
+                        paramType = parameter.getType().getName();
                     }
-                    prettyCall.append(parameter.getType().getName())
+                    prettyCall.append(paramType)
                             .append(" ")
                             .append(parameter.getName())
                             .append(" = ")
@@ -74,6 +87,39 @@ public class FunctionCallRecorderWithValueCapturing {
         }
     }
 
+    public static String getValueAsString(Object value) {
+        if(value == null){
+            return "null";
+        }
+        try {
+            if (value.getClass().isArray()) {
+                if (value instanceof boolean[]) {
+                    return Arrays.toString((boolean[]) value);
+                } else if (value instanceof byte[]) {
+                    return Arrays.toString((byte[]) value);
+                } else if (value instanceof char[]) {
+                    return Arrays.toString((char[]) value);
+                } else if (value instanceof double[]) {
+                    return Arrays.toString((double[]) value);
+                } else if (value instanceof float[]) {
+                    return Arrays.toString((float[]) value);
+                } else if (value instanceof int[]) {
+                    return Arrays.toString((int[]) value);
+                } else if (value instanceof short[]) {
+                    return Arrays.toString((short[]) value);
+                } else if (value instanceof long[]) {
+                    return Arrays.toString((long[]) value);
+                } else {
+                    return Arrays.toString((Object[]) value);
+                }
+            } else {
+                return value.toString();
+            }
+        } catch (Exception e) {
+            return "ARG_TOSTRING_EXCEPTION "+e;
+        }
+    }
+
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(
         @Advice.Enter long start,
@@ -91,7 +137,7 @@ public class FunctionCallRecorderWithValueCapturing {
             if(createDetails){
                 shouldDetailThread.put(threadName, false);
                 try {
-                    returnValue = (returnValueFromMethod == null) ? "null" : returnValueFromMethod.toString();
+                    returnValue = getValueAsString(returnValueFromMethod);
                 } catch (Exception e) {
                     returnValue = "RETURN_TOSTRING_EXCEPTION "+e;
                 }

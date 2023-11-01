@@ -131,7 +131,8 @@ public class Span{
             // If has not exited yet, 
             return 0;
         }
-        return exitTime - entryTime;
+        long duration = exitTime - entryTime;
+        return duration;
     }
 
     public String toJson(){

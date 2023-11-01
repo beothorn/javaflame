@@ -3,44 +3,25 @@
  */
 package com.github.beothorn;
 
-import com.github.junrar.Junrar;
-import com.github.junrar.exception.RarException;
+import com.github.beothorn.sorts.BubbleSort;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 
 public class App {
 
-    private static ArrayList<Integer> allNumbers = new ArrayList<>();
+    public static void main(String[] args) throws InterruptedException {
+        int randomUpTo20[] = {10,14,7,16,18,11,8,
+                     5,17,6,12,20,1,9,19,
+                     3,4,2,13,15}; // chosen by fair dice roll.
+                                   // guaranteed to be random.
 
-    private static void printNumber(int number) {
-        allNumbers.add(number);
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void main(String[] args) throws RarException, IOException {
-        // new thread that print all numbers up to 100
-        new Thread(() -> {
-            for (int i = 0; i < 100; i++) {
-                printNumber(i);
-            }
-        }).start();
-
-	printNumber(200000);
-
-        AnotherClass foo = new AnotherClass("Foo");
-        foo.getValue();
-        String x = foo.toString();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        Junrar.extract("/tmp/foo.rar", "/tmp");
+        Thread bubbleSort = new Thread(() -> {
+            int[] result = BubbleSort.sort(randomUpTo20);
+            System.out.println(Arrays.toString(result));
+        });
+        bubbleSort.setName("BubbleSort");
+        bubbleSort.start();
+        bubbleSort.join();
     }
 }

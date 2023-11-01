@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,6 +30,8 @@ public class MethodInstrumentationAgent {
     private static File snapshotDirectory;
 
     private static final long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
+
+    static ReentrantLock fileWriteLock = new ReentrantLock();
 
     public enum Flag{
 
@@ -118,8 +121,6 @@ public class MethodInstrumentationAgent {
 
         writeHtmlFiles(javaFlameDirectory);
 
-        addShutdownHookToWriteDataOnJVMShutdown();
-
         List<String> excludes = argumentExcludes(argument);
         List<String> filters = argumentFilter(argument);
 
@@ -156,34 +157,13 @@ public class MethodInstrumentationAgent {
             .transform(new IntroduceMethodInterception(noConstructorMode, advice))
             .installOn(instrumentation);
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            writeSnapshotToFile(executionMetadataFormatted);
+        }));
+
         Thread snapshotThread = new Thread(() -> {
             while (true) {
-                FunctionCallRecorder.getOldCallStack().ifPresent(oldCallStack -> {
-                    try {
-                        File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
-                        if (dataFile.exists()) {
-                            RandomAccessFile raf = new RandomAccessFile(dataFile, "rw");
-                            long length = raf.length();
-                            long pos = length - 3; // 3 bytes = \n];
-                            raf.seek(pos);
-                            raf.writeBytes("\n" + oldCallStack + ",\n];");
-                            raf.close();
-                            log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
-                        } else {
-                            try (FileWriter fw = new FileWriter(dataFile)) {
-                                String content = "var executionMetadata = \""+executionMetadataFormatted+"\";\n" +
-                                        "var data = [" + oldCallStack + ",\n];";
-                                fw.write(content);
-                                fw.flush();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                            log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+                writeSnapshotToFile(executionMetadataFormatted);
                 try {
                     Thread.sleep(SAVE_SNAPSHOT_INTERVAL_MILLIS);
                 } catch (InterruptedException e) {
@@ -195,6 +175,40 @@ public class MethodInstrumentationAgent {
         if(!argumentHasNoSnapshotsMode(argument)){
             snapshotThread.setDaemon(true);
             snapshotThread.start();
+        }
+    }
+
+    private static void writeSnapshotToFile(String executionMetadataFormatted) {
+        fileWriteLock.lock();
+        try {
+            FunctionCallRecorder.getOldCallStack().ifPresent(oldCallStack -> {
+                try {
+                    File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
+                    if (dataFile.exists()) {
+                        RandomAccessFile raf = new RandomAccessFile(dataFile, "rw");
+                        long length = raf.length();
+                        long pos = length - 3; // 3 bytes = \n];
+                        raf.seek(pos);
+                        raf.writeBytes("\n" + oldCallStack + ",\n];");
+                        raf.close();
+                    } else {
+                        try (FileWriter fw = new FileWriter(dataFile)) {
+                            String content = "var executionMetadata = \""+ executionMetadataFormatted +"\";\n" +
+                                    "var data = [" + oldCallStack + ",\n];";
+                            fw.write(content);
+                            fw.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
+                    log(INFO, "Graph at '" + dataFile.getParentFile().getAbsolutePath() + "/index.html'");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        } finally {
+            fileWriteLock.unlock();
         }
     }
 
@@ -217,23 +231,6 @@ public class MethodInstrumentationAgent {
             withExclusions = withExclusions.and(namedElementJunction);
         }
         return withExclusions;
-    }
-
-    private static void addShutdownHookToWriteDataOnJVMShutdown() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            FunctionCallRecorder.getFinalCallStack().ifPresent(stack -> {
-                File dataFile = new File(snapshotDirectory.getAbsolutePath(), "jvmShutdownData.js");
-                try (FileWriter fw = new FileWriter(dataFile)){
-                    fw.write("var data = "+stack);
-                    fw.flush();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                log(INFO, "Final stack '"+ dataFile.getAbsolutePath()+"'");
-            });
-
-            log(INFO, "Flamegraph output to '"+snapshotDirectory.getAbsolutePath()+"'");
-        }));
     }
 
     private static void writeHtmlFiles(File javaFlameDirectory) {
