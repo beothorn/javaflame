@@ -1,0 +1,92 @@
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="d3-flamegraph.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+<div id="header" class="box">
+    <img id="logo" width="100px" src="./logo.svg"/>
+    <div id="metadata">
+        <p>Javaflame v9.0.0</p>
+        <p id="arguments"></p>
+        <p>First snapshot timestamp: <span id="startTimestamp"></span></p>
+        <p>Last snapshot timestamp: &nbsp;<span id="finalTimestamp"></span></p>
+    </div>
+</div>
+<div id="errorOutput"></div>
+<div id="charts"></div>
+<script type="text/javascript" src="d3.v7.js"></script>
+<script type="text/javascript" src="d3-flamegraph.min.js"></script>
+<script type="text/javascript" src="data.js"></script>
+<script type="text/javascript" src="code.js"></script>
+<script type="text/javascript">
+
+    const argumentsField = document.getElementById("arguments");
+    argumentsField.innerHTML = executionMetadata;
+
+    const firstSnapshot = document.getElementById("startTimestamp");
+    const firstSnapshotTimestamp = data[0][0].snapshotTime;
+    const firstSnapshotDate = new Date(firstSnapshotTimestamp);
+    const firstSnapshotTimestampFormatted =
+        `${firstSnapshotDate.getFullYear()}-`+
+        `${firstSnapshotDate.getMonth()+1}-`+
+        `${firstSnapshotDate.getDate()} `+
+        `${firstSnapshotDate.getHours()}:`+
+        `${firstSnapshotDate.getMinutes()}:`+
+        `${firstSnapshotDate.getSeconds()}.`+
+        `${firstSnapshotDate.getMilliseconds()}`;
+    firstSnapshot.appendChild(document.createTextNode(firstSnapshotTimestampFormatted));
+
+    const finalSnapshot = document.getElementById("finalTimestamp");
+    const finalSnapshotTimestamp = data[data.length-1][0].snapshotTime;
+
+    const lastSnapshot = document.getElementById("finalTimestamp");
+    const lastSnapshotTimestamp = data[data.length-1][0].snapshotTime;
+    const lastSnapshotDate = new Date(lastSnapshotTimestamp);
+    const lastSnapshotTimestampFormatted =
+        `${lastSnapshotDate.getFullYear()}-`+
+        `${lastSnapshotDate.getMonth()+1}-`+
+        `${lastSnapshotDate.getDate()} `+
+        `${lastSnapshotDate.getHours()}:`+
+        `${lastSnapshotDate.getMinutes()}:`+
+        `${lastSnapshotDate.getSeconds()}.`+
+        `${lastSnapshotDate.getMilliseconds()}`;
+    lastSnapshot.appendChild(document.createTextNode(lastSnapshotTimestampFormatted));
+
+    const charts = document.getElementById("charts");
+
+    // join data and filter here
+    const mergedData = mergeSnapshots(data);
+
+    const dataForGraph = increaseZeroValues(mergedData);
+
+    for(let i = 0; i < dataForGraph.length; i++){
+        const newDiv = document.createElement("div");
+        newDiv.classList.add("box");
+        newDiv.id = "chart"+i;
+        const threadName = document.createElement("h1");
+        threadName.classList.add("threadName");
+        threadName.appendChild(document.createTextNode(dataForGraph[i].thread));
+        newDiv.appendChild(threadName);
+        charts.appendChild(newDiv);
+        // get div charts width
+        const chartsWidth = charts.offsetWidth;
+
+        var chart = flamegraph().width(chartsWidth - 10); // minus border
+
+        try {
+            d3.select("#"+newDiv.id)
+                .datum(dataForGraph[i].span)
+                .call(chart);
+        } catch (e) {
+            const errorOutput = document.getElementById("errorOutput");
+            errorOutput.appendChild(document.createTextNode(`There was an error loading the chart.`));
+            errorOutput.appendChild(document.createTextNode(`You can still open the devtools (F12) and type "mergedData" to see the graph as json.`));
+            errorOutput.appendChild(document.createTextNode(`The exception: ${e}`));
+        }
+    }
+</script>
+</body>
+</html>
