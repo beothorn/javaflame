@@ -14,18 +14,18 @@ class MethodInstrumentationAgentTest {
     void listFlags(){
         assertArrayEquals(new String[]{"no_constructor"},
                 allFlagsOnArgument("dtailed,no_constructor,foobar"));
-        assertArrayEquals(new String[]{"detailed", "no_constructor"},
-                allFlagsOnArgument("dtailed,no_constructor,detailed,foobar"));
+        assertArrayEquals(new String[]{"no_capturing_values", "no_constructor"},
+                allFlagsOnArgument("dtailed,no_constructor,no_capturing_values,foobar"));
     }
 
     @Test
-    void whenItHasCommandDetailed(){
-        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("detailed,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("asdas,detailed"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("asdas,detailed,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasDetailedMode("detailed"));
-        assertFalse(MethodInstrumentationAgent.argumentHasDetailedMode("include:com.detailed.foobar,modse:detailed"));
-        assertFalse(MethodInstrumentationAgent.argumentHasDetailedMode("asdas,modse:detailed"));
+    void whenItHasCommandNoCapturingValue(){
+        assertTrue(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("no_capturing_values,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("asdas,no_capturing_values"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("asdas,no_capturing_values,asdasd"));
+        assertTrue(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("no_capturing_values"));
+        assertFalse(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("include:com.no_capturing_values.foobar,modse:no_capturing_values"));
+        assertFalse(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("asdas,modse:no_capturing_values"));
     }
 
     @Test

@@ -16,9 +16,9 @@ or with arguments:
 
 `java -javaagent:javaAgent.jar=flags,configuration:value -jar yourApp.jar` 
 
-For example, this will silently output a flame graph including values.  
+For example, this will silently output a flame graph including function parameter values and the return.  
 
-`java -javaagent:javaAgent.jar=detailed,log:NONE,out:C:/graphs -jar yourApp.jar` 
+`java -javaagent:javaAgent.jar=log:NONE,out:C:/graphs -jar yourApp.jar` 
 
 Anything without exclusions will generate lots of data. Either it will not render or you will need to filter it first.
 
@@ -26,9 +26,9 @@ Anything without exclusions will generate lots of data. Either it will not rende
 
 ### Flags
 
-- detailed Specifies detailed mode, all parameter values will be recorded with a toString() call.  
+- no_capturing_values Record only function call, no parameter value or return value will be recorded.  
 This is slower but a great view for debugging.
-Example: `java -javaagent:javaAgent.jar=detailed -jar yourApp.jar`
+Example: `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar`
 - no_constructor Will ignore constructors
 Example: `java -javaagent:javaAgent.jar=no_constructor -jar yourApp.jar`
 - core_classes Will include java core classes. More useful in conjunction with filters to check, for example, network calls.

@@ -12,7 +12,7 @@ import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBU
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 import static com.github.beothorn.agent.Span.span;
 
-public class SpanCatcher {
+public class FunctionCallRecorder {
     public static final Map<String, Span> stackPerThread = new ConcurrentHashMap<>();
 
     @Advice.OnMethodEnter
@@ -84,11 +84,11 @@ public class SpanCatcher {
     }
 
     public static Optional<String> getOldCallStack() {
-        if(SpanCatcher.stackPerThread.isEmpty()) return Optional.empty();
+        if(FunctionCallRecorder.stackPerThread.isEmpty()) return Optional.empty();
 
         Map<String, Span> oldStackPerThread = new ConcurrentHashMap<>();
 
-        SpanCatcher.stackPerThread.forEach((key, value) -> {
+        FunctionCallRecorder.stackPerThread.forEach((key, value) -> {
             if(value != null) value.getRoot().removeFinishedFunction()
                     .ifPresent(p -> oldStackPerThread.put(key, p));
         });
@@ -111,8 +111,8 @@ public class SpanCatcher {
     }
 
     public static Optional<String> getFinalCallStack() {
-        if(SpanCatcher.stackPerThread.isEmpty()) return Optional.empty();
+        if(FunctionCallRecorder.stackPerThread.isEmpty()) return Optional.empty();
 
-        return Optional.of(getSnapshot(SpanCatcher.stackPerThread));
+        return Optional.of(getSnapshot(FunctionCallRecorder.stackPerThread));
     }
 }

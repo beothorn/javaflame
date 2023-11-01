@@ -1,17 +1,17 @@
 package integration;
 
-import com.github.beothorn.agent.SpanCatcher;
+import com.github.beothorn.agent.FunctionCallRecorder;
 import org.junit.jupiter.api.Test;
 
-import static com.github.beothorn.agent.SpanCatcherDetailed.enter;
-import static com.github.beothorn.agent.SpanCatcherDetailed.exit;
+import static com.github.beothorn.agent.FunctionCallRecorderWithValueCapturing.enter;
+import static com.github.beothorn.agent.FunctionCallRecorderWithValueCapturing.exit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DummyProgram {
 
     public static void main(String[] args) {
         new DummyProgram().run();
-        System.out.println(SpanCatcher.getFinalCallStack());
+        System.out.println(FunctionCallRecorder.getFinalCallStack());
     }
 
     public void run() {
@@ -42,7 +42,7 @@ public class DummyProgram {
 
         int result = aa(p1 + 1);
 
-        exit(-1, null);
+        exit(-1, result);
         return result;
     }
 
@@ -56,8 +56,9 @@ public class DummyProgram {
             throw new RuntimeException(e);
         }
 
-        exit(-1, null);
-        return p1 + 1;
+        int result = p1 + 1;
+        exit(-1, result);
+        return result;
     }
 
     private int b(int p1, int p2){
@@ -74,7 +75,7 @@ public class DummyProgram {
 
         int result = bb(p1 + 1, p2 + 1);
 
-        exit(-1, null);
+        exit(-1, result);
         return result;
     }
 
@@ -92,13 +93,13 @@ public class DummyProgram {
 
         int result = p1 + p2;
 
-        exit(-1, null);
+        exit(-1, result);
         return result;
     }
 
     @Test
     void runDummyProgramAndCheckOutput(){
-        SpanCatcher.stackPerThread.clear();
+        FunctionCallRecorder.stackPerThread.clear();
         new DummyProgram().run();
         assertEquals("[" +
             "{" +
@@ -111,19 +112,19 @@ public class DummyProgram {
                     "\"value\":0," +
                     "\"children\":[" +
                         "{" +
-                            "\"name\":\"integration.DummyProgram.run()\"," +
+                            "\"name\":\"integration.DummyProgram.run() => null\"," +
                             "\"entryTime\":0," +
                             "\"exitTime\":0," +
                             "\"value\":0," +
                             "\"children\":[" +
                                 "{" +
-                                    "\"name\":\"integration.DummyProgram.a(int arg0 = 1)\"," +
+                                    "\"name\":\"integration.DummyProgram.a(int arg0 = 1) => 3\"," +
                                     "\"entryTime\":0," +
                                     "\"exitTime\":0," +
                                     "\"value\":0," +
                                     "\"children\":[" +
                                         "{" +
-                                            "\"name\":\"integration.DummyProgram.aa(int arg0 = 2)\"," +
+                                            "\"name\":\"integration.DummyProgram.aa(int arg0 = 2) => 3\"," +
                                             "\"entryTime\":0," +
                                             "\"exitTime\":0," +
                                             "\"value\":0" +
@@ -131,13 +132,13 @@ public class DummyProgram {
                                     "]" +
                                 "}," +
                                 "{" +
-                                    "\"name\":\"integration.DummyProgram.b(int arg0 = 1, int arg1 = 2)\"," +
+                                    "\"name\":\"integration.DummyProgram.b(int arg0 = 1, int arg1 = 2) => 5\"," +
                                     "\"entryTime\":0," +
                                     "\"exitTime\":0," +
                                     "\"value\":0," +
                                     "\"children\":[" +
                                         "{" +
-                                            "\"name\":\"integration.DummyProgram.bb(int arg0 = 2, int arg1 = 3)\"," +
+                                            "\"name\":\"integration.DummyProgram.bb(int arg0 = 2, int arg1 = 3) => 5\"," +
                                             "\"entryTime\":0," +
                                             "\"exitTime\":0," +
                                             "\"value\":0" +
@@ -149,7 +150,7 @@ public class DummyProgram {
                     "]" +
                 "}" +
             "}" +
-        "]", SpanCatcher.getFinalCallStack()
+        "]", FunctionCallRecorder.getFinalCallStack()
                 .orElseThrow()
                 .replaceAll("\n", "")
                 .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
