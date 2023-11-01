@@ -10,4 +10,4 @@ rm -rf build
 gradle assemble
 popd
 
-java -javaagent:./javaAgent/build/libs/javaAgent.jar=exclude:com.github.junrar.unpack,log:INFO,out:/tmp -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp -jar ./javaExampleApp/build/libs/javaExampleApp.jar

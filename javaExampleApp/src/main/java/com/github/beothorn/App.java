@@ -3,25 +3,34 @@
  */
 package com.github.beothorn;
 
-import com.github.beothorn.sorts.BubbleSort;
+import com.github.beothorn.sorts.algorithms.BubbleSort;
+import com.github.beothorn.sorts.algorithms.InplaceQuickSort;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 public class App {
 
     public static void main(String[] args) throws InterruptedException {
-        int randomUpTo20[] = {10,14,7,16,18,11,8,
-                     5,17,6,12,20,1,9,19,
-                     3,4,2,13,15}; // chosen by fair dice roll.
+        int[] randomUpTo20 = {10,14,7,11,8,5,15,12,1,9,
+                     3,4,2,13,6}; // chosen by fair dice roll.
                                    // guaranteed to be random.
 
         Thread bubbleSort = new Thread(() -> {
             int[] result = BubbleSort.sort(randomUpTo20);
-            System.out.println(Arrays.toString(result));
+            System.out.println("Bubble sort: " + Arrays.toString(result));
         });
         bubbleSort.setName("BubbleSort");
         bubbleSort.start();
+
+        Thread inPlaceQuickSort = new Thread(() -> {
+            int[] result = InplaceQuickSort.sort(randomUpTo20);
+            System.out.println("InPlace QuickSort: " + Arrays.toString(result));
+        });
+        inPlaceQuickSort.setName("InPlaceQuickSort");
+        inPlaceQuickSort.start();
+
+
         bubbleSort.join();
+        inPlaceQuickSort.join();
     }
 }
