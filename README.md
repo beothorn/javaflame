@@ -2,7 +2,9 @@
 
 Simple and easy flame graph for java.  
 No servers or open connections, just plug the agent and get the results.  
-[Latest release v9.0.0](https://github.com/beothorn/javaflame/releases/download/v9.0.0/javaAgent.jar)
+[Latest release v10.0.0](https://github.com/beothorn/javaflame/releases/download/v10.0.0/javaAgent.jar)
+
+Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
 # Screenshots  
 
@@ -33,6 +35,8 @@ Example: `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar`
 Example: `java -javaagent:javaAgent.jar=no_constructor -jar yourApp.jar`
 - core_classes Will include java core classes. More useful in conjunction with filters to check, for example, network calls.
 Example: `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar`
+- no_snapshots Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that.
+- qualified_functions Print the qualified function name, ownerClass.functionName
 
 ### Configurations
 

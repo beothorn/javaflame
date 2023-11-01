@@ -14,14 +14,25 @@ import static com.github.beothorn.agent.Span.span;
 
 public class FunctionCallRecorder {
     public static final Map<String, Span> stackPerThread = new ConcurrentHashMap<>();
+    public static boolean shouldPrintQualified = false;
 
     @Advice.OnMethodEnter
     public static void enter(@Advice.Origin Method method) {
         try {
+            StringBuilder prettyCall = new StringBuilder();
             String methodName = method.getName();
+            if ( FunctionCallRecorder.shouldPrintQualified ){
+                String ownerClass = method.getDeclaringClass().getName();
+                prettyCall.append(ownerClass)
+                        .append(".")
+                        .append(methodName);
+            } else {
+                prettyCall.append(methodName);
+            }
+
             final String threadName = Thread.currentThread().getName();
             long entryTime = System.currentTimeMillis();
-            onEnter(threadName, methodName, entryTime);
+            onEnter(threadName, prettyCall.toString(), entryTime);
         } catch (Exception e){
             // Should never get here, but if it does, execution needs to go on
             log(DEBUG, e.getMessage());

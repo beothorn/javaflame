@@ -24,9 +24,17 @@ public class FunctionCallRecorderWithValueCapturing {
         @Advice.AllArguments Object[] allArguments
     ) {
         try {
+            StringBuilder prettyCall = new StringBuilder();
             String methodName = method.getName();
-            String ownerClass = method.getDeclaringClass().getName();
-            StringBuilder prettyCall = new StringBuilder(ownerClass + "." + methodName + "(");
+            if ( FunctionCallRecorder.shouldPrintQualified ){
+                String ownerClass = method.getDeclaringClass().getName();
+                prettyCall.append(ownerClass)
+                        .append(".")
+                        .append(methodName);
+            } else {
+                prettyCall.append(methodName);
+            }
+            prettyCall.append("(");
             Parameter[] parameters = method.getParameters();
             final String threadName = Thread.currentThread().getName();
 
@@ -39,31 +47,7 @@ public class FunctionCallRecorderWithValueCapturing {
                     Parameter parameter = parameters[i];
                     String argToString;
                     argToString = getValueAsString(allArguments[i]);
-                    // if array
-                    String paramType;
-                    if (allArguments[i].getClass().isArray()){
-                        if (allArguments[i] instanceof boolean[]) {
-                            paramType = "boolean[]";
-                        } else if (allArguments[i]  instanceof byte[]) {
-                            paramType = "byte[]";
-                        } else if (allArguments[i]  instanceof char[]) {
-                            paramType = "char[]";
-                        } else if (allArguments[i]  instanceof double[]) {
-                            paramType = "double[]";
-                        } else if (allArguments[i]  instanceof float[]) {
-                            paramType = "float[]";
-                        } else if (allArguments[i]  instanceof int[]) {
-                            paramType = "int[]";
-                        } else if (allArguments[i]  instanceof short[]) {
-                            paramType = "short[]";
-                        } else if (allArguments[i]  instanceof long[]) {
-                            paramType = "long[]";
-                        } else {
-                            paramType = "Object[]";
-                        }
-                    } else {
-                        paramType = parameter.getType().getName();
-                    }
+                    String paramType = getTypeAsString(allArguments, i, parameter);
                     prettyCall.append(paramType)
                             .append(" ")
                             .append(parameter.getName())
@@ -85,6 +69,34 @@ public class FunctionCallRecorderWithValueCapturing {
             log(DEBUG, e.getMessage());
             return 0;
         }
+    }
+
+    public static String getTypeAsString(Object[] allArguments, int i, Parameter parameter) {
+        String paramType;
+        if (allArguments[i].getClass().isArray()){
+            if (allArguments[i] instanceof boolean[]) {
+                paramType = "boolean[]";
+            } else if (allArguments[i]  instanceof byte[]) {
+                paramType = "byte[]";
+            } else if (allArguments[i]  instanceof char[]) {
+                paramType = "char[]";
+            } else if (allArguments[i]  instanceof double[]) {
+                paramType = "double[]";
+            } else if (allArguments[i]  instanceof float[]) {
+                paramType = "float[]";
+            } else if (allArguments[i]  instanceof int[]) {
+                paramType = "int[]";
+            } else if (allArguments[i]  instanceof short[]) {
+                paramType = "short[]";
+            } else if (allArguments[i]  instanceof long[]) {
+                paramType = "long[]";
+            } else {
+                paramType = "Object[]";
+            }
+        } else {
+            paramType = parameter.getType().getName();
+        }
+        return paramType;
     }
 
     public static String getValueAsString(Object value) {

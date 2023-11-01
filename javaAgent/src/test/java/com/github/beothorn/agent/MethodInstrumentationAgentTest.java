@@ -3,6 +3,7 @@ package com.github.beothorn.agent;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.allFlagsOnArgument;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
@@ -18,32 +19,53 @@ class MethodInstrumentationAgentTest {
                 allFlagsOnArgument("dtailed,no_constructor,no_capturing_values,foobar"));
     }
 
+    void whenItHasCommand(Function<String, Boolean> test, String command){
+        assertTrue(test.apply(command + ",asdasd"));
+        assertTrue(test.apply("asdas," + command));
+        assertTrue(test.apply("asdas," + command + ",asdasd"));
+        assertTrue(test.apply(command));
+        assertFalse(test.apply("include:com."+command+".foobar,modse:"+command));
+        assertFalse(test.apply("asdas," + command + ":no_capturing_values"));
+    }
+
     @Test
     void whenItHasCommandNoCapturingValue(){
-        assertTrue(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("no_capturing_values,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("asdas,no_capturing_values"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("asdas,no_capturing_values,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("no_capturing_values"));
-        assertFalse(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("include:com.no_capturing_values.foobar,modse:no_capturing_values"));
-        assertFalse(MethodInstrumentationAgent.argumentHasNoCaptureValuesMode("asdas,modse:no_capturing_values"));
+        whenItHasCommand(
+            MethodInstrumentationAgent::argumentHasNoCaptureValuesMode,
+            "no_capturing_values"
+        );
+    }
+
+    @Test
+    void whenItHasCommandQualifiedFunctionsValue(){
+        whenItHasCommand(
+            MethodInstrumentationAgent::argumentHasQualifiedFunctions,
+            "qualified_functions"
+        );
     }
 
     @Test
     void whenItHasIncludeCoreClasses(){
-        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("core_classes,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,core_classes"));
-        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,core_classes,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("core_classes"));
-        assertFalse(MethodInstrumentationAgent.argumentHasIncludeCoreClasses("asdas,filter:core_classes"));
+        whenItHasCommand(
+            MethodInstrumentationAgent::argumentHasIncludeCoreClasses,
+            "core_classes"
+        );
     }
 
     @Test
     void whenItHasNoConstructor(){
-        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("no_constructor,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,no_constructor"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,no_constructor,asdasd"));
-        assertTrue(MethodInstrumentationAgent.argumentHasNoConstructorMode("no_constructor"));
-        assertFalse(MethodInstrumentationAgent.argumentHasNoConstructorMode("asdas,modse:no_constructor"));
+        whenItHasCommand(
+            MethodInstrumentationAgent::argumentHasNoConstructorMode,
+            "no_constructor"
+        );
+    }
+
+    @Test
+    void whenItHasNoSnapshots(){
+        whenItHasCommand(
+                MethodInstrumentationAgent::argumentHasNoSnapshotsMode,
+                "no_snapshots"
+        );
     }
 
     @Test

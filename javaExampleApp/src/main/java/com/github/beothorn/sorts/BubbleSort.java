@@ -1,5 +1,9 @@
 package com.github.beothorn.sorts;
 
+/**
+ * This BubbleSort implementation may call more functions than actually needed.
+ * This is because I want the flamegraph to show exactly what is going on.
+ */
 public class BubbleSort {
 
     private static boolean isABiggerThanB(int a, int b){
