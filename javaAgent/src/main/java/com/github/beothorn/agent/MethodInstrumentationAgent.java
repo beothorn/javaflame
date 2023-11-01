@@ -32,7 +32,7 @@ public class MethodInstrumentationAgent {
 
     public enum Flag{
 
-        DETAILED("detailed"),
+        NO_CAPTURING_VALUES("no_capturing_values"),
         CORE_CLASSES("core_classes"),
         NO_CONSTRUCTOR("no_constructor"),
         NO_SNAPSHOTS("no_snapshots");
@@ -94,7 +94,7 @@ public class MethodInstrumentationAgent {
 
         currentLevel = argumentLogLevel(argument);
         log(INFO, "Agent loaded");
-        boolean detailed = argumentHasDetailedMode(argument);
+        boolean shouldCaptureValues = !argumentHasNoCaptureValuesMode(argument);
         Optional<String> maybeFilePath = outputFileOnArgument(argument);
 
         Optional<File> file = maybeFilePath
@@ -145,7 +145,7 @@ public class MethodInstrumentationAgent {
         }
 
         boolean noConstructorMode = argumentHasNoConstructorMode(argument);
-        Advice advice = detailed ? Advice.to(SpanCatcherDetailed.class) : Advice.to(SpanCatcher.class);
+        Advice advice = shouldCaptureValues ? Advice.to(FunctionCallRecorderWithValueCapturing.class) : Advice.to(FunctionCallRecorder.class);
         AgentBuilder.Identified.Narrowable withoutExtraExcludes = agentBuilder
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
@@ -158,7 +158,7 @@ public class MethodInstrumentationAgent {
 
         Thread snapshotThread = new Thread(() -> {
             while (true) {
-                SpanCatcher.getOldCallStack().ifPresent(oldCallStack -> {
+                FunctionCallRecorder.getOldCallStack().ifPresent(oldCallStack -> {
                     try {
                         File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
                         if (dataFile.exists()) {
@@ -221,7 +221,7 @@ public class MethodInstrumentationAgent {
 
     private static void addShutdownHookToWriteDataOnJVMShutdown() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            SpanCatcher.getFinalCallStack().ifPresent(stack -> {
+            FunctionCallRecorder.getFinalCallStack().ifPresent(stack -> {
                 File dataFile = new File(snapshotDirectory.getAbsolutePath(), "jvmShutdownData.js");
                 try (FileWriter fw = new FileWriter(dataFile)){
                     fw.write("var data = "+stack);
@@ -254,8 +254,8 @@ public class MethodInstrumentationAgent {
         }
     }
 
-    public static boolean argumentHasDetailedMode(String argument){
-        return DETAILED.isOnArguments(argument);
+    public static boolean argumentHasNoCaptureValuesMode(String argument){
+        return NO_CAPTURING_VALUES.isOnArguments(argument);
     }
 
     public static boolean argumentHasIncludeCoreClasses(String argument){

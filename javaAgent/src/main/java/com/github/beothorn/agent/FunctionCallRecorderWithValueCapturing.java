@@ -11,10 +11,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
-import static com.github.beothorn.agent.SpanCatcher.onEnter;
-import static com.github.beothorn.agent.SpanCatcher.onLeave;
+import static com.github.beothorn.agent.FunctionCallRecorder.onEnter;
+import static com.github.beothorn.agent.FunctionCallRecorder.onLeave;
 
-public class SpanCatcherDetailed {
+public class FunctionCallRecorderWithValueCapturing {
 
     public static final Map<String, Boolean> shouldDetailThread = new ConcurrentHashMap<>();
 

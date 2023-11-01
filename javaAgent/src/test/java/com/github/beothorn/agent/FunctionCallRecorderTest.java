@@ -3,16 +3,16 @@ package com.github.beothorn.agent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.github.beothorn.agent.SpanCatcher.onEnter;
-import static com.github.beothorn.agent.SpanCatcher.onLeave;
+import static com.github.beothorn.agent.FunctionCallRecorder.onEnter;
+import static com.github.beothorn.agent.FunctionCallRecorder.onLeave;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class SpanCatcherTest {
+class FunctionCallRecorderTest {
 
     @BeforeEach
     void setUp() {
-        SpanCatcher.stackPerThread.clear();
+        FunctionCallRecorder.stackPerThread.clear();
     }
 
     @Test
@@ -106,7 +106,7 @@ class SpanCatcherTest {
         "}";
         assertEquals(
             "[" + threadT + "," + threadMain +"]",
-            SpanCatcher.getFinalCallStack()
+            FunctionCallRecorder.getFinalCallStack()
                     .orElseThrow()
                     .replaceAll("\n", "")
                     .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
@@ -138,7 +138,7 @@ class SpanCatcherTest {
                 "}" +
             "}" +
         "]",
-        SpanCatcher.getOldCallStack()
+        FunctionCallRecorder.getOldCallStack()
                 .orElseThrow()
                 .replaceAll("\n", "")
                 .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
@@ -147,8 +147,8 @@ class SpanCatcherTest {
 
     @Test
     void shouldNotPrintEmptyCallStack(){
-        assertTrue(SpanCatcher.stackPerThread.isEmpty());
-        assertTrue(SpanCatcher.getOldCallStack().isEmpty());
-        assertTrue(SpanCatcher.getFinalCallStack().isEmpty());
+        assertTrue(FunctionCallRecorder.stackPerThread.isEmpty());
+        assertTrue(FunctionCallRecorder.getOldCallStack().isEmpty());
+        assertTrue(FunctionCallRecorder.getFinalCallStack().isEmpty());
     }
 }
