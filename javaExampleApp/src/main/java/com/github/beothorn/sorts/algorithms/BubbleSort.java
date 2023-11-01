@@ -1,22 +1,12 @@
-package com.github.beothorn.sorts;
+package com.github.beothorn.sorts.algorithms;
+
+import com.github.beothorn.sorts.Swap;
 
 /**
  * This BubbleSort implementation may call more functions than actually needed.
  * This is because I want the flamegraph to show exactly what is going on.
  */
 public class BubbleSort {
-
-    private static boolean isABiggerThanB(int a, int b){
-        return a > b;
-    }
-
-    private static boolean swapIfBiggerThanNext(int cursorPosition, int[] array) {
-        if ( !isABiggerThanB(array[cursorPosition], array[cursorPosition+1]) ) return false;
-        int temp = array[cursorPosition];
-        array[cursorPosition] = array[cursorPosition+1];
-        array[cursorPosition+1] = temp;
-        return true;
-    }
 
     public static int[] sort(int[] array) {
         int[] result = new int[array.length];
@@ -27,6 +17,16 @@ public class BubbleSort {
             if (alreadyOrdered) break;
         }
         return result;
+    }
+
+    private static boolean isABiggerThanB(int a, int b){
+        return a > b;
+    }
+
+    private static boolean swapIfBiggerThanNext(int cursorPosition, int[] array) {
+        if ( !isABiggerThanB(array[cursorPosition], array[cursorPosition+1]) ) return false;
+        Swap.swap(array, cursorPosition, cursorPosition + 1);
+        return true;
     }
 
     private static boolean bubbleUp(int i, int[] result) {
