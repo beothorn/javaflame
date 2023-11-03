@@ -7,6 +7,7 @@ repositories {
 dependencies {
     implementation 'net.bytebuddy:byte-buddy:1.14.6'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testImplementation 'org.skyscreamer:jsonassert:1.5.1'
 }
 
 jar {
