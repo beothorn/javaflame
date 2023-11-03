@@ -110,12 +110,12 @@ public class TestDummyProgram {
         JSONArray expected = new JSONArray().put(
             thread("main", 0,
                 span("mainRoot",0,-1,0,
-                    span("integration.DummyProgram.run() => null",0,0,0,
-                        span("integration.DummyProgram.a(int = 1) => 3",0,0,0,
-                            span("integration.DummyProgram.aa(int = 2) => 3",0,0,0)
+                    span("integration.TestDummyProgram.run() => null",0,0,0,
+                        span("integration.TestDummyProgram.a(int = 1) => 3",0,0,0,
+                            span("integration.TestDummyProgram.aa(int = 2) => 3",0,0,0)
                         ),
-                        span("integration.DummyProgram.b(int = 1, int = 2) => 5",0,0,0,
-                            span("integration.DummyProgram.bb(int = 2, int = 3) => 5",0,0,0)
+                        span("integration.TestDummyProgram.b(int = 1, int = 2) => 5",0,0,0,
+                            span("integration.TestDummyProgram.bb(int = 2, int = 3) => 5",0,0,0)
                         )
                     )
                 )
@@ -123,6 +123,9 @@ public class TestDummyProgram {
         );
         String finalStack = getFinalStack();
         JSONArray actual = new JSONArray(finalStack);
+        System.out.println(expected);
+        System.out.println(actual);
+
         JSONAssert.assertEquals(expected, actual, false);
     }
 
