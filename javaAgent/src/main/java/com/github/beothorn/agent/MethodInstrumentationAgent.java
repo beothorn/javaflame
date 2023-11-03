@@ -11,6 +11,7 @@ import net.bytebuddy.utility.JavaModule;
 
 import java.io.*;
 import java.lang.instrument.Instrumentation;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
@@ -203,7 +204,8 @@ public class MethodInstrumentationAgent {
                         }
                     }
                     log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
-                    log(INFO, "Graph at '" + dataFile.getParentFile().getAbsolutePath() + "/index.html'");
+                    log(INFO, "Graph at '" + dataFile.getParentFile().getAbsolutePath()
+                            + FileSystems.getDefault().getSeparator() + "index.html'");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
