@@ -87,7 +87,11 @@ public class FunctionCallRecorderWithValueCapturing {
                 paramType = "Object[]";
             }
         } else {
-            paramType = parameter.getType().getName();
+            if ( FunctionCallRecorder.shouldPrintQualified ){
+                paramType = parameter.getType().getName();
+            } else {
+                paramType = parameter.getType().getSimpleName();
+            }
         }
         return paramType;
     }
