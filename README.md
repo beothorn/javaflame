@@ -26,28 +26,19 @@ Anything without exclusions will generate lots of data. Either it will not rende
 
 ## Arguments
 
-### Flags
+### Arguments
 
-- no_capturing_values Record only function call, no parameter value or return value will be recorded.  
-This is slower but a great view for debugging.
-Example: `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar`
-- no_constructor Will ignore constructors
-Example: `java -javaagent:javaAgent.jar=no_constructor -jar yourApp.jar`
-- core_classes Will include java core classes. More useful in conjunction with filters to check, for example, network calls.
-Example: `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar`
-- no_snapshots Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that.
-- qualified_functions Print the qualified function name, ownerClass.functionName
+| Flag | Description | Example |
+| --- | --- | --- |
+| no_capturing_values | Record only function call, no parameter value or return value will be recorded. This is slower but a great view for debugging. | `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar` |
+| no_constructor | Will ignore constructors | `java -javaagent:javaAgent.jar=no_constructor -jar yourApp.jar` |
+| core_classes | Will include java core classes. More useful in conjunction with filters to check, for example, network calls. | `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar` |
+| no_snapshots | Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that. | `java -javaagent:javaAgent.jar=no_snapshots -jar yourApp.jar` |
+| qualified_functions | Print the qualified function name, ownerClass.functionName | `java -javaagent:javaAgent.jar=qualified_functions -jar yourApp.jar` |
+| exclude:qualified.name.part | Will exclude classes which contain the qualified name on them. | `java -javaagent:javaAgent.jar=exclude:com.github.myApp,com.foo.bar -jar yourApp.jar` |
+| filter:qualified.name.part | Will instrument only classes that contains this string on their qualified name. You probably want to set this to you app package to avoid out of memory with huge spans. | `java -javaagent:javaAgent.jar=filter:com.github.myApp,com.github.other -jar yourApp.jar` |
+| out:path | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
 
-### Configurations
-
-- log:LEVEL Specifies the log level. Available levels in order: NONE,ERROR,INFO,WARN,DEBUG
-Example: `java -javaagent:javaAgent.jar=log:NONE -jar yourApp.jar`
-- exclude:qualifed.name.part Will exclude classes which contain the qualified name on them.
-Example: `java -javaagent:javaAgent.jar=exclude:com.github.myApp -jar yourApp.jar`
-- filter:qualified.name.part Will instrument only classes that contains this string on their qualified name. You probably want to set this to you app package to avoid out of memory with huge spans.
-Example: `java -javaagent:javaAgent.jar=exclude:com.github.myApp -jar yourApp.jar`
-- out:path Specifies the output directory. 
-Example: `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar`
 
 ## Libraries used
 
