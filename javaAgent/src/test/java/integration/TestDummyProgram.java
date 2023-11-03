@@ -123,9 +123,6 @@ public class TestDummyProgram {
         );
         String finalStack = getFinalStack();
         JSONArray actual = new JSONArray(finalStack);
-        System.out.println(expected);
-        System.out.println(actual);
-
         JSONAssert.assertEquals(expected, actual, false);
     }
 
