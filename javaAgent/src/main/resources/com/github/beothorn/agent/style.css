@@ -37,6 +37,14 @@ body {
     margin-right: 1rem;
 }
 
+#filter {
+    padding: 0.5rem;
+}
+
+#filterInput {
+    width: 35rem;
+}
+
 .threadName {
     margin: 1rem;
     font-family: monospace;
