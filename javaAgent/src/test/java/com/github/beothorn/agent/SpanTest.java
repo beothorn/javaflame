@@ -1,6 +1,9 @@
 package com.github.beothorn.agent;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.util.Optional;
 
@@ -11,61 +14,39 @@ import static org.junit.jupiter.api.Assertions.*;
 class SpanTest {
 
     @Test
-    void happyDayJson(){
+    void happyDayJson() throws JSONException {
         Span subject = span("foo", 0, 2, of(
             span("fooA", 0, 1),
             span("fooB", 1, 2)
         ));
-        String expected = "{" +
-            "\"name\":\"foo\"," +
-            "\"entryTime\":0," +
-            "\"exitTime\":2," +
-            "\"value\":2," +
-            "\"children\":[" +
-                "{" +
-                    "\"name\":\"fooA\"," +
-                    "\"entryTime\":0," +
-                    "\"exitTime\":1," +
-                    "\"value\":1" +
-                "}," +
-                "{" +
-                    "\"name\":\"fooB\"," +
-                    "\"entryTime\":1," +
-                    "\"exitTime\":2," +
-                    "\"value\":1" +
-                "}" +
-            "]" +
-        "}";
-        assertEquals(expected, subject.toJson()
-                .replaceAll("\n", ""));
+
+        JSONObject expected = TestHelper.span("foo",0,2,2,
+            TestHelper.span("fooA",0,1,1),
+            TestHelper.span("fooB",1,2,1)
+        );
+
+        JSONObject actual = new JSONObject(subject.toJson());
+        JSONAssert.assertEquals(expected, actual, false);
     }
 
     @Test
-    void jsonWithEscapedValues(){
+    void jsonWithEscapedValues() throws JSONException {
         String name = "\" \n \\ \t \\\"";
         Span subject = span(name, 0, 2);
-        String expected = "{" +
-                "\"name\":\"\\\" \\n \\\\ \\t \\\\\\\"\"," +
-                "\"entryTime\":0," +
-                "\"exitTime\":2," +
-                "\"value\":2" +
-                "}\n";
-        assertEquals(expected, subject.toJson());
+        JSONObject expected = TestHelper.span(name,0,2,2);
+        JSONObject actual = new JSONObject(subject.toJson());
+        JSONAssert.assertEquals(expected, actual, false);
     }
 
     @Test
-    void jsonWithJsonArg(){
+    void jsonWithJsonArg() throws JSONException {
         // Sometimes a json is passed as a string to a function.
         // We should be able to render it on data.js
         String name = "{\n\t\"id\": \"123\"}";
         Span subject = span(name, 0, 2);
-        String expected = "{" +
-                "\"name\":\"{\\n\\t\\\"id\\\": \\\"123\\\"}\"," +
-                "\"entryTime\":0," +
-                "\"exitTime\":2," +
-                "\"value\":2" +
-                "}\n";
-        assertEquals(expected, subject.toJson());
+        JSONObject expected = TestHelper.span(name,0,2,2);
+        JSONObject actual = new JSONObject(subject.toJson());
+        JSONAssert.assertEquals(expected, actual, false);
     }
 
     @Test

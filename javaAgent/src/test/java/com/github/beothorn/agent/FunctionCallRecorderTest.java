@@ -88,9 +88,9 @@ class FunctionCallRecorderTest {
 
     private static JSONArray getOldStack() {
         String jsonStringResult = FunctionCallRecorder.getOldCallStack()
-                .orElseThrow()
-                .replaceAll("\n", "")
-                .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,");
+            .orElseThrow()
+            .replaceAll("\n", "")
+            .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,");
         try {
             return new JSONArray(jsonStringResult);
         } catch (JSONException e) {
@@ -100,9 +100,9 @@ class FunctionCallRecorderTest {
 
     private static JSONArray getFinalStack() {
         String jsonStringResult = FunctionCallRecorder.getFinalCallStack()
-                .orElseThrow()
-                .replaceAll("\n", "")
-                .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,");
+            .orElseThrow()
+            .replaceAll("\n", "")
+            .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,");
         try {
             return new JSONArray(jsonStringResult);
         } catch (JSONException e) {
