@@ -11,7 +11,7 @@ public class Span{
     public long exitTime;
     // Type -> value
     public String[] returnValue;
-    public String[][] arguments;
+    public final String[][] arguments;
 
     public static Span span(
             final String name,
@@ -228,8 +228,7 @@ public class Span{
             // If has not exited yet, 
             return 0;
         }
-        long duration = exitTime - entryTime;
-        return duration;
+        return exitTime - entryTime;
     }
 
     public String toJson(){
@@ -252,7 +251,26 @@ public class Span{
             "\"name\":\""+ nameEscaped +"\"," +
             "\"entryTime\":"+ entryTime +"," +
             "\"exitTime\":"+ exitTime +"," +
-            "\"value\":"+ duration());
+            "\"value\":"+ duration()
+        );
+
+        if(arguments != null && arguments.length > 0){
+            result.append(",\"arguments\":[");
+            String[] firstArgument = arguments[0];
+            appendTypedValue(result, firstArgument);
+
+            for(int i =1; i < arguments.length; i++){
+                String[] argument = arguments[i];
+                result.append(",");
+                appendTypedValue(result, argument);
+            }
+            result.append("]");
+        }
+
+        if (returnValue != null) {
+            result.append(",\"arguments\":");
+            appendTypedValue(result, returnValue);
+        }
 
         if(children.isEmpty()){
             return result.append("}\n").toString();
@@ -268,6 +286,14 @@ public class Span{
 
         result.append("]}\n");
         return result.toString();
+    }
+
+    private static void appendTypedValue(StringBuilder result, String[] argument) {
+        result.append("{\"type\":\"")
+            .append(argument[0])
+            .append("\",\"value\":\"")
+            .append(argument[1])
+            .append("\"}");
     }
 
     public String description(){
