@@ -268,7 +268,7 @@ public class Span{
         }
 
         if (returnValue != null) {
-            result.append(",\"arguments\":");
+            result.append(",\"return\":");
             appendTypedValue(result, returnValue);
         }
 
