@@ -9,15 +9,18 @@ public class Span{
     private List<Span> children;
     public final long entryTime;
     public long exitTime;
-    public String returnValue;
+    // Type -> value
+    public String[] returnValue;
+    public String[][] arguments;
 
     public static Span span(
-        final String name,
-        final long entryTime
+            final String name,
+            final long entryTime
     ){
         return new Span(
             name,
             entryTime,
+            null,
             -1,
             null,
             new ArrayList<>()
@@ -27,11 +30,28 @@ public class Span{
     public static Span span(
         final String name,
         final long entryTime,
+        final String[][] arguments
+    ){
+        return new Span(
+            name,
+            entryTime,
+            arguments,
+            -1,
+            null,
+            new ArrayList<>()
+        );
+    }
+
+    public static Span span(
+        final String name,
+        final long entryTime,
+        final String[][] arguments,
         final Span parent
     ){
         return new Span(
             name,
             entryTime,
+            arguments,
             -1,
             parent,
             new ArrayList<>()
@@ -47,6 +67,24 @@ public class Span{
         return new Span(
                 name,
                 entryTime,
+                null,
+                exitTime,
+                null,
+                children
+        );
+    }
+
+    public static Span span(
+            final String name,
+            final long entryTime,
+            final String[][] arguments,
+            final long exitTime,
+            final List<Span> children
+    ){
+        return new Span(
+                name,
+                entryTime,
+                arguments,
                 exitTime,
                 null,
                 children
@@ -59,8 +97,25 @@ public class Span{
             final List<Span> children
     ){
         return new Span(
+            name,
+            entryTime,
+            null,
+            -1,
+            null,
+            children
+        );
+    }
+
+    public static Span span(
+            final String name,
+            final long entryTime,
+            final String[][] arguments,
+            final List<Span> children
+    ){
+        return new Span(
                 name,
                 entryTime,
+                arguments,
                 -1,
                 null,
                 children
@@ -73,8 +128,25 @@ public class Span{
             final long exitTime
     ){
         return new Span(
+            name,
+            entryTime,
+            null,
+            exitTime,
+            null,
+            new ArrayList<>()
+        );
+    }
+
+    public static Span span(
+            final String name,
+            final long entryTime,
+            final String[][] arguments,
+            final long exitTime
+    ){
+        return new Span(
                 name,
                 entryTime,
+                arguments,
                 exitTime,
                 null,
                 new ArrayList<>()
@@ -84,12 +156,14 @@ public class Span{
     private Span(
         final String name,
         final long entryTime,
+        final String[][] arguments,
         final long exitTime,
         final Span parent,
         final List<Span> children
     ){
         this.name = name;
         this.entryTime = entryTime;
+        this.arguments = arguments;
         this.exitTime = exitTime;
         this.parent = parent;
         this.children = new ArrayList<>(children);
@@ -100,7 +174,24 @@ public class Span{
         final String methodName,
         final long entryTime
     ){
-        Span child = span(methodName, entryTime, this);
+        return enter(
+            methodName,
+            entryTime,
+            null
+        );
+    }
+
+    public Span enter(
+        final String methodName,
+        final long entryTime,
+        final String[][] arguments
+    ){
+        Span child = span(
+            methodName,
+            entryTime,
+            arguments,
+            this
+        );
         children.add(child);
         return child;
     }
@@ -117,9 +208,15 @@ public class Span{
         return leave(exitTime, null);
     }
 
+    /**
+     * To be called after the span has exited.
+     * @param exitTime The exit timestamp of the span.
+     * @param returnValue An array with two elements, the return type and the return value.
+     * @return
+     */
     public Span leave(
             final long exitTime,
-            final String returnValue
+            final String[] returnValue
     ){
         this.exitTime = exitTime;
         this.returnValue = returnValue;
@@ -136,37 +233,41 @@ public class Span{
     }
 
     public String toJson(){
-        String nameMaybeWithReturn = (returnValue == null) ? name : name + " => " + returnValue;
+        String nameMaybeWithReturn = name;
+        if (returnValue != null) {
+            if(returnValue[0].equals("void")) {
+                nameMaybeWithReturn = name + " => " + returnValue[0];
+            } else {
+                nameMaybeWithReturn = name + " => " + returnValue[0] + " " + returnValue[1];
+            }
+        }
         String nameEscaped = nameMaybeWithReturn
                 .replaceAll("\\\\", "\\\\\\\\")
                 .replaceAll("\"", "\\\\\"")
                 .replaceAll("\n", "\\\\n")
                 .replaceAll("\r", "\\\\r")
                 .replaceAll("\t", "\\\\t");
+
+        StringBuilder result = new StringBuilder("{" +
+            "\"name\":\""+ nameEscaped +"\"," +
+            "\"entryTime\":"+ entryTime +"," +
+            "\"exitTime\":"+ exitTime +"," +
+            "\"value\":"+ duration());
+
         if(children.isEmpty()){
-            return "{" +
-                        "\"name\":\""+ nameEscaped +"\"," +
-                        "\"entryTime\":"+ entryTime +"," +
-                        "\"exitTime\":"+ exitTime +"," +
-                        "\"value\":"+ duration() +
-                    "}\n";
+            return result.append("}\n").toString();
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(children.get(0).toJson());
+        result.append(",\"children\":[")
+            .append(children.get(0).toJson());
+
         for (int i = 1; i < children.size(); i++) {
-            sb.append(",");
-            sb.append(children.get(i).toJson());
+            result.append(",");
+            result.append(children.get(i).toJson());
         }
 
-        String childrenAsJson = sb.toString();
-        return "{" +
-                    "\"name\":\""+ nameEscaped +"\"," +
-                    "\"entryTime\":"+ entryTime +"," +
-                    "\"exitTime\":"+ exitTime +"," +
-                    "\"value\":"+ duration() +"," +
-                    "\"children\":["+childrenAsJson+"]"+
-                "}\n";
+        result.append("]}\n");
+        return result.toString();
     }
 
     public String description(){
@@ -230,6 +331,7 @@ public class Span{
             return Optional.of(new Span(
                     name,
                     entryTime,
+                    arguments,
                     exitTime,
                     parent,
                     oldChildren
@@ -257,6 +359,7 @@ public class Span{
         return Optional.of(new Span(
             name,
             entryTime,
+            arguments,
             exitTime,
             null,
             oldChildren
