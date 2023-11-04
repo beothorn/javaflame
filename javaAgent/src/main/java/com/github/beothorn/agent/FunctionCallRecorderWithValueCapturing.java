@@ -31,12 +31,13 @@ public class FunctionCallRecorderWithValueCapturing {
                     .append(methodName)
                     .append("(");
             Parameter[] parameters = method.getParameters();
+            String[][] arguments = new String[parameters.length][2];
             final String threadName = Thread.currentThread().getName();
 
             // We avoid extracting detail when executing a toString for a parameter
             // or else we risk creating a stack overflow
             Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
-            if(createDetails){
+            if (createDetails) {
                 shouldDetailThread.put(threadName, false);
                 for (int i = 0; i < parameters.length; i++) {
                     Parameter parameter = parameters[i];
@@ -46,6 +47,8 @@ public class FunctionCallRecorderWithValueCapturing {
                     prettyCall.append(paramType)
                             .append(" = ")
                             .append(argToString);
+                    arguments[i][0] = paramType;
+                    arguments[i][1] = argToString;
                     if(i < parameters.length-1){
                         prettyCall.append(", ");
                     }
@@ -56,7 +59,12 @@ public class FunctionCallRecorderWithValueCapturing {
             }
             prettyCall.append(")");
             long entryTime = System.currentTimeMillis();
-            onEnter(threadName, prettyCall.toString(), entryTime);
+            onEnter(
+                threadName,
+                prettyCall.toString(),
+                entryTime,
+                arguments
+            );
             return entryTime;
         } catch (Exception e){
             log(DEBUG, e.getMessage());
@@ -152,8 +160,21 @@ public class FunctionCallRecorderWithValueCapturing {
                 }
                 shouldDetailThread.put(threadName, true);
             }
-            onLeave(threadName, exitTime, returnValue);
-        }catch (Exception e){
+            String returnType;
+            try {
+                if (shouldPrintQualified) {
+                    returnType = returnValueFromMethod.getClass().getName();
+                } else {
+                    returnType = returnValueFromMethod.getClass().getSimpleName();
+                }
+            } catch (NullPointerException np) {
+                returnType = "void";
+                if ( returnValueFromMethod == null ){
+                    returnValue = "";
+                }
+            }
+            onLeave(threadName, exitTime, new String[]{returnType, returnValue});
+        } catch (Exception e) {
             log(DEBUG, e.getMessage());
         }
     }

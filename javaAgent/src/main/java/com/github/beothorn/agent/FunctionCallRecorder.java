@@ -51,15 +51,29 @@ public class FunctionCallRecorder {
         final String methodName,
         final long entryTime
     ){
+        onEnter(
+            threadName,
+            methodName,
+            entryTime,
+            null
+        );
+    }
+
+    public static void onEnter(
+        final String threadName,
+        final String methodName,
+        final long entryTime,
+        String[][] arguments
+    ){
         log(DEBUG, "Enter @"+threadName+": "+methodName);
 
         Span stack = getCurrentRunning(threadName);
         if(stack == null){
-            stackPerThread.put(threadName, span(threadName + "Root", entryTime));
+            stackPerThread.put(threadName, span(threadName + "Root", entryTime, arguments));
         }
         stack = getCurrentRunning(threadName);
 
-        Span newCurrentRunning = stack.enter(methodName, entryTime);
+        Span newCurrentRunning = stack.enter(methodName, entryTime, arguments);
         stackPerThread.put(threadName, newCurrentRunning);
     }
 
@@ -88,7 +102,7 @@ public class FunctionCallRecorder {
     public static void onLeave(
             final String threadName,
             final long exitTime,
-            final String returnValue
+            final String[] returnValue
     ) {
         final Span stack = getCurrentRunning(threadName);
         Span leave = stack.leave(exitTime, returnValue);
