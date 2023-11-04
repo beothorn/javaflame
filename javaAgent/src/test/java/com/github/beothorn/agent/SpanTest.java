@@ -15,18 +15,23 @@ class SpanTest {
 
     @Test
     void happyDayJson() throws JSONException {
-        Span subject = span("foo", 0, 2, of(
+        String[][] arguments = {
+            {"int", "1"},
+            {"String", "aaa"}
+        };
+
+        Span subject = span("foo", 0, arguments, 2, of(
             span("fooA", 0, 1),
             span("fooB", 1, 2)
         ));
 
-        JSONObject expected = TestHelper.span("foo",0,2,2,
+        JSONObject expected = TestHelper.span("foo",0,2,2, arguments,
             TestHelper.span("fooA",0,1,1),
             TestHelper.span("fooB",1,2,1)
         );
 
         JSONObject actual = new JSONObject(subject.toJson());
-        JSONAssert.assertEquals(expected, actual, false);
+        JSONAssert.assertEquals(expected, actual, true);
     }
 
     @Test
@@ -113,7 +118,6 @@ class SpanTest {
         assertNotEquals(subjectA, subjectANotEquals);
         assertNotEquals(subjectA, subjectANotEqualsDeep);
     }
-
 
     @Test
     void shallowRemoveOldSpans(){
