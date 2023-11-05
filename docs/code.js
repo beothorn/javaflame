@@ -92,3 +92,30 @@ function increaseSpanValue(span) {
     }
     return newSpan;
 }
+
+function filterDataByLambda(data, filterLambda){
+    const filterFunction = new Function('span', `return ${filterLambda};`);
+    return data.map( d => ({
+      ...d,
+      "span": filterSpans(d.span, filterFunction)
+    }));
+}
+
+function filterSpans(span, filterFunction) {
+    let newSpan = {...span};
+    const shouldBeIncluded = filterFunction(span);
+    const newChildren = [];
+    if(span.children && span.children.length > 0){
+        newSpan.children = span.children.map( c => filterSpans(c, filterFunction)).filter(c => c);
+    }
+
+    if(shouldBeIncluded){
+        return newSpan;
+    }
+
+    if(newSpan.children && newSpan.children.length > 0){
+        return newSpan;
+    }
+
+    return null;
+}

@@ -5,8 +5,10 @@ package com.github.beothorn;
 
 import com.github.beothorn.sorts.algorithms.BubbleSort;
 import com.github.beothorn.sorts.algorithms.InplaceQuickSort;
+import com.github.beothorn.sorts.algorithms.MergeSort;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
 public class App {
 
@@ -15,22 +17,40 @@ public class App {
                      3,4,2,13,6}; // chosen by fair dice roll.
                                    // guaranteed to be random.
 
-        Thread bubbleSort = new Thread(() -> {
-            int[] result = BubbleSort.sort(randomUpTo20);
-            System.out.println("Bubble sort: " + Arrays.toString(result));
-        });
-        bubbleSort.setName("BubbleSort");
-        bubbleSort.start();
+        Thread bubbleSort = runSortInThread(
+            randomUpTo20,
+            BubbleSort::sort,
+            "BubbleSort"
+        );
 
-        Thread inPlaceQuickSort = new Thread(() -> {
-            int[] result = InplaceQuickSort.sort(randomUpTo20);
-            System.out.println("InPlace QuickSort: " + Arrays.toString(result));
-        });
-        inPlaceQuickSort.setName("InPlaceQuickSort");
-        inPlaceQuickSort.start();
+        Thread inPlaceQuickSort = runSortInThread(
+            randomUpTo20,
+            InplaceQuickSort::sort,
+            "InPlaceQuickSort"
+        );
 
+        Thread mergeSort = runSortInThread(
+            randomUpTo20,
+            MergeSort::sort,
+            "MergeSort"
+        );
 
         bubbleSort.join();
         inPlaceQuickSort.join();
+        mergeSort.join();
+    }
+
+    private static Thread runSortInThread(int[] arrayToSort, Function<int[], int[]> sort, String sortName) {
+        Thread sortThread = new Thread(() -> {
+            try {
+                int[] result = sort.apply(arrayToSort);
+                System.out.println(sortName + ": " + Arrays.toString(result));
+            } catch (Exception e) {
+                System.err.println(e);
+            }
+        });
+        sortThread.setName(sortName);
+        sortThread.start();
+        return sortThread;
     }
 }

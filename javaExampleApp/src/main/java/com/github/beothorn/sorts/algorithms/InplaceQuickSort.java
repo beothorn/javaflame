@@ -1,6 +1,6 @@
 package com.github.beothorn.sorts.algorithms;
 
-import com.github.beothorn.sorts.Swap;
+import com.github.beothorn.sorts.Common;
 
 /**
  * This InplaceQuickSort implementation may call more functions than actually needed.
@@ -10,7 +10,7 @@ public class InplaceQuickSort {
 
     public static int[] sort(int[] array) {
         int[] result = new int[array.length];
-        System.arraycopy(array, 0, result, 0, array.length);
+        Common.copyArray(array, result);
         sort(result, 0, result.length - 1);
         return result;
     }
@@ -27,8 +27,8 @@ public class InplaceQuickSort {
                 indexForSmallerThanPivotOnTheRight = findNextValueSmallerOrEqualThanPivotOnRight(pivotValue, indexForSmallerThanPivotOnTheRight, array);
 
                 if (indexForBiggerThenPivotOnTheLeft <= indexForSmallerThanPivotOnTheRight) {
-                    // Smaller on the left, bigger on the right
-                    Swap.swap(array, indexForBiggerThenPivotOnTheLeft, indexForSmallerThanPivotOnTheRight);
+                    // Smaller than pivot on the left (including pivot), bigger than pivot on the right
+                    Common.swap(array, indexForBiggerThenPivotOnTheLeft, indexForSmallerThanPivotOnTheRight);
                     indexForBiggerThenPivotOnTheLeft++;
                     indexForSmallerThanPivotOnTheRight--;
                 }
