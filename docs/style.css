@@ -17,6 +17,10 @@ body {
     height: 150px;
 }
 
+#explanation {
+    padding: 1rem;
+}
+
 #metadata {
     display: flex;
     align-items: flex-start;
