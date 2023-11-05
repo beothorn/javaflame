@@ -18,7 +18,7 @@
 </div>
 <div id="filter" class="box">
     <h2>Filter</h2>
-    <input type="text" id="filterInput" placeholder="span.functionName === 'fooBar'" />
+    <input type="text" id="filterInput" placeholder="span.return && span.return.value === '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]'" />
     <button id="filterButton">Filter</button>
 </div>
 <div id="errorOutput"></div>
@@ -68,31 +68,45 @@
 
     const dataForGraph = increaseZeroValues(mergedData);
 
-    for(let i = 0; i < dataForGraph.length; i++){
-        const newDiv = document.createElement("div");
-        newDiv.classList.add("box");
-        newDiv.id = "chart"+i;
-        const threadName = document.createElement("h1");
-        threadName.classList.add("threadName");
-        threadName.appendChild(document.createTextNode(dataForGraph[i].thread));
-        newDiv.appendChild(threadName);
-        charts.appendChild(newDiv);
-        // get div charts width
-        const chartsWidth = charts.offsetWidth;
+    function buildGraph(dataToPlot){
+        for(let i = 0; i < dataToPlot.length; i++){
+            const newDiv = document.createElement("div");
+            newDiv.classList.add("box");
+            newDiv.id = "chart"+i;
+            const threadName = document.createElement("h1");
+            threadName.classList.add("threadName");
+            threadName.appendChild(document.createTextNode(dataToPlot[i].thread));
+            newDiv.appendChild(threadName);
+            charts.appendChild(newDiv);
+            // get div charts width
+            const chartsWidth = charts.offsetWidth;
 
-        var chart = flamegraph().width(chartsWidth - 10); // minus border
+            var chart = flamegraph().width(chartsWidth - 10); // minus border
 
-        try {
-            d3.select("#"+newDiv.id)
-                .datum(dataForGraph[i].span)
-                .call(chart);
-        } catch (e) {
-            const errorOutput = document.getElementById("errorOutput");
-            errorOutput.appendChild(document.createTextNode(`There was an error loading the chart.`));
-            errorOutput.appendChild(document.createTextNode(`You can still open the devtools (F12) and type "mergedData" to see the graph as json.`));
-            errorOutput.appendChild(document.createTextNode(`The exception: ${e}`));
+            try {
+                d3.select("#"+newDiv.id)
+                    .datum(dataToPlot[i].span)
+                    .call(chart);
+            } catch (e) {
+                const errorOutput = document.getElementById("errorOutput");
+                errorOutput.appendChild(document.createTextNode(`There was an error loading the chart.`));
+                errorOutput.appendChild(document.createTextNode(`You can still open the devtools (F12) and type "mergedData" to see the graph as json.`));
+                errorOutput.appendChild(document.createTextNode(`The exception: ${e}`));
+            }
         }
     }
+
+    buildGraph(dataForGraph);
+
+    //filterDataByLambda(subject, filterString)
+    const filterButton = document.getElementById("filterButton");
+    filterButton.addEventListener("click", () => {
+        document.getElementById("charts").innerHTML = '';
+        const filterString = document.getElementById("filterInput").value;
+        const filtered = filterDataByLambda(dataForGraph, filterString);
+        buildGraph(filtered);
+    });
+
 </script>
 </body>
 </html>
