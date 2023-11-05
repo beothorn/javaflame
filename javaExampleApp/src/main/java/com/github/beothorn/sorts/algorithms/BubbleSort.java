@@ -1,6 +1,6 @@
 package com.github.beothorn.sorts.algorithms;
 
-import com.github.beothorn.sorts.Swap;
+import com.github.beothorn.sorts.Common;
 
 /**
  * This BubbleSort implementation may call more functions than actually needed.
@@ -10,7 +10,7 @@ public class BubbleSort {
 
     public static int[] sort(int[] array) {
         int[] result = new int[array.length];
-        System.arraycopy(array, 0, result, 0, array.length);
+        Common.copyArray(array, result);
         for (int i = array.length - 1; i > 0; i--) {
             boolean thereWasASwapping = bubbleUp(i, result);
             boolean alreadyOrdered = !thereWasASwapping;
@@ -25,7 +25,7 @@ public class BubbleSort {
 
     private static boolean swapIfBiggerThanNext(int cursorPosition, int[] array) {
         if ( !isABiggerThanB(array[cursorPosition], array[cursorPosition+1]) ) return false;
-        Swap.swap(array, cursorPosition, cursorPosition + 1);
+        Common.swap(array, cursorPosition, cursorPosition + 1);
         return true;
     }
 
