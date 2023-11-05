@@ -42,6 +42,15 @@ public class FunctionCallRecorder {
         }
     }
 
+    public static void setStartTrigger(String startTriggerFunctionNam) {
+        startTrigger = startTriggerFunctionNam;
+        isRecording = false;
+    }
+
+    public static void setStopTrigger(String stopTriggerFunctionNam) {
+        stopTrigger = stopTriggerFunctionNam;
+    }
+
     public static String getClassNameFor(Method method) {
         String ownerClass;
         Class<?> declaringClass = method.getDeclaringClass();
