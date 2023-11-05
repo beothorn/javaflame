@@ -17,25 +17,30 @@ class FunctionCallRecorderTest {
 
     @BeforeEach
     void setUp() {
+        MethodInstrumentationAgent.currentLevel = MethodInstrumentationAgent.LogLevel.DEBUG;
         FunctionCallRecorder.stackPerThread.clear();
+        FunctionCallRecorder.shouldPrintQualified = false;
+        FunctionCallRecorder.isRecording = true;
+        FunctionCallRecorder.startTrigger = null;
+        FunctionCallRecorder.stopTrigger = null;
     }
 
     @Test
     void happyDay() throws JSONException {
-        onEnter("main", "a",  0); // main: a
-        onEnter("main", "aa", 0); // main: a -> aa
-        onLeave("main", 1); // main: a
-        onEnter("main", "ab", 1); // main: a -> ab
-        onEnter("t", "a", 0); // t: a
-        onEnter("t", "b", 0); // t: a -> b
-        onLeave("t", 1); // t: a
-        onLeave("main", 2); // main: a
-        onEnter("main", "ac", 2); // main: a -> ac
-        onEnter("main", "aca", 2); // main: a -> ac -> aca
-        onLeave("main", 3); // main: a -> ac
-        onLeave("t", 1);  // t: no root
-        onLeave("main", 3); // main: a
-        onLeave("main", 3); // main: exit a
+        onEnter("main", "a",  0); // main: enter a
+            onEnter("main", "aa", 0); // main: a -> enter aa
+            onLeave("main", 1); // main: leave aa -> a
+            onEnter("main", "ab", 1); // main: a -> enter ab
+        onEnter("t", "a", 0); // t: enter a
+            onEnter("t", "b", 0); // t: a -> enter b
+            onLeave("t", 1); // t: leave b -> a
+            onLeave("main", 2); // main: leave ab -> a
+            onEnter("main", "ac", 2); // main: a -> enter ac
+                onEnter("main", "aca", 2); // main: a -> ac -> enter aca
+                onLeave("main", 3); // main: leave aca -> ac
+        onLeave("t", 1);  // t: leave a -> no root
+            onLeave("main", 3); // main: leave ac -> a
+        onLeave("main", 3); // main: leave a -> no root
 
         JSONObject threadT = thread("t",0,
             span("tRoot",0,-1,0,
@@ -58,6 +63,58 @@ class FunctionCallRecorderTest {
         );
 
         JSONArray expected = new JSONArray().put(threadT).put(threadMain);
+        JSONArray actual = getFinalStack();
+        JSONAssert.assertEquals(expected, actual, false);
+    }
+
+    @Test
+    void happyDayWithTrigger() throws JSONException {
+        FunctionCallRecorder.startTrigger = "startRecording";
+        FunctionCallRecorder.stopTrigger = "stopRecording";
+        FunctionCallRecorder.isRecording = false;
+
+        onEnter("main", "ShouldNotRecordThisCall",  0);
+        onEnter("other", "ShouldNotRecordThisCallOnOtherThread",  0);
+            onEnter("main", "startRecording",  0);
+                onEnter("main", "Fun",  0);
+                    onEnter("main", "FunFun",  0);
+                    onLeave("main", 0);
+                onLeave("main", 0);
+            onLeave("main", 0);
+            onEnter("other", "OtherFun",  0);
+                onEnter("other", "OtherFunFun",  0);
+                onLeave("other", 0);
+            onLeave("other", 0);
+            onEnter("other", "stopRecording",  0);
+            onEnter("main", "ShouldNotRecordThisCall",  0);
+            onLeave("main", 0);
+            onEnter("other", "ShouldNotRecordThisCall",  0);
+            onLeave("other", 0);
+
+
+        JSONObject otherThread = thread("other",0,
+            // exit time 0 when leaving is unknown and it goes above the synthetic root
+            // I am still not sure what is best here, to trap execution on synthetic root
+            // or just let i leave the stack null.
+            // It leaves the stack null for now.
+            span("otherRoot",0,0,0,
+                span("OtherFun",0,0,0,
+                    span("OtherFunFun",0,0,0)
+                )
+            )
+        );
+
+        JSONObject threadMain = thread("main",0,
+            span("mainRoot",0,0,0,
+                span("startRecording",0,0,0,
+                    span("Fun",0,0,0,
+                        span("FunFun",0,0,0)
+                    )
+                )
+            )
+        );
+
+        JSONArray expected = new JSONArray().put(otherThread).put(threadMain);
         JSONArray actual = getFinalStack();
         JSONAssert.assertEquals(expected, actual, false);
     }
@@ -106,7 +163,7 @@ class FunctionCallRecorderTest {
         try {
             return new JSONArray(jsonStringResult);
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(jsonStringResult, e);
         }
     }
 }
