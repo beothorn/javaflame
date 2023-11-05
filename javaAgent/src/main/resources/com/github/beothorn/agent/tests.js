@@ -210,6 +210,92 @@ const tests = {
         ];
 
         assert.deepEquals("Data with replaced values", expected, increaseZeroValues(subject));
+    },
+    "Filter entries": (assert) => {
+        const subject = [
+            {
+                "thread": "main",
+                "snapshotTime": 1000,
+                "span": {
+                    "name": "functionMain",
+                    "entryTime":1000,
+                    "exitTime":1000,
+                    "value":0,
+                    "children":[
+                        {
+                            "name": "functionA",
+                            "entryTime":1000,
+                            "exitTime":1000,
+                            "value":0,
+                            "children":[
+                                {
+                                    "name": "functionAA",
+                                    "entryTime":1000,
+                                    "exitTime":1000,
+                                    "value":0,
+                                    "return": {
+                                        "type": "int",
+                                        "value": 99
+                                    }
+                                },{
+                                    "name": "functionAB",
+                                    "entryTime":1000,
+                                    "exitTime":1000,
+                                    "value":0,
+                                    "return": {
+                                        "type": "String",
+                                        "value": "ababa"
+                                    }
+                                },
+                            ]
+                        },
+                        {
+                            "name": "functionShouldBeFiltered",
+                            "entryTime":1000,
+                            "exitTime":1000,
+                            "value":0,
+                        }
+                    ]
+                }
+            }
+        ];
+
+        const expected = [
+            {
+                "thread": "main",
+                "snapshotTime": 1000,
+                "span": {
+                    "name": "functionMain",
+                    "entryTime":1000,
+                    "exitTime":1000,
+                    "value":0,
+                    "children":[
+                        {
+                            "name": "functionA",
+                            "entryTime":1000,
+                            "exitTime":1000,
+                            "value":0,
+                            "children":[
+                                {
+                                    "name": "functionAB",
+                                    "entryTime":1000,
+                                    "exitTime":1000,
+                                    "value":0,
+                                    "return": {
+                                        "type": "String",
+                                        "value": "ababa"
+                                    }
+                                },
+                            ]
+                        }
+                    ]
+                }
+            }
+        ];
+
+        const filterString = 'span.return && span.return.type === "String" && span.return.value === "ababa"';
+
+        assert.deepEquals("Filtered values", expected, filterDataByLambda(subject, filterString));
     }
 };
 
