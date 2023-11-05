@@ -3,6 +3,7 @@ package com.github.beothorn.agent;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.allFlagsOnArgument;
@@ -145,6 +146,26 @@ class MethodInstrumentationAgentTest {
         assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("xxx,filter:foo.bar").toArray()));
         assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar,filter:bar.baz").toArray()));
         assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar,fda,filter:bar.baz,acd,wfae").toArray()));
+    }
+
+    @Test
+    void whenItHasStartRecordingFunction(){
+        Optional<String> maybeStartRecordingTrigger =  MethodInstrumentationAgent
+            .argumentStartRecordingTriggerFunction(
+                "startRecordingTriggerFunction:Foo.onStart,stopRecordingTriggerFunction:Foo.onEnd"
+            );
+        assertTrue(maybeStartRecordingTrigger.isPresent());
+        assertEquals("Foo.onStart", maybeStartRecordingTrigger.get());
+    }
+
+    @Test
+    void whenItHasStopRecordingFunction(){
+        Optional<String> maybeStopRecordingTrigger =  MethodInstrumentationAgent
+            .argumentStopRecordingTriggerFunction(
+                "startRecordingTriggerFunction:Foo.onStart,stopRecordingTriggerFunction:Foo.onEnd"
+            );
+        assertTrue(maybeStopRecordingTrigger.isPresent());
+        assertEquals("Foo.onEnd", maybeStopRecordingTrigger.get());
     }
 
 }

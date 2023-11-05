@@ -125,18 +125,27 @@ public class MethodInstrumentationAgent {
 
         List<String> excludes = argumentExcludes(argument);
         List<String> filters = argumentFilter(argument);
+        Optional<String> maybeStartRecordingTriggerFunction = argumentStartRecordingTriggerFunction(argument);
+        Optional<String> maybeStopRecordingTriggerFunction = argumentStopRecordingTriggerFunction(argument);
 
         String executionMetadata = "logLevel :" + currentLevel.name()
                 + " flags:" + Arrays.toString(allFlagsOnArgument(argument))
                 + " output to '" + snapshotDirectory.getAbsolutePath() + "'"
                 + " excludes:" + Arrays.toString(excludes.toArray())
-                + " filters:" + Arrays.toString(filters.toArray());
+                + " filters:" + Arrays.toString(filters.toArray())
+                + maybeStartRecordingTriggerFunction.map(s -> "Start recording trigger function" + s).orElse("")
+                + maybeStopRecordingTriggerFunction.map(s -> "Stop recording trigger function" + s).orElse("");
         log(DEBUG, executionMetadata);
 
         String executionMetadataFormatted = "<p>Flags: " + Arrays.toString(allFlagsOnArgument(argument)) + "</p>"
                 + "<p>Output: '" + snapshotDirectory.getAbsolutePath() + "'</p>"
                 + "<p>Excludes: " + Arrays.toString(excludes.toArray()) + "</p>"
-                + "<p>Filters: " + Arrays.toString(filters.toArray()) + "</p>";
+                + "<p>Filters: " + Arrays.toString(filters.toArray()) + "</p>"
+                + maybeStartRecordingTriggerFunction.map(s -> "<p>Start recording trigger function" + s + "</p>").orElse("")
+                + maybeStopRecordingTriggerFunction.map(s -> "<p>Stop recording trigger function" + s + "</p>").orElse("");
+
+        maybeStartRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStartTrigger);
+        maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
 
         ElementMatcher.Junction<TypeDescription> argumentsMatcher = getMatcherFromArguments(excludes, filters);
 
@@ -286,6 +295,20 @@ public class MethodInstrumentationAgent {
                 .matcher(argument);
 
         return getAllStringsForMatcher(matcher);
+    }
+
+    public static Optional<String> argumentStartRecordingTriggerFunction(String argument){
+        Matcher matcher = Pattern.compile("startRecordingTriggerFunction:([^,]+)")
+                .matcher(argument);
+        if(!matcher.find()) return Optional.empty();
+        return Optional.of(matcher.group(1));
+    }
+
+    public static Optional<String> argumentStopRecordingTriggerFunction(String argument){
+        Matcher matcher = Pattern.compile("stopRecordingTriggerFunction:([^,]+)")
+                .matcher(argument);
+        if(!matcher.find()) return Optional.empty();
+        return Optional.of(matcher.group(1));
     }
 
     public static LogLevel argumentLogLevel(String argument){

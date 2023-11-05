@@ -30,13 +30,15 @@ Anything without exclusions will generate lots of data. Either it will not rende
 
 | Flag | Description | Example |
 | --- | --- | --- |
-| no_capturing_values | Record only function call, no parameter value or return value will be recorded. This is slower but a great view for debugging. | `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar` |
+| no_capturing_values | Record only function call, no parameter value or return value will be recorded. This is faster and measures performance more accurately. | `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar` |
 | no_constructor | Will ignore constructors | `java -javaagent:javaAgent.jar=no_constructor -jar yourApp.jar` |
-| core_classes | Will include java core classes. More useful in conjunction with filters to check, for example, network calls. | `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar` |
+| core_classes | Will include Java core classes. More useful in conjunction with filters to check, for example, network calls. | `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar` |
 | no_snapshots | Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that. | `java -javaagent:javaAgent.jar=no_snapshots -jar yourApp.jar` |
 | qualified_functions | Print the qualified function name, ownerClass.functionName | `java -javaagent:javaAgent.jar=qualified_functions -jar yourApp.jar` |
 | exclude:qualified.name.part | Will exclude classes which contain the qualified name on them. | `java -javaagent:javaAgent.jar=exclude:com.github.myApp,com.foo.bar -jar yourApp.jar` |
 | filter:qualified.name.part | Will instrument only classes that contains this string on their qualified name. You probably want to set this to you app package to avoid out of memory with huge spans. | `java -javaagent:javaAgent.jar=filter:com.github.myApp,com.github.other -jar yourApp.jar` |
+| startRecordingTriggerFunction:method | Will start recording the stack only when the function with this name is called. If the name needs the qualified name depends on the qualified_functions flag. Function name is the same as the one that goes on the stack. | `java -javaagent:javaAgent.jar=startRecordingTriggerFunction:MyObject.afterSetup -jar yourApp.jar` |
+| stopRecordingTriggerFunction:method | Will stop recording the stack when the function with this name is called. If the name needs the qualified name depends on the qualified_functions flag. Function name is the same as the one that goes on the stack. | `java -javaagent:javaAgent.jar=stopRecordingTriggerFunction:MyObject.afterJobIsDone -jar yourApp.jar` |
 | out:path | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
 
 
