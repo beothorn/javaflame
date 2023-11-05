@@ -79,7 +79,7 @@ public class MethodInstrumentationAgent {
         }
     }
 
-    private static LogLevel currentLevel = ERROR;
+    public static LogLevel currentLevel = ERROR;
 
     public static void log(LogLevel level, String log){
         if(currentLevel.shouldPrint(level)){

@@ -12,23 +12,30 @@ import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBU
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 import static com.github.beothorn.agent.Span.span;
 
+/**
+ * This class is responsible for recording the call stack of a function call.
+ * Usually, this should be written following OO principles of encapsulation.
+ * But this class bytecode is injected on the actual code, and having stuff private
+ * seems to cause some issues. You will see some questionable visibility choices here.
+ */
 public class FunctionCallRecorder {
     public static final Map<String, Span> stackPerThread = new ConcurrentHashMap<>();
     public static boolean shouldPrintQualified = false;
+    public static boolean isRecording = true;
+    public static String startTrigger;
+    public static String stopTrigger;
 
     @Advice.OnMethodEnter
     public static void enter(@Advice.Origin Method method) {
         try {
-            StringBuilder prettyCall = new StringBuilder();
             String methodName = method.getName();
             String ownerClass = getClassNameFor(method);
-            prettyCall.append(ownerClass)
-                    .append(".")
-                    .append(methodName);
+
+            String finalMethodSignature = ownerClass + "." + methodName;
 
             final String threadName = Thread.currentThread().getName();
             long entryTime = System.currentTimeMillis();
-            onEnter(threadName, prettyCall.toString(), entryTime);
+            onEnter(threadName, finalMethodSignature, entryTime);
         } catch (Exception e){
             // Should never get here, but if it does, execution needs to go on
             log(DEBUG, e.getMessage());
@@ -65,6 +72,21 @@ public class FunctionCallRecorder {
         final long entryTime,
         String[][] arguments
     ){
+
+        if(isRecording && methodName.equals(stopTrigger)){
+            isRecording = false;
+            return;
+        }
+
+        if(!isRecording && methodName.equals(startTrigger)){
+            isRecording = true;
+        }
+
+        if(!isRecording){
+            log(DEBUG, "Skip @"+threadName+": "+methodName);
+            return;
+        }
+
         log(DEBUG, "Enter @"+threadName+": "+methodName);
 
         Span stack = getCurrentRunning(threadName);
@@ -106,7 +128,7 @@ public class FunctionCallRecorder {
     ) {
         final Span stack = getCurrentRunning(threadName);
         Span leave = stack.leave(exitTime, returnValue);
-        if(leave == null){
+        if(leave == null){ // Valid state, this could mean we started recording in a child function call
             log(DEBUG, "Leaving root loop on "+threadName+" last stack: "+stack.description());
             stack.exitTime = exitTime;
             return;
