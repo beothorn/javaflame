@@ -240,12 +240,7 @@ public class Span{
                 nameMaybeWithReturn = name + " => " + returnValue[0] + " " + returnValue[1];
             }
         }
-        String nameEscaped = nameMaybeWithReturn
-                .replaceAll("\\\\", "\\\\\\\\")
-                .replaceAll("\"", "\\\\\"")
-                .replaceAll("\n", "\\\\n")
-                .replaceAll("\r", "\\\\r")
-                .replaceAll("\t", "\\\\t");
+        String nameEscaped = escapeString(nameMaybeWithReturn);
 
         StringBuilder result = new StringBuilder("{" +
             "\"name\":\""+ nameEscaped +"\"," +
@@ -288,11 +283,20 @@ public class Span{
         return result.toString();
     }
 
+    public static String escapeString(String nameMaybeWithReturn) {
+        return nameMaybeWithReturn
+                .replaceAll("\\\\", "\\\\\\\\")
+                .replaceAll("\"", "\\\\\"")
+                .replaceAll("\n", "\\\\n")
+                .replaceAll("\r", "\\\\r")
+                .replaceAll("\t", "\\\\t");
+    }
+
     private static void appendTypedValue(StringBuilder result, String[] argument) {
         result.append("{\"type\":\"")
             .append(argument[0])
             .append("\",\"value\":\"")
-            .append(argument[1])
+            .append(escapeString(argument[1]))
             .append("\"}");
     }
 

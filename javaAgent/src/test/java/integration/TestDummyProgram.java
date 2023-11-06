@@ -14,15 +14,15 @@ import static com.github.beothorn.agent.TestHelper.thread;
 public class TestDummyProgram {
 
     public static void main(String[] args) {
-        new TestDummyProgram().run();
+        new TestDummyProgram().run("{\"bar\":\n\"baz\"}");
         System.out.println(FunctionCallRecorder.getFinalCallStack());
     }
 
-    public void run() {
+    public void run(String foo) {
         try {
             enter(
-                    TestDummyProgram.class.getDeclaredMethod("run"),
-                    new Object[]{}
+                    TestDummyProgram.class.getDeclaredMethod("run", String.class),
+                    new Object[]{foo}
             );
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -105,12 +105,12 @@ public class TestDummyProgram {
     void runDummyProgramAndCheckOutput() throws JSONException {
         FunctionCallRecorder.stackPerThread.clear();
         FunctionCallRecorder.shouldPrintQualified = true;
-        new TestDummyProgram().run();
+        new TestDummyProgram().run("{\"bar\":\n\"baz\"}");
 
         JSONArray expected = new JSONArray().put(
             thread("main", 0,
                 span("mainRoot",0,-1,0,
-                    span("integration.TestDummyProgram.run() => void",0,0,0,
+                    span("integration.TestDummyProgram.run(java.lang.String = {\"bar\":\n\"baz\"}) => void",0,0,0,
                         span("integration.TestDummyProgram.a(int = 1) => java.lang.Integer 3",0,0,0,
                             span("integration.TestDummyProgram.aa(int = 2) => java.lang.Integer 3",0,0,0)
                         ),
