@@ -5,6 +5,7 @@ package com.github.beothorn;
 
 import com.github.beothorn.sorts.algorithms.BubbleSort;
 import com.github.beothorn.sorts.algorithms.InplaceQuickSort;
+import com.github.beothorn.sorts.algorithms.InsertionSort;
 import com.github.beothorn.sorts.algorithms.MergeSort;
 
 import java.util.Arrays;
@@ -35,9 +36,16 @@ public class App {
             "MergeSort"
         );
 
+        Thread insertionSort = runSortInThread(
+                randomUpTo20,
+                InsertionSort::sort,
+                "InsertionSort"
+        );
+
         bubbleSort.join();
         inPlaceQuickSort.join();
         mergeSort.join();
+        insertionSort.join();
     }
 
     private static Thread runSortInThread(int[] arrayToSort, Function<int[], int[]> sort, String sortName) {
