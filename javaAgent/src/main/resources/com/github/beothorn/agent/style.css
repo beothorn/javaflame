@@ -10,6 +10,7 @@ body {
     margin: 3px;
     box-shadow: 1px 1px 0px 0px #aaa;
     background-image: linear-gradient(to bottom right, white, #dbdbdb);
+    overflow: hidden;
 }
 
 #header {
@@ -47,5 +48,14 @@ body {
 
 .threadName {
     margin: 1rem;
+    display: inline-block;
     font-family: monospace;
+}
+
+.smallBox {
+    height: 3.7rem;
+}
+
+.hideButton {
+    float: right;
 }
