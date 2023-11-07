@@ -39,9 +39,7 @@ public class TestHelper {
             JSONArray argumentsArray = new JSONArray();
             for(String[] argument : arguments) {
                 argumentsArray.put(
-                    new JSONObject()
-                        .put("type", argument[0])
-                        .put("value", argument[1])
+                        argument(argument)
                 );
             }
 
@@ -54,6 +52,12 @@ public class TestHelper {
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static JSONObject argument(String[] argument) throws JSONException {
+        return new JSONObject()
+                .put("type", argument[0])
+                .put("value", argument[1]);
     }
 
     public static JSONObject span(
