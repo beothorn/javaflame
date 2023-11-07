@@ -284,6 +284,7 @@ public class Span{
     }
 
     public static String escapeString(String nameMaybeWithReturn) {
+        if(nameMaybeWithReturn == null) return "null";
         return nameMaybeWithReturn
                 .replaceAll("\\\\", "\\\\\\\\")
                 .replaceAll("\"", "\\\\\"")

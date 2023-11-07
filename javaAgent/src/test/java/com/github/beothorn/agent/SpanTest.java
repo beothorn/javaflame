@@ -44,6 +44,27 @@ class SpanTest {
     }
 
     @Test
+    void jsonWithNullValues() throws JSONException {
+        String name = "funAcceptsNull";
+        Span subject = span(name, 0, new String[][]{
+                {
+                    "Object", null
+                }
+        });
+        subject.returnValue = new String[]{
+            "Object", null
+        };
+        JSONObject expected = TestHelper.span(name + " => Object null",0,-1,0,new String[][]{
+                {
+                    "Object", null
+                }
+        });
+        expected.put("return", TestHelper.argument(new String[]{"Object", "null"}));
+        JSONObject actual = new JSONObject(subject.toJson());
+        JSONAssert.assertEquals(expected, actual, false);
+    }
+
+    @Test
     void jsonWithJsonArg() throws JSONException {
         // Sometimes a json is passed as a string to a function.
         // We should be able to render it on data.js
