@@ -2,7 +2,7 @@
 
 Simple and easy flame graph for java.  
 No servers or open connections, just plug the agent and get the results.  
-[La1.0](https://github.com/beothorn/javaflame/releases/download/v11.1.0/javaAgent.jar)
+[Latest release v11.2.0](https://github.com/beothorn/javaflame/releases/download/v11.2.0/javaAgent.jar)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
