@@ -5,23 +5,24 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-<div id="explanation" class="box">
+
+<div id="header" class="box">
+    <img id="logo" width="100px" src="./logo.svg"/>
+    <div id="metadata">
+        <p>Javaflame v11.2.1</p>
+        <p id="arguments"></p>
+        <p>First snapshot timestamp: <span id="startTimestamp"></span></p>
+        <p>Last snapshot timestamp: &nbsp;<span id="finalTimestamp"></span></p>
+        <p>Created with <a href="https://github.com/beothorn/javaflame">Javaflame</a></p>
+    </div>
+</div>
+<div id="explanation" class="box" style="padding: 1rem;">
     <h2>Javaflame</h2>
     <p>This is a render of different sort algorithms running each on a different thread.</p>
     <p>This visualization was created using <a href="https://github.com/beothorn/javaflame">Javaflame</a>,
       a Java agent you can just add to your jar command and it will produce this html, with no other dependencies needed.</p>
     <p>Here you can see step by step, including parameters and return values, how each sort works.</p>
     <p>The source for the sort algorithms are <a href="https://github.com/beothorn/javaflame/tree/main/javaExampleApp/src/main/java/com/github/beothorn/sorts/algorithms">here</a>.</p>
-</div>
-<div id="header" class="box">
-    <img id="logo" width="100px" src="./logo.svg"/>
-    <div id="metadata">
-        <p>Javaflame v11.0.0</p>
-        <p id="arguments"></p>
-        <p>First snapshot timestamp: <span id="startTimestamp"></span></p>
-        <p>Last snapshot timestamp: &nbsp;<span id="finalTimestamp"></span></p>
-        <p>Created with <a href="https://github.com/beothorn/javaflame">Javaflame</a></p>
-    </div>
 </div>
 <div id="filter" class="box">
     <h2>Filter</h2>
@@ -83,7 +84,20 @@
             const threadName = document.createElement("h1");
             threadName.classList.add("threadName");
             threadName.appendChild(document.createTextNode(dataToPlot[i].thread));
+            const hide = document.createElement("button");
+            hide.appendChild(document.createTextNode("-"));
+            hide.classList.add("hideButton");
+            hide.addEventListener("click", () => {
+                if(newDiv.classList.contains("smallBox")){
+                    newDiv.classList.remove("smallBox");
+                    hide.textContent = "-";
+                } else {
+                    newDiv.classList.add("smallBox");
+                    hide.textContent = "+";
+                }
+            });
             newDiv.appendChild(threadName);
+            newDiv.appendChild(hide);
             charts.appendChild(newDiv);
             // get div charts width
             const chartsWidth = charts.offsetWidth;
