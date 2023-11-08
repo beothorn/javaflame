@@ -35,7 +35,7 @@ public class FunctionCallRecorder {
 
             final String threadName = Thread.currentThread().getName();
             long entryTime = System.currentTimeMillis();
-            onEnter(threadName, finalMethodSignature, entryTime);
+            onEnter(threadName, finalMethodSignature, methodName, entryTime);
         } catch (Exception e){
             // Should never get here, but if it does, execution needs to go on
             log(DEBUG, e.getMessage());
@@ -64,47 +64,62 @@ public class FunctionCallRecorder {
 
     public static void onEnter(
         final String threadName,
-        final String methodName,
+        final String name,
+        final String method,
         final long entryTime
     ){
         onEnter(
             threadName,
-            methodName,
+            name,
+            method,
             entryTime,
             null
         );
     }
 
     public static void onEnter(
-        final String threadName,
-        final String methodName,
-        final long entryTime,
-        String[][] arguments
+            final String threadName,
+            final String name,
+            final String method,
+            final long entryTime,
+            String[][] arguments
     ){
-
-        if(isRecording && methodName.equals(stopTrigger)){
+        if(isRecording && method.equals(stopTrigger)){
             isRecording = false;
             return;
         }
 
-        if(!isRecording && methodName.equals(startTrigger)){
+        if(!isRecording && method.equals(startTrigger)){
             isRecording = true;
         }
 
         if(!isRecording){
-            log(DEBUG, "Skip @"+threadName+": "+methodName);
+            log(DEBUG, "Skip @"+threadName+": "+name);
             return;
         }
 
-        log(DEBUG, "Enter @"+threadName+": "+methodName);
+        log(DEBUG, "Enter @"+threadName+": "+name);
 
         Span stack = getCurrentRunning(threadName);
         if(stack == null){
-            stackPerThread.put(threadName, span(threadName + "Root", entryTime, arguments));
+            stackPerThread.put(
+                threadName,
+                span(
+                    threadName + "Root",
+                    threadName + "Root",
+                    entryTime,
+                    arguments
+                )
+            );
         }
         stack = getCurrentRunning(threadName);
 
-        Span newCurrentRunning = stack.enter(methodName, entryTime, arguments);
+        Span newCurrentRunning = stack.enter(
+            name,
+            method,
+            entryTime,
+            arguments
+        );
         stackPerThread.put(threadName, newCurrentRunning);
     }
 

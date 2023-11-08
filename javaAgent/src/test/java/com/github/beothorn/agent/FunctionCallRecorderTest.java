@@ -9,8 +9,8 @@ import org.skyscreamer.jsonassert.JSONAssert;
 
 import static com.github.beothorn.agent.FunctionCallRecorder.onEnter;
 import static com.github.beothorn.agent.FunctionCallRecorder.onLeave;
-import static com.github.beothorn.agent.TestHelper.span;
-import static com.github.beothorn.agent.TestHelper.thread;
+import static com.github.beothorn.agent.TestHelper.spanJSON;
+import static com.github.beothorn.agent.TestHelper.threadJSON;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FunctionCallRecorderTest {
@@ -27,36 +27,36 @@ class FunctionCallRecorderTest {
 
     @Test
     void happyDay() throws JSONException {
-        onEnter("main", "a",  0); // main: enter a
-            onEnter("main", "aa", 0); // main: a -> enter aa
+        e("main", "a", "a",  0); // main: enter a
+            e("main", "aa", "aa", 0); // main: a -> enter aa
             onLeave("main", 1); // main: leave aa -> a
-            onEnter("main", "ab", 1); // main: a -> enter ab
-        onEnter("t", "a", 0); // t: enter a
-            onEnter("t", "b", 0); // t: a -> enter b
+            e("main", "ab", "ab", 1); // main: a -> enter ab
+        e("t", "a", "a", 0); // t: enter a
+            e("t", "b", "b", 0); // t: a -> enter b
             onLeave("t", 1); // t: leave b -> a
             onLeave("main", 2); // main: leave ab -> a
-            onEnter("main", "ac", 2); // main: a -> enter ac
-                onEnter("main", "aca", 2); // main: a -> ac -> enter aca
+            e("main", "ac", "ac", 2); // main: a -> enter ac
+                e("main", "aca", "aca", 2); // main: a -> ac -> enter aca
                 onLeave("main", 3); // main: leave aca -> ac
         onLeave("t", 1);  // t: leave a -> no root
             onLeave("main", 3); // main: leave ac -> a
         onLeave("main", 3); // main: leave a -> no root
 
-        JSONObject threadT = thread("t",0,
-            span("tRoot",0,-1,0,
-                span("a",0,1,1,
-                    span("b",0,1,1)
+        JSONObject threadT = threadJSON("t",0,
+            spanJSON("tRoot", "tRoot", 0, -1, 0,
+                spanJSON("a", "a", 0, 1, 1,
+                    spanJSON("b", "b", 0,1,1)
                 )
             )
         );
 
-        JSONObject threadMain = thread("main",0,
-            span("mainRoot",0,-1,0,
-                span("a",0,3,3,
-                    span("aa",0,1,1),
-                    span("ab",1,2,1),
-                    span("ac",2,3,1,
-                        span("aca",2,3,1)
+        JSONObject threadMain = threadJSON("main",0,
+            spanJSON("mainRoot", "mainRoot", 0, -1, 0,
+                spanJSON("a", "a", 0, 3, 3,
+                    spanJSON("aa", "aa", 0, 1, 1),
+                    spanJSON("ab", "ab", 1, 2, 1),
+                    spanJSON("ac", "ac", 2 , 3, 1,
+                        spanJSON("aca", "aca", 2, 3, 1)
                     )
                 )
             )
@@ -73,42 +73,42 @@ class FunctionCallRecorderTest {
         FunctionCallRecorder.stopTrigger = "stopRecording";
         FunctionCallRecorder.isRecording = false;
 
-        onEnter("main", "ShouldNotRecordThisCall",  0);
-        onEnter("other", "ShouldNotRecordThisCallOnOtherThread",  0);
-            onEnter("main", "startRecording",  0);
-                onEnter("main", "Fun",  0);
-                    onEnter("main", "FunFun",  0);
+        e("main", "ShouldNotRecordThisCall", "",  0);
+        e("other", "ShouldNotRecordThisCallOnOtherThread", "",  0);
+        e("main", "startRecording", "startRecording",  0);
+                e("main", "Fun", "Fun",  0);
+                    e("main", "FunFun", "FunFun",  0);
                     onLeave("main", 0);
                 onLeave("main", 0);
             onLeave("main", 0);
-            onEnter("other", "OtherFun",  0);
-                onEnter("other", "OtherFunFun",  0);
+            e("other", "OtherFun", "OtherFun",  0);
+                e("other", "OtherFunFun", "OtherFunFun",  0);
                 onLeave("other", 0);
             onLeave("other", 0);
-            onEnter("other", "stopRecording",  0);
-            onEnter("main", "ShouldNotRecordThisCall",  0);
+            e("other", "stopRecording", "stopRecording",  0);
+            e("main", "ShouldNotRecordThisCall", "",  0);
             onLeave("main", 0);
-            onEnter("other", "ShouldNotRecordThisCall",  0);
+            e("other", "ShouldNotRecordThisCall", "",  0);
             onLeave("other", 0);
 
 
-        JSONObject otherThread = thread("other",0,
+        JSONObject otherThread = threadJSON("other",0,
             // exit time 0 when leaving is unknown and it goes above the synthetic root
             // I am still not sure what is best here, to trap execution on synthetic root
             // or just let i leave the stack null.
             // It leaves the stack null for now.
-            span("otherRoot",0,0,0,
-                span("OtherFun",0,0,0,
-                    span("OtherFunFun",0,0,0)
+            spanJSON("otherRoot", "otherRoot", 0, 0, 0,
+                spanJSON("OtherFun", "OtherFun", 0, 0, 0,
+                    spanJSON("OtherFunFun", "OtherFunFun", 0, 0, 0)
                 )
             )
         );
 
-        JSONObject threadMain = thread("main",0,
-            span("mainRoot",0,0,0,
-                span("startRecording",0,0,0,
-                    span("Fun",0,0,0,
-                        span("FunFun",0,0,0)
+        JSONObject threadMain = threadJSON("main",0,
+            spanJSON("mainRoot", "mainRoot", 0, 0, 0,
+                spanJSON("startRecording", "startRecording", 0, 0, 0,
+                    spanJSON("Fun", "Fun", 0, 0, 0,
+                        spanJSON("FunFun", "FunFun", 0, 0, 0)
                     )
                 )
             )
@@ -121,13 +121,13 @@ class FunctionCallRecorderTest {
 
     @Test
     void getOldCallStackHappyDay() throws JSONException {
-        onEnter("someThread", "A",  0);
+        e("someThread", "A", "A",  0);
         onLeave("someThread", 1);
-        onEnter("someThread", "B",  2);
+        e("someThread", "B", "B",  2);
 
-        JSONObject someThread = thread("someThread",0,
-            span("someThreadRoot",0,-1,0,
-                span("A",0,1,1)
+        JSONObject someThread = threadJSON("someThread",0,
+            spanJSON("someThreadRoot", "someThreadRoot", 0, -1, 0,
+                spanJSON("A", "A", 0, 1, 1)
             )
         );
 
@@ -141,6 +141,20 @@ class FunctionCallRecorderTest {
         assertTrue(FunctionCallRecorder.stackPerThread.isEmpty());
         assertTrue(FunctionCallRecorder.getOldCallStack().isEmpty());
         assertTrue(FunctionCallRecorder.getFinalCallStack().isEmpty());
+    }
+
+    private static void e(
+        final String threadName,
+        final String name,
+        final String method,
+        final long entryTime
+    ){
+        onEnter(
+            threadName,
+            name,
+            method,
+            entryTime
+        );
     }
 
     private static JSONArray getOldStack() {

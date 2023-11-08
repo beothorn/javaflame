@@ -1,7 +1,8 @@
 # Javaflame
 
 Simple and easy flame graph for java.  
-No servers or open connections, just plug the agent and get the results.  
+No servers or open connections, just plug the agent and get the results.   
+See function calls, parameters and return values all at once.  
 [Latest release v11.2.1](https://github.com/beothorn/javaflame/releases/download/v11.2.1/javaAgent.jar)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
@@ -9,6 +10,16 @@ Want to see it in action? [Check out this rendering of some sort algorithms flam
 # Screenshots  
 
 ![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotDetailed.png?raw=true)
+
+# Features
+
+- One Flamegraph per thread.
+- Value capturing, all parameters and return are captured as string.
+- Filtering on instrumentation, bytecode transformation is only done on classes that match the filter.
+- Exclude classes and packages.
+- Continuous snapshots.
+- Pure html output in a simple file and all captured data available as a JSON at data.js.
+- Optional, start and stop recording whenever a method with a certain name is called.
 
 ## Usage
 
@@ -49,7 +60,6 @@ https://bytebuddy.net
 
 ## TODO
 
+- JSON view
 - agent parameter: snapshot interval
-- timestamps on spans
 - timestamp filter
-- search

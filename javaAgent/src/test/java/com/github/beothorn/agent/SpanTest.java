@@ -20,14 +20,14 @@ class SpanTest {
             {"String", "aaa"}
         };
 
-        Span subject = span("foo", 0, arguments, 2, of(
-            span("fooA", 0, 1),
-            span("fooB", 1, 2)
+        Span subject = TestHelper.spanTest("x.foo","foo", 0, arguments, 2, of(
+            TestHelper.spanTest("x.fooA", "fooA", 0, 1),
+            TestHelper.spanTest("x.fooB", "fooB", 1, 2)
         ));
 
-        JSONObject expected = TestHelper.span("foo",0,2,2, arguments,
-            TestHelper.span("fooA",0,1,1),
-            TestHelper.span("fooB",1,2,1)
+        JSONObject expected = TestHelper.spanJSON("x.foo", "foo", 0,2,2, arguments,
+            TestHelper.spanJSON("x.fooA", "fooA", 0, 1, 1),
+            TestHelper.spanJSON("x.fooB", "fooB", 1, 2, 1)
         );
 
         JSONObject actual = new JSONObject(subject.toJson());
@@ -37,16 +37,17 @@ class SpanTest {
     @Test
     void jsonWithEscapedValues() throws JSONException {
         String name = "\" \n \\ \t \\\"";
-        Span subject = span(name, 0, 2);
-        JSONObject expected = TestHelper.span(name,0,2,2);
+        Span subject = TestHelper.spanTest(name, "method", 0, 2);
+        JSONObject expected = TestHelper.spanJSON(name, "method", 0, 2, 2);
         JSONObject actual = new JSONObject(subject.toJson());
         JSONAssert.assertEquals(expected, actual, false);
     }
 
     @Test
     void jsonWithNullValues() throws JSONException {
-        String name = "funAcceptsNull";
-        Span subject = span(name, 0, new String[][]{
+        String name = "x.funAcceptsNull";
+        String method = "funAcceptsNull";
+        Span subject = span(name, method, 0, new String[][]{
                 {
                     "Object", null
                 }
@@ -54,12 +55,12 @@ class SpanTest {
         subject.returnValue = new String[]{
             "Object", null
         };
-        JSONObject expected = TestHelper.span(name + " => Object null",0,-1,0,new String[][]{
+        JSONObject expected = TestHelper.spanJSON(name + " => Object null", method,0,-1,0,new String[][]{
                 {
                     "Object", null
                 }
         });
-        expected.put("return", TestHelper.argument(new String[]{"Object", "null"}));
+        expected.put("return", TestHelper.argumentJSON(new String[]{"Object", "null"}));
         JSONObject actual = new JSONObject(subject.toJson());
         JSONAssert.assertEquals(expected, actual, false);
     }
@@ -69,31 +70,31 @@ class SpanTest {
         // Sometimes a json is passed as a string to a function.
         // We should be able to render it on data.js
         String name = "{\n\t\"id\": \"123\"}";
-        Span subject = span(name, 0, 2);
-        JSONObject expected = TestHelper.span(name,0,2,2);
+        Span subject = TestHelper.spanTest(name, "method", 0, 2);
+        JSONObject expected = TestHelper.spanJSON(name, "method", 0, 2, 2);
         JSONObject actual = new JSONObject(subject.toJson());
         JSONAssert.assertEquals(expected, actual, false);
     }
 
     @Test
     void equalities(){
-        Span subjectA = span("root", 0, 2, of(
-            span("A", 0, 1),
-            span("B", 1, 2)
+        Span subjectA = TestHelper.spanTest("root", "root", 0, 2, of(
+            TestHelper.spanTest("x.A", "A", 0, 1),
+            TestHelper.spanTest("x.B", "B", 1, 2)
         ));
-        Span subjectAEquals = span("root", 0, 2, of(
-            span("A", 0, 1),
-            span("B", 1, 2)
+        Span subjectAEquals = TestHelper.spanTest("root", "root", 0, 2, of(
+            TestHelper.spanTest("x.A", "A", 0, 1),
+            TestHelper.spanTest("x.B", "B", 1, 2)
         ));
-        Span subjectANotEquals = span("root", 0, 3, of(
-            span("A", 0, 1),
-            span("B", 1, 2),
-            span("C", 2, 3)
+        Span subjectANotEquals = TestHelper.spanTest("root", "root", 0, 3, of(
+            TestHelper.spanTest("x.A", "A", 0, 1),
+            TestHelper.spanTest("x.B", "B", 1, 2),
+            TestHelper.spanTest("x.C", "C", 2, 3)
         ));
-        Span subjectANotEqualsDeep = span("root", 0, 2, of(
-            span("A", 0, 1),
-            span("B", 1, 2, of(
-                span("C", 1, 2)
+        Span subjectANotEqualsDeep = TestHelper.spanTest("root", "root", 0, 2, of(
+            TestHelper.spanTest("x.A", "A", 0, 1),
+            TestHelper.spanTest("x.B", "B", 1, 2, of(
+                TestHelper.spanTest("x.C", "C", 1, 2)
             ))
         ));
         assertEquals(subjectA, subjectAEquals);
@@ -103,37 +104,37 @@ class SpanTest {
 
     @Test
     void equalitiesDeep(){
-        Span subjectA = span("root", 0, 2, of(
-            span("A", 0, 1,  of(
-                span("AA", 0, 1, of(
-                    span("AAA", 0, 1)
+        Span subjectA = TestHelper.spanTest("root", "root", 0, 2, of(
+            TestHelper.spanTest("x.A", "A", 0, 1,  of(
+                TestHelper.spanTest("x.AA", "AA", 0, 1, of(
+                    TestHelper.spanTest("x.AAA", "AAA", 0, 1)
                 ))
             )),
-            span("B", 1, 2)
+            TestHelper.spanTest("x.B", "B", 1, 2)
         ));
-        Span subjectAEquals = span("root", 0, 2, of(
-            span("A", 0, 1, of(
-                span("AA", 0, 1, of(
-                    span("AAA", 0, 1)
+        Span subjectAEquals = TestHelper.spanTest("root", "root", 0, 2, of(
+            TestHelper.spanTest("x.A", "A", 0, 1, of(
+                TestHelper.spanTest("x.AA", "AA", 0, 1, of(
+                    TestHelper.spanTest("x.AAA", "AAA", 0, 1)
                 ))
             )),
-            span("B", 1, 2)
+            TestHelper.spanTest("x.B", "B", 1, 2)
         ));
-        Span subjectANotEquals = span("root", 0, 2, of(
-            span("A", 0, 1, of(
-                span("AA", 0, 1)
+        Span subjectANotEquals = TestHelper.spanTest("root", "root", 0, 2, of(
+            TestHelper.spanTest("x.A", "A", 0, 1, of(
+                TestHelper.spanTest("x.AA", "AA", 0, 1)
             )),
-            span("B", 1, 2)
+            TestHelper.spanTest("x.B", "B", 1, 2)
         ));
-        Span subjectANotEqualsDeep = span("root", 0, 2, of(
-            span("A", 0, 1, of(
-                span("AA", 0, 1, of(
-                    span("AAA", 0, 1, of(
-                        span("AAAA", 0, 1)
+        Span subjectANotEqualsDeep = TestHelper.spanTest("root", "root", 0, 2, of(
+            TestHelper.spanTest("x.A", "A", 0, 1, of(
+                TestHelper.spanTest("x.AA", "AA", 0, 1, of(
+                    TestHelper.spanTest("x.AAA", "AAA", 0, 1, of(
+                        TestHelper.spanTest("x.AAAA", "AAAA", 0, 1)
                     ))
                 ))
             )),
-            span("B", 1, 2)
+            TestHelper.spanTest("x.B", "B", 1, 2)
         ));
         assertEquals(subjectA, subjectAEquals);
         assertNotEquals(subjectA, subjectANotEquals);
@@ -142,19 +143,19 @@ class SpanTest {
 
     @Test
     void shallowRemoveOldSpans(){
-        Span subject = span("root", 0, of(
-            span("A", 0, 1),
-            span("B", 1, 2),
-            span("C", 2, 3),
-            span("D", 3)
+        Span subject = TestHelper.spanTest("root", "root", 0, of(
+            TestHelper.spanTest("x.A", "A", 0, 1),
+            TestHelper.spanTest("x.B", "B", 1, 2),
+            TestHelper.spanTest("x.C", "C", 2, 3),
+            TestHelper.spanTest("x.D", "D", 3)
         ));
-        Span expectedOnlyOld = span("root", 0, of(
-            span("A", 0, 1),
-            span("B", 1, 2),
-            span("C", 2, 3)
+        Span expectedOnlyOld = TestHelper.spanTest("root", "root", 0, of(
+            TestHelper.spanTest("x.A", "A", 0, 1),
+            TestHelper.spanTest("x.B", "B", 1, 2),
+            TestHelper.spanTest("x.C", "C", 2, 3)
         ));
-        Span expectedWithoutOld = span("root", 0, 4, of(
-            span("D", 3, -1)
+        Span expectedWithoutOld = TestHelper.spanTest("root", "root", 0, 4, of(
+            TestHelper.spanTest("x.D", "D", 3, -1)
         ));
         Span actualOnlyOld = subject.removeFinishedFunction().orElseThrow();
         assertEquals(expectedWithoutOld, subject);
@@ -165,11 +166,11 @@ class SpanTest {
     void doNotRemoveUnfinished(){
         // If the function is not finished, it should not be removed.
         // Functions with exitTime == -1 are not finished.
-        Span subject = span("root", 0, of(
-            span("A", 0)
+        Span subject = TestHelper.spanTest("root", "root", 0, of(
+            TestHelper.spanTest("x.A", "A", 0)
         ));
-        Span expected = span("root", 0, of(
-            span("A", 0)
+        Span expected = TestHelper.spanTest("root", "root", 0, of(
+            TestHelper.spanTest("x.A", "A", 0)
         ));
         assertTrue(subject.removeFinishedFunction().isEmpty());
         assertEquals(expected, subject);
@@ -179,20 +180,20 @@ class SpanTest {
     void addUnfinishedIfAFinishedIsIncluded(){
         // If the function is not finished, it should not be removed.
         // Functions with exitTime == -1 are not finished except when a child function is finished.
-        Span subject = span("root", 0, of(
-            span("A", 0, of(
-                span("AA", 0, 1),
-                span("AB", 0)
+        Span subject = TestHelper.spanTest("root", "root", 0, of(
+            TestHelper.spanTest("x.A", "A", 0, of(
+                TestHelper.spanTest("x.AA", "AA", 0, 1),
+                TestHelper.spanTest("x.AB", "AB", 0)
             ))
         ));
-        Span expectedWithoutOld = span("root", 0, of(
-            span("A", 0, of(
-                span("AB", 0)
+        Span expectedWithoutOld = TestHelper.spanTest("root", "root", 0, of(
+            TestHelper.spanTest("x.A", "A", 0, of(
+                TestHelper.spanTest("x.AB", "AB", 0)
             ))
         ));
-        Span expectedOnlyOld = span("root", 0, of(
-            span("A", 0, of(
-                span("AA", 0, 1)
+        Span expectedOnlyOld = TestHelper.spanTest("root", "root", 0, of(
+            TestHelper.spanTest("x.A", "A", 0, of(
+                TestHelper.spanTest("x.AA", "AA", 0, 1)
             ))
         ));
 
@@ -203,28 +204,28 @@ class SpanTest {
 
     @Test
     void happyDayRemoveOldSpans(){
-        Span subject = span("foo", 0, of(
-            span("fooA", 0, 2, of(
-                span("fooAA", 0, 1),
-                span("fooAB", 1, 2)
+        Span subject = TestHelper.spanTest("x.foo", "foo", 0, of(
+            TestHelper.spanTest("x.fooA", "fooA", 0, 2, of(
+                TestHelper.spanTest("x.fooAA", "fooAA", 0, 1),
+                TestHelper.spanTest("x.fooAB", "fooAB", 1, 2)
             )),
-            span("fooB", 2, of(
-                span("fooBA", 2, 3),
-                span("fooBB", 3)
+            TestHelper.spanTest("x.fooB", "fooB", 2, of(
+                TestHelper.spanTest("x.fooBA", "fooBA", 2, 3),
+                TestHelper.spanTest("x.fooBB", "fooBB", 3)
             ))
         ));
-        Span expectedOnlyOld = span("foo", 0, of(
-            span("fooA", 0, 2, of(
-                span("fooAA", 0, 1),
-                span("fooAB", 1, 2)
+        Span expectedOnlyOld = TestHelper.spanTest("x.foo", "foo", 0, of(
+            TestHelper.spanTest("x.fooA", "fooA", 0, 2, of(
+                TestHelper.spanTest("x.fooAA", "fooAA", 0, 1),
+                TestHelper.spanTest("x.fooAB", "fooAB", 1, 2)
             )),
-            span("fooB", 2, of(
-                span("fooBA", 2, 3)
+            TestHelper.spanTest("x.fooB", "fooB", 2, of(
+                TestHelper.spanTest("x.fooBA", "fooBA", 2, 3)
             ))
         ));
-        Span expectedWithoutOld = span("foo", 0, of(
-            span("fooB", 2, of(
-                span("fooBB", 3)
+        Span expectedWithoutOld = TestHelper.spanTest("x.foo", "foo", 0, of(
+            TestHelper.spanTest("x.fooB", "fooB", 2, of(
+                TestHelper.spanTest("x.fooBB", "fooBB", 3)
             ))
         ));
 
@@ -236,17 +237,17 @@ class SpanTest {
 
     @Test
     void removeWithoutOldSpans(){
-        Span subject = span("foo", 0, of(
-            span("fooA", 0, of(
-                span("fooAA", 0, of(
-                    span("fooAAA", 0)
+        Span subject = TestHelper.spanTest("x.foo", "foo", 0, of(
+            TestHelper.spanTest("x.fooA", "fooA", 0, of(
+                TestHelper.spanTest("x.fooAA", "fooAA", 0, of(
+                    TestHelper.spanTest("x.fooAAA", "fooAAA", 0)
                 ))
             ))
         ));
-        Span expected = span("foo", 0, of(
-            span("fooA", 0, of(
-                span("fooAA", 0, of(
-                    span("fooAAA", 0)
+        Span expected = TestHelper.spanTest("x.foo", "foo", 0, of(
+            TestHelper.spanTest("x.fooA", "fooA", 0, of(
+                TestHelper.spanTest("x.fooAA", "fooAA", 0, of(
+                    TestHelper.spanTest("x.fooAAA", "fooAAA", 0)
                 ))
             ))
         ));
@@ -259,27 +260,27 @@ class SpanTest {
 
     @Test
     void spanFlow(){
-        Span subject = span("root", 0)
-                .enter("A", 0)
-                    .enter("AA", 0)
+        Span subject = TestHelper.spanTest("root", "root", 0)
+                .enter("x.A", "A", 0)
+                    .enter("x.AA", "AA", 0)
                         .leave(1)
-                    .enter("AB", 1)
+                    .enter("x.AB", "AB", 1)
                         .leave(2)
                     .leave(2)
-                .enter("B", 2)
-                    .enter("BA", 2)
+                .enter("x.B", "B", 2)
+                    .enter("x.BA", "BA", 2)
                         .leave(3)
-                    .enter("BB", 3)
+                    .enter("x.BB", "BB", 3)
                         .leave(4);
 
-        Span expected = span("root", 0, of(
-            span("A", 0, 2, of(
-                span("AA", 0, 1),
-                span("AB", 1, 2)
+        Span expected = TestHelper.spanTest("root", "root", 0, of(
+            TestHelper.spanTest("x.A", "A", 0, 2, of(
+                TestHelper.spanTest("x.AA", "AA", 0, 1),
+                TestHelper.spanTest("x.AB", "AB", 1, 2)
             )),
-            span("B", 2, 4, of(
-                span("BA", 2, 3),
-                span("BB", 3, 4)
+            TestHelper.spanTest("x.B", "B", 2, 4, of(
+                TestHelper.spanTest("x.BA", "BA", 2, 3),
+                TestHelper.spanTest("x.BB", "BB", 3, 4)
             ))
         ));
 
@@ -289,17 +290,17 @@ class SpanTest {
 
     @Test
     void removeFinishedFunctionWithNoChildren(){
-        Span subject = span("foo", 0, of(
-            span("fooA", 0, 2, of(
-                    span("fooAA", 0, 1)
+        Span subject = TestHelper.spanTest("x.foo", "foo", 0, of(
+            TestHelper.spanTest("x.fooA", "fooA", 0, 2, of(
+                TestHelper.spanTest("x.fooAA", "fooAA", 0, 1)
             ))
         ));
-        Span expectedOnlyOld = span("foo", 0, of(
-                span("fooA", 0, 2, of(
-                        span("fooAA", 0, 1)
-                ))
+        Span expectedOnlyOld = TestHelper.spanTest("x.foo", "foo", 0, of(
+            TestHelper.spanTest("x.fooA", "fooA", 0, 2, of(
+                TestHelper.spanTest("x.fooAA", "fooAA", 0, 1)
+            ))
         ));
-        Span expectedWithoutOld = span("foo", 0, 2);
+        Span expectedWithoutOld = TestHelper.spanTest("x.foo", "foo", 0, 2);
 
         Span actualOld = subject.removeFinishedFunction().orElseThrow();
 
