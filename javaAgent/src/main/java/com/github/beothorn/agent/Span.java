@@ -5,6 +5,7 @@ import java.util.*;
 public class Span{
 
     private final String name;
+    private final String method;
     private Span parent;
     private List<Span> children;
     public final long entryTime;
@@ -14,26 +15,14 @@ public class Span{
     public final String[][] arguments;
 
     public static Span span(
-            final String name,
-            final long entryTime
-    ){
-        return new Span(
-            name,
-            entryTime,
-            null,
-            -1,
-            null,
-            new ArrayList<>()
-        );
-    }
-
-    public static Span span(
         final String name,
+        final String method,
         final long entryTime,
         final String[][] arguments
     ){
         return new Span(
             name,
+            method,
             entryTime,
             arguments,
             -1,
@@ -44,12 +33,14 @@ public class Span{
 
     public static Span span(
         final String name,
+        final String method,
         final long entryTime,
         final String[][] arguments,
         final Span parent
     ){
         return new Span(
             name,
+            method,
             entryTime,
             arguments,
             -1,
@@ -58,103 +49,9 @@ public class Span{
         );
     }
 
-    public static Span span(
-            final String name,
-            final long entryTime,
-            final long exitTime,
-            final List<Span> children
-    ){
-        return new Span(
-                name,
-                entryTime,
-                null,
-                exitTime,
-                null,
-                children
-        );
-    }
-
-    public static Span span(
-            final String name,
-            final long entryTime,
-            final String[][] arguments,
-            final long exitTime,
-            final List<Span> children
-    ){
-        return new Span(
-                name,
-                entryTime,
-                arguments,
-                exitTime,
-                null,
-                children
-        );
-    }
-
-    public static Span span(
-            final String name,
-            final long entryTime,
-            final List<Span> children
-    ){
-        return new Span(
-            name,
-            entryTime,
-            null,
-            -1,
-            null,
-            children
-        );
-    }
-
-    public static Span span(
-            final String name,
-            final long entryTime,
-            final String[][] arguments,
-            final List<Span> children
-    ){
-        return new Span(
-                name,
-                entryTime,
-                arguments,
-                -1,
-                null,
-                children
-        );
-    }
-
-    public static Span span(
-            final String name,
-            final long entryTime,
-            final long exitTime
-    ){
-        return new Span(
-            name,
-            entryTime,
-            null,
-            exitTime,
-            null,
-            new ArrayList<>()
-        );
-    }
-
-    public static Span span(
-            final String name,
-            final long entryTime,
-            final String[][] arguments,
-            final long exitTime
-    ){
-        return new Span(
-                name,
-                entryTime,
-                arguments,
-                exitTime,
-                null,
-                new ArrayList<>()
-        );
-    }
-
-    private Span(
+    public Span(
         final String name,
+        final String method,
         final long entryTime,
         final String[][] arguments,
         final long exitTime,
@@ -162,6 +59,7 @@ public class Span{
         final List<Span> children
     ){
         this.name = name;
+        this.method = method;
         this.entryTime = entryTime;
         this.arguments = arguments;
         this.exitTime = exitTime;
@@ -171,23 +69,27 @@ public class Span{
     }
 
     public Span enter(
-        final String methodName,
+        final String name,
+        final String method,
         final long entryTime
     ){
         return enter(
-            methodName,
+            name,
+            method,
             entryTime,
             null
         );
     }
 
     public Span enter(
-        final String methodName,
-        final long entryTime,
-        final String[][] arguments
+            final String name,
+            final String method,
+            final long entryTime,
+            final String[][] arguments
     ){
         Span child = span(
-            methodName,
+            name,
+            method,
             entryTime,
             arguments,
             this
@@ -244,6 +146,7 @@ public class Span{
 
         StringBuilder result = new StringBuilder("{" +
             "\"name\":\""+ nameEscaped +"\"," +
+            "\"method\":\""+ method +"\"," +
             "\"entryTime\":"+ entryTime +"," +
             "\"exitTime\":"+ exitTime +"," +
             "\"value\":"+ duration()
@@ -360,12 +263,13 @@ public class Span{
             oldChildren.add(activeChild);
             children = new ArrayList<>();
             return Optional.of(new Span(
-                    name,
-                    entryTime,
-                    arguments,
-                    exitTime,
-                    parent,
-                    oldChildren
+                name,
+                method,
+                entryTime,
+                arguments,
+                exitTime,
+                parent,
+                oldChildren
             ));
         }
 
@@ -389,6 +293,7 @@ public class Span{
         children.add(activeChild);
         return Optional.of(new Span(
             name,
+            method,
             entryTime,
             arguments,
             exitTime,

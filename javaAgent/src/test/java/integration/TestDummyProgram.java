@@ -1,6 +1,7 @@
 package integration;
 
 import com.github.beothorn.agent.FunctionCallRecorder;
+import com.github.beothorn.agent.TestHelper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.jupiter.api.Test;
@@ -8,8 +9,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 
 import static com.github.beothorn.agent.FunctionCallRecorderWithValueCapturing.enter;
 import static com.github.beothorn.agent.FunctionCallRecorderWithValueCapturing.exit;
-import static com.github.beothorn.agent.TestHelper.span;
-import static com.github.beothorn.agent.TestHelper.thread;
+import static com.github.beothorn.agent.TestHelper.threadJSON;
 
 public class TestDummyProgram {
 
@@ -108,14 +108,41 @@ public class TestDummyProgram {
         new TestDummyProgram().run("{\"bar\":\n\"baz\"}");
 
         JSONArray expected = new JSONArray().put(
-            thread("main", 0,
-                span("mainRoot",0,-1,0,
-                    span("integration.TestDummyProgram.run(java.lang.String = {\"bar\":\n\"baz\"}) => void",0,0,0,
-                        span("integration.TestDummyProgram.a(int = 1) => java.lang.Integer 3",0,0,0,
-                            span("integration.TestDummyProgram.aa(int = 2) => java.lang.Integer 3",0,0,0)
+            threadJSON("main", 0,
+                TestHelper.spanJSON("mainRoot", "mainRoot",0,-1,0,
+                    TestHelper.spanJSON(
+                        "integration.TestDummyProgram.run(java.lang.String = {\"bar\":\n\"baz\"}) => void",
+                        "run",
+                        0,
+                        0,
+                        0,
+                        TestHelper.spanJSON(
+                            "integration.TestDummyProgram.a(int = 1) => java.lang.Integer 3",
+                            "a",
+                            0,
+                            0,
+                            0,
+                            TestHelper.spanJSON(
+                                "integration.TestDummyProgram.aa(int = 2) => java.lang.Integer 3",
+                                "aa",
+                                0,
+                                0,
+                                0
+                            )
                         ),
-                        span("integration.TestDummyProgram.b(int = 1, int = 2) => java.lang.Integer 5",0,0,0,
-                            span("integration.TestDummyProgram.bb(int = 2, int = 3) => java.lang.Integer 5",0,0,0)
+                        TestHelper.spanJSON(
+                            "integration.TestDummyProgram.b(int = 1, int = 2) => java.lang.Integer 5",
+                            "b",
+                            0,
+                            0
+                            ,0,
+                            TestHelper.spanJSON(
+                                "integration.TestDummyProgram.bb(int = 2, int = 3) => java.lang.Integer 5",
+                                "bb",
+                                0,
+                                0,
+                                0
+                            )
                         )
                     )
                 )

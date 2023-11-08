@@ -62,6 +62,7 @@ public class FunctionCallRecorderWithValueCapturing {
             onEnter(
                 threadName,
                 prettyCall.toString(),
+                methodName,
                 entryTime,
                 arguments
             );
