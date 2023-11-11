@@ -14,13 +14,11 @@ import java.lang.instrument.Instrumentation;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.*;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
@@ -124,7 +122,7 @@ public class MethodInstrumentationAgent {
         writeHtmlFiles(javaFlameDirectory);
 
         List<String> excludes = argumentExcludes(argument);
-        List<String> filters = argumentFilter(argument);
+        List<String[]> filters = argumentFilter(argument);
         Optional<String> maybeStartRecordingTriggerFunction = argumentStartRecordingTriggerFunction(argument);
         Optional<String> maybeStopRecordingTriggerFunction = argumentStopRecordingTriggerFunction(argument);
 
@@ -147,7 +145,10 @@ public class MethodInstrumentationAgent {
         maybeStartRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStartTrigger);
         maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
 
-        ElementMatcher.Junction<TypeDescription> argumentsMatcher = getMatcherFromArguments(excludes, filters);
+        ElementMatcher.Junction<TypeDescription> argumentsMatcher = getMatcherFromArguments(
+            excludes,
+            filters
+        );
 
         AgentBuilder agentBuilder = new AgentBuilder.Default();
 
@@ -165,7 +166,11 @@ public class MethodInstrumentationAgent {
                 .with(new DebugListener())
                 .type(argumentsMatcher);
         withoutExtraExcludes
-            .transform(new IntroduceMethodInterception(noConstructorMode, advice))
+            .transform(new IntroduceMethodInterception(
+                noConstructorMode,
+                advice,
+                filters
+            ))
             .installOn(instrumentation);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -226,7 +231,7 @@ public class MethodInstrumentationAgent {
 
     private static ElementMatcher.Junction<TypeDescription> getMatcherFromArguments(
             List<String> excludes,
-            List<String> filters
+            List<String[]> filters
     ) {
         ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent")
                 .or(nameContains("net.bytebuddy"));
@@ -236,9 +241,9 @@ public class MethodInstrumentationAgent {
         ElementMatcher.Junction<TypeDescription> withExclusions = not(exclusions);
 
         if(!filters.isEmpty()){
-            ElementMatcher.Junction<NamedElement> namedElementJunction = nameContains(filters.get(0));
+            ElementMatcher.Junction<NamedElement> namedElementJunction = nameContains(filters.get(0)[0]);
             for (int i = 1; i < filters.size(); i++) {
-                namedElementJunction = namedElementJunction.or(nameContains(filters.get(i)));
+                namedElementJunction = namedElementJunction.or(nameContains(filters.get(i)[0]));
             }
             withExclusions = withExclusions.and(namedElementJunction);
         }
@@ -290,11 +295,14 @@ public class MethodInstrumentationAgent {
         return getAllStringsForMatcher(matcher);
     }
 
-    public static List<String> argumentFilter(String argument){
-        Matcher matcher = Pattern.compile("filter:([^,]+)")
+    public static List<String[]> argumentFilter(String argument){
+        String command = "filter";
+        String functionSeparator = ":";
+        Matcher matcher = Pattern.compile(command + ":([^,]+)")
                 .matcher(argument);
-
-        return getAllStringsForMatcher(matcher);
+        ArrayList<String> allMatches = getAllStringsForMatcher(matcher);
+        return allMatches.stream().map(m -> m.split(functionSeparator))
+                .collect(Collectors.toList());
     }
 
     public static Optional<String> argumentStartRecordingTriggerFunction(String argument){
@@ -408,10 +416,16 @@ public class MethodInstrumentationAgent {
     private static class IntroduceMethodInterception implements AgentBuilder.Transformer {
         private final boolean noConstructorMode;
         private final Advice advice;
+        private final List<String[]> filters;
 
-        public IntroduceMethodInterception(boolean noConstructorMode, Advice advice) {
+        public IntroduceMethodInterception(
+            boolean noConstructorMode,
+            Advice advice,
+            List<String[]> filters
+        ) {
             this.noConstructorMode = noConstructorMode;
             this.advice = advice;
+            this.filters = filters;
         }
 
         public DynamicType.Builder<?> transform(
@@ -439,14 +453,23 @@ public class MethodInstrumentationAgent {
             TypeDescription typeDescription
         ) {
             log(DEBUG, "Transform '"+ typeDescription.getCanonicalName()+"'");
-            System.out.println("Transform '"+ typeDescription.getCanonicalName()+"'");
+
             ElementMatcher.Junction<MethodDescription> matcher = isMethod();
             if(noConstructorMode){
                 matcher = matcher.and(not(isConstructor()));
             }
-            if(typeDescription.getCanonicalName().equals("com.github.beothorn.sorts.algorithms.InplaceQuickSort")){
-                matcher = matcher.and(nameContains("findNextValueSmallerOrEqualThanPivotOnRight"));
+
+            for (String[] f : filters) {
+                if (f.length > 1) {
+                    if (Objects.equals(typeDescription.getCanonicalName(), f[0])) {
+                        matcher = matcher.and(nameContains(f[1]));
+                    }
+                }
             }
+
+//            if(typeDescription.getCanonicalName().equals("com.github.beothorn.sorts.algorithms.InplaceQuickSort")){
+//                matcher = matcher.and(nameContains("findNextValueSmallerOrEqualThanPivotOnRight"));
+//            }
             //findNextValueSmallerOrEqualThanPivotOnRight
 
             return builder.visit(advice.on(matcher));

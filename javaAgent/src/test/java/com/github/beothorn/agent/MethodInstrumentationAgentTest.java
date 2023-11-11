@@ -3,6 +3,7 @@ package com.github.beothorn.agent;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -139,13 +140,49 @@ class MethodInstrumentationAgentTest {
 
     @Test
     void whenItHasFilter(){
-        assertEquals("[]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("").toArray()));
-        assertEquals("[]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("xxx").toArray()));
-        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar").toArray()));
-        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar,xxx").toArray()));
-        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("xxx,filter:foo.bar").toArray()));
-        assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar,filter:bar.baz").toArray()));
-        assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentFilter("filter:foo.bar,fda,filter:bar.baz,acd,wfae").toArray()));
+
+        testArguments("", new String[][]{});
+
+        testArguments("xxx", new String[][]{});
+
+        testArguments("filter:foo.bar", new String[][]{
+            {"foo.bar"}
+        });
+
+        testArguments("filter:foo.bar,xxx", new String[][]{
+            {"foo.bar"}
+        });
+
+        testArguments("xxx,filter:foo.bar", new String[][]{
+            {"foo.bar"}
+        });
+
+        testArguments("filter:foo.bar,filter:bar.baz", new String[][]{
+            {"foo.bar"},
+            {"bar.baz"},
+        });
+
+        testArguments("aaa:bbb:ccc,filter:foo.bar,fda,filter:bar.baz,acd,wfae", new String[][]{
+            {"foo.bar"},
+            {"bar.baz"},
+        });
+
+        testArguments("aaa:bbb:ccc,filter:foo.bar:baz,fda,filter:bar.baz,acd,wfae", new String[][]{
+            {"foo.bar", "baz"},
+            {"bar.baz"},
+        });
+    }
+
+    private static void testArguments(String stringArgument, String[][] expectation) {
+        List<String[]> args = MethodInstrumentationAgent.argumentFilter(stringArgument);
+        assertEquals(expectation.length, args.size());
+        for (int i = 0; i < expectation.length; i++) {
+            String[] arg = args.get(i);
+            assertEquals(expectation[i][0], arg[0]);
+            if (expectation[i].length > 1) {
+                assertEquals(expectation[i][1], arg[1]);
+            }
+        }
     }
 
     @Test
