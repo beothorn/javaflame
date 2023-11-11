@@ -2,7 +2,6 @@ package com.github.beothorn.agent;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -129,52 +128,65 @@ class MethodInstrumentationAgentTest {
 
     @Test
     void whenItHasExcludes(){
-        assertEquals("[]", Arrays.toString(MethodInstrumentationAgent.argumentExcludes("").toArray()));
-        assertEquals("[]", Arrays.toString(MethodInstrumentationAgent.argumentExcludes("xxx").toArray()));
-        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentExcludes("exclude:foo.bar").toArray()));
-        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentExcludes("exclude:foo.bar,xxx").toArray()));
-        assertEquals("[foo.bar]", Arrays.toString(MethodInstrumentationAgent.argumentExcludes("xxx,exclude:foo.bar").toArray()));
-        assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentExcludes("exclude:foo.bar,exclude:bar.baz").toArray()));
-        assertEquals("[foo.bar, bar.baz]", Arrays.toString(MethodInstrumentationAgent.argumentExcludes("exclude:foo.bar,fda,exclude:bar.baz,acd,wfae").toArray()));
+        testArgumentsForExcludes("", new String[][]{});
+        testArgumentsForExcludes("xxx", new String[][]{});
+        testArgumentsForExcludes("exclude:foo.bar", new String[][]{
+            {"foo.bar"}
+        });
+        testArgumentsForExcludes("exclude:foo.bar,xxx", new String[][]{
+                {"foo.bar"}
+        });
+        testArgumentsForExcludes("xxx,exclude:foo.bar", new String[][]{
+                {"foo.bar"}
+        });
+        testArgumentsForExcludes("exclude:foo.bar,exclude:bar.baz", new String[][]{
+                {"foo.bar"},
+                {"bar.baz"}
+        });
+        testArgumentsForExcludes("exclude:foo.bar,fda,exclude:bar.baz,acd,wfae", new String[][]{
+                {"foo.bar"},
+                {"bar.baz"}
+        });
     }
 
     @Test
     void whenItHasFilter(){
-
-        testArguments("", new String[][]{});
-
-        testArguments("xxx", new String[][]{});
-
-        testArguments("filter:foo.bar", new String[][]{
+        testArgumentsForFilter("", new String[][]{});
+        testArgumentsForFilter("xxx", new String[][]{});
+        testArgumentsForFilter("filter:foo.bar", new String[][]{
             {"foo.bar"}
         });
-
-        testArguments("filter:foo.bar,xxx", new String[][]{
+        testArgumentsForFilter("filter:foo.bar,xxx", new String[][]{
             {"foo.bar"}
         });
-
-        testArguments("xxx,filter:foo.bar", new String[][]{
+        testArgumentsForFilter("xxx,filter:foo.bar", new String[][]{
             {"foo.bar"}
         });
-
-        testArguments("filter:foo.bar,filter:bar.baz", new String[][]{
+        testArgumentsForFilter("filter:foo.bar,filter:bar.baz", new String[][]{
             {"foo.bar"},
             {"bar.baz"},
         });
-
-        testArguments("aaa:bbb:ccc,filter:foo.bar,fda,filter:bar.baz,acd,wfae", new String[][]{
+        testArgumentsForFilter("aaa:bbb:ccc,filter:foo.bar,fda,filter:bar.baz,acd,wfae", new String[][]{
             {"foo.bar"},
             {"bar.baz"},
         });
-
-        testArguments("aaa:bbb:ccc,filter:foo.bar:baz,fda,filter:bar.baz,acd,wfae", new String[][]{
+        testArgumentsForFilter("aaa:bbb:ccc,filter:foo.bar:baz,fda,filter:bar.baz,acd,wfae", new String[][]{
             {"foo.bar", "baz"},
             {"bar.baz"},
         });
     }
 
-    private static void testArguments(String stringArgument, String[][] expectation) {
+    private static void testArgumentsForFilter(String stringArgument, String[][] expectation) {
         List<String[]> args = MethodInstrumentationAgent.argumentFilter(stringArgument);
+        testArguments(expectation, args);
+    }
+
+    private static void testArgumentsForExcludes(String stringArgument, String[][] expectation) {
+        List<String[]> args = MethodInstrumentationAgent.argumentExcludes(stringArgument);
+        testArguments(expectation, args);
+    }
+
+    private static void testArguments(String[][] expectation, List<String[]> args) {
         assertEquals(expectation.length, args.size());
         for (int i = 0; i < expectation.length; i++) {
             String[] arg = args.get(i);
