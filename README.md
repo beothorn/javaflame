@@ -13,7 +13,7 @@ Want to see it in action? [Check out this rendering of some sort algorithms flam
 
 # What is this for?
 
-This is mainly a debugging tool. The motivation behind it is to have a quick way to get a glimpse of how some logic is handled by looking at the values that are passed around between functions.  
+This is mainly a debugging tool. The motivation behind it is to have a quick way to get a glimpse of how some logic is handled by looking at the values that are passed around between functions. It is specially nice to use together with your automated tests.  
 
 # Is this a profiler?
 
