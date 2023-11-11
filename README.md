@@ -67,11 +67,5 @@ Anything without exclusions will generate lots of data. Either it will not rende
 
 ## Libraries used
 
-https://github.com/spiermar/d3-flame-graph  
-https://bytebuddy.net  
-
-## TODO
-
-- JSON view
-- agent parameter: snapshot interval
-- timestamp filter
+[d3-flame-graph](https://github.com/spiermar/d3-flame-graph)  
+[ByteBuddy](https://bytebuddy.net)  

@@ -434,12 +434,21 @@ public class MethodInstrumentationAgent {
             return getBuilder(builder, typeDescription);
         }
 
-        private DynamicType.Builder<?> getBuilder(DynamicType.Builder<?> builder, TypeDescription typeDescription) {
+        private DynamicType.Builder<?> getBuilder(
+            DynamicType.Builder<?> builder,
+            TypeDescription typeDescription
+        ) {
             log(DEBUG, "Transform '"+ typeDescription.getCanonicalName()+"'");
+            System.out.println("Transform '"+ typeDescription.getCanonicalName()+"'");
             ElementMatcher.Junction<MethodDescription> matcher = isMethod();
             if(noConstructorMode){
                 matcher = matcher.and(not(isConstructor()));
             }
+            if(typeDescription.getCanonicalName().equals("com.github.beothorn.sorts.algorithms.InplaceQuickSort")){
+                matcher = matcher.and(nameContains("findNextValueSmallerOrEqualThanPivotOnRight"));
+            }
+            //findNextValueSmallerOrEqualThanPivotOnRight
+
             return builder.visit(advice.on(matcher));
         }
     }
