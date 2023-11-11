@@ -121,7 +121,7 @@ public class MethodInstrumentationAgent {
 
         writeHtmlFiles(javaFlameDirectory);
 
-        List<String> excludes = argumentExcludes(argument);
+        List<String[]> excludes = argumentExcludes(argument);
         List<String[]> filters = argumentFilter(argument);
         Optional<String> maybeStartRecordingTriggerFunction = argumentStartRecordingTriggerFunction(argument);
         Optional<String> maybeStopRecordingTriggerFunction = argumentStopRecordingTriggerFunction(argument);
@@ -169,7 +169,8 @@ public class MethodInstrumentationAgent {
             .transform(new IntroduceMethodInterception(
                 noConstructorMode,
                 advice,
-                filters
+                filters,
+                excludes
             ))
             .installOn(instrumentation);
 
@@ -230,13 +231,17 @@ public class MethodInstrumentationAgent {
     }
 
     private static ElementMatcher.Junction<TypeDescription> getMatcherFromArguments(
-            List<String> excludes,
+            List<String[]> excludes,
             List<String[]> filters
     ) {
         ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent")
                 .or(nameContains("net.bytebuddy"));
-        for (String exclude: excludes) {
-            exclusions = exclusions.or(nameContains(exclude));
+
+        for (String[] exclude: excludes) {
+            if(exclude.length == 1){ // This excludes the whole package, not only one function
+                exclusions = exclusions.or(nameContains(exclude[0]));
+            }
+            // If the exclude is for a single function, this is done somewhere else
         }
         ElementMatcher.Junction<TypeDescription> withExclusions = not(exclusions);
 
@@ -288,20 +293,28 @@ public class MethodInstrumentationAgent {
         return NO_SNAPSHOTS.isOnArguments(argument);
     }
 
-    public static List<String> argumentExcludes(String argument){
-        Matcher matcher = Pattern.compile("exclude:([^,]+)")
-                .matcher(argument);
-
-        return getAllStringsForMatcher(matcher);
+    public static List<String[]> argumentExcludes(String argument){
+        return matchCommand(
+            argument,
+            "exclude"
+        );
     }
 
     public static List<String[]> argumentFilter(String argument){
-        String command = "filter";
-        String functionSeparator = ":";
+        return matchCommand(
+            argument,
+            "filter"
+        );
+    }
+
+    private static List<String[]> matchCommand(
+        String argument,
+        String command
+    ) {
         Matcher matcher = Pattern.compile(command + ":([^,]+)")
                 .matcher(argument);
         ArrayList<String> allMatches = getAllStringsForMatcher(matcher);
-        return allMatches.stream().map(m -> m.split(functionSeparator))
+        return allMatches.stream().map(m -> m.split(":"))
                 .collect(Collectors.toList());
     }
 
@@ -417,15 +430,18 @@ public class MethodInstrumentationAgent {
         private final boolean noConstructorMode;
         private final Advice advice;
         private final List<String[]> filters;
+        private final List<String[]> excludes;
 
         public IntroduceMethodInterception(
             boolean noConstructorMode,
             Advice advice,
-            List<String[]> filters
+            List<String[]> filters,
+            List<String[]> excludes
         ) {
             this.noConstructorMode = noConstructorMode;
             this.advice = advice;
             this.filters = filters;
+            this.excludes = excludes;
         }
 
         public DynamicType.Builder<?> transform(
@@ -467,10 +483,13 @@ public class MethodInstrumentationAgent {
                 }
             }
 
-//            if(typeDescription.getCanonicalName().equals("com.github.beothorn.sorts.algorithms.InplaceQuickSort")){
-//                matcher = matcher.and(nameContains("findNextValueSmallerOrEqualThanPivotOnRight"));
-//            }
-            //findNextValueSmallerOrEqualThanPivotOnRight
+            for (String[] e : excludes) {
+                if (e.length > 1) {
+                    if (Objects.equals(typeDescription.getCanonicalName(), e[0])) {
+                        matcher = matcher.and(not(nameContains(e[1])));
+                    }
+                }
+            }
 
             return builder.visit(advice.on(matcher));
         }
