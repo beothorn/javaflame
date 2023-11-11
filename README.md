@@ -11,6 +11,18 @@ Want to see it in action? [Check out this rendering of some sort algorithms flam
 
 ![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotDetailed.png?raw=true)
 
+# What is this for?
+
+This is mainly a debugging tool. The motivation behind it is to have a quick way to get a glimpse of how some logic is handled by looking at the values that are passed around between functions.  
+
+# Is this a profiler?
+
+No. A profiler, either for memory or performance, tries to have as little impact as possible on the execution of the process.  
+Usually, the way it works is by sampling the executon stack (either inside the JVM or the OS kernel) and using it to acess how long a call took. The stack is the very stack of the process.  
+That is not what javaflame does. Javaflame injects some bytecode on every function call that matches the filter on its arguments. This bytecode will store the function name on a separate stack and will use reflection to get the parameters. It will also call the toString function for each argument and store the result on the separate stack.  
+That means Javaflame impacts performance (because of the time it takes to process toString) and memory (because it stores the argument values).  
+You still can use it to have some idea about the performance, if you assume the time it takes to execute the toString and the size of the stack is negligible. This is not guaranteed to be true. If what you need is to be as precise as possible, consider other tools like [async-profiler](https://github.com/async-profiler/async-profiler)
+
 # Features
 
 - One Flamegraph per thread.
