@@ -20,17 +20,18 @@ class SpanTest {
             {"String", "aaa"}
         };
 
-        Span subject = TestHelper.spanTest("x.foo","foo", 0, arguments, 2, of(
-            TestHelper.spanTest("x.fooA", "fooA", 0, 1),
-            TestHelper.spanTest("x.fooB", "fooB", 1, 2)
+        Span subject = TestHelper.spanTest("1", "x.foo", "x","foo", 0, arguments, 2, of(
+            TestHelper.spanTest("2", "x.fooA", "x", "fooA", 0, 1),
+            TestHelper.spanTest("3", "x.fooB", "x", "fooB", 1, 2)
         ));
 
-        JSONObject expected = TestHelper.spanJSON("x.foo", "foo", 0,2,2, arguments,
-            TestHelper.spanJSON("x.fooA", "fooA", 0, 1, 1),
-            TestHelper.spanJSON("x.fooB", "fooB", 1, 2, 1)
-        );
+        JSONObject expected = TestHelper.spanJSON("x.foo", "x", "foo", 0,2,2, arguments,
+            TestHelper.spanJSON("x.fooA", "x", "fooA", 0, 1, 1).put("id","2"),
+            TestHelper.spanJSON("x.fooB", "x", "fooB", 1, 2, 1).put("id","3")
+        ).put("id","1");
 
-        JSONObject actual = new JSONObject(subject.toJson());
+        String json = subject.toJson();
+        JSONObject actual = new JSONObject(json);
         JSONAssert.assertEquals(expected, actual, true);
     }
 
@@ -38,7 +39,7 @@ class SpanTest {
     void jsonWithEscapedValues() throws JSONException {
         String name = "\" \n \\ \t \\\"";
         Span subject = TestHelper.spanTest(name, "method", 0, 2);
-        JSONObject expected = TestHelper.spanJSON(name, "method", 0, 2, 2);
+        JSONObject expected = TestHelper.spanJSON(name, "Class", "method", 0, 2, 2);
         JSONObject actual = new JSONObject(subject.toJson());
         JSONAssert.assertEquals(expected, actual, false);
     }
@@ -55,7 +56,7 @@ class SpanTest {
         subject.returnValue = new String[]{
             "Object", null
         };
-        JSONObject expected = TestHelper.spanJSON(name + " => Object null", method,0,-1,0,new String[][]{
+        JSONObject expected = TestHelper.spanJSON(name + " => Object null", "Class."+name, method,0,-1,0,new String[][]{
                 {
                     "Object", null
                 }
@@ -71,7 +72,7 @@ class SpanTest {
         // We should be able to render it on data.js
         String name = "{\n\t\"id\": \"123\"}";
         Span subject = TestHelper.spanTest(name, "method", 0, 2);
-        JSONObject expected = TestHelper.spanJSON(name, "method", 0, 2, 2);
+        JSONObject expected = TestHelper.spanJSON(name, "Class", "method", 0, 2, 2);
         JSONObject actual = new JSONObject(subject.toJson());
         JSONAssert.assertEquals(expected, actual, false);
     }

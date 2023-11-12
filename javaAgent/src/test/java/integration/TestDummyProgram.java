@@ -109,21 +109,24 @@ public class TestDummyProgram {
 
         JSONArray expected = new JSONArray().put(
             threadJSON("main", 0,
-                TestHelper.spanJSON("mainRoot", "mainRoot",0,-1,0,
+                TestHelper.spanJSON("mainRoot", "mainRoot", "mainRoot",0,-1,0,
                     TestHelper.spanJSON(
                         "integration.TestDummyProgram.run(java.lang.String = {\"bar\":\n\"baz\"}) => void",
+                        "integration.TestDummyProgram",
                         "run",
                         0,
                         0,
                         0,
                         TestHelper.spanJSON(
                             "integration.TestDummyProgram.a(int = 1) => java.lang.Integer 3",
+                            "integration.TestDummyProgram",
                             "a",
                             0,
                             0,
                             0,
                             TestHelper.spanJSON(
                                 "integration.TestDummyProgram.aa(int = 2) => java.lang.Integer 3",
+                                "integration.TestDummyProgram",
                                 "aa",
                                 0,
                                 0,
@@ -132,12 +135,14 @@ public class TestDummyProgram {
                         ),
                         TestHelper.spanJSON(
                             "integration.TestDummyProgram.b(int = 1, int = 2) => java.lang.Integer 5",
+                            "integration.TestDummyProgram",
                             "b",
                             0,
                             0
                             ,0,
                             TestHelper.spanJSON(
                                 "integration.TestDummyProgram.bb(int = 2, int = 3) => java.lang.Integer 5",
+                                "integration.TestDummyProgram",
                                 "bb",
                                 0,
                                 0,
