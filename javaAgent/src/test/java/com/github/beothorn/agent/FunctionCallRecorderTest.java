@@ -43,20 +43,20 @@ class FunctionCallRecorderTest {
         onLeave("main", 3); // main: leave a -> no root
 
         JSONObject threadT = threadJSON("t",0,
-            spanJSON("tRoot", "tRoot", 0, -1, 0,
-                spanJSON("a", "a", 0, 1, 1,
-                    spanJSON("b", "b", 0,1,1)
+            spanJSON("tRoot", "tRoot", "tRoot", 0, -1, 0,
+                spanJSON("a", "aClass", "a", 0, 1, 1,
+                    spanJSON("b", "bClass", "b", 0,1,1)
                 )
             )
         );
 
         JSONObject threadMain = threadJSON("main",0,
-            spanJSON("mainRoot", "mainRoot", 0, -1, 0,
-                spanJSON("a", "a", 0, 3, 3,
-                    spanJSON("aa", "aa", 0, 1, 1),
-                    spanJSON("ab", "ab", 1, 2, 1),
-                    spanJSON("ac", "ac", 2 , 3, 1,
-                        spanJSON("aca", "aca", 2, 3, 1)
+            spanJSON("mainRoot", "mainRoot", "mainRoot", 0, -1, 0,
+                spanJSON("a", "aClass", "a", 0, 3, 3,
+                    spanJSON("aa", "aaClass", "aa", 0, 1, 1),
+                    spanJSON("ab", "abClass", "ab", 1, 2, 1),
+                    spanJSON("ac", "acClass","ac", 2 , 3, 1,
+                        spanJSON("aca", "acaClass", "aca", 2, 3, 1)
                     )
                 )
             )
@@ -97,18 +97,18 @@ class FunctionCallRecorderTest {
             // I am still not sure what is best here, to trap execution on synthetic root
             // or just let i leave the stack null.
             // It leaves the stack null for now.
-            spanJSON("otherRoot", "otherRoot", 0, 0, 0,
-                spanJSON("OtherFun", "OtherFun", 0, 0, 0,
-                    spanJSON("OtherFunFun", "OtherFunFun", 0, 0, 0)
+            spanJSON("otherRoot", "otherRoot", "otherRoot", 0, 0, 0,
+                spanJSON("OtherFun", "OtherFunClass", "OtherFun", 0, 0, 0,
+                    spanJSON("OtherFunFun", "OtherFunFunClass", "OtherFunFun", 0, 0, 0)
                 )
             )
         );
 
         JSONObject threadMain = threadJSON("main",0,
-            spanJSON("mainRoot", "mainRoot", 0, 0, 0,
-                spanJSON("startRecording", "startRecording", 0, 0, 0,
-                    spanJSON("Fun", "Fun", 0, 0, 0,
-                        spanJSON("FunFun", "FunFun", 0, 0, 0)
+            spanJSON("mainRoot", "mainRoot", "mainRoot", 0, 0, 0,
+                spanJSON("startRecording", "startRecordingClass", "startRecording", 0, 0, 0,
+                    spanJSON("Fun", "FunClass", "Fun", 0, 0, 0,
+                        spanJSON("FunFun", "FunFunClass", "FunFun", 0, 0, 0)
                     )
                 )
             )
@@ -126,8 +126,8 @@ class FunctionCallRecorderTest {
         e("someThread", "B", "B",  2);
 
         JSONObject someThread = threadJSON("someThread",0,
-            spanJSON("someThreadRoot", "someThreadRoot", 0, -1, 0,
-                spanJSON("A", "A", 0, 1, 1)
+            spanJSON("someThreadRoot", "someThreadRoot", "someThreadRoot", 0, -1, 0,
+                spanJSON("A", "AClass", "A", 0, 1, 1)
             )
         );
 
@@ -152,7 +152,7 @@ class FunctionCallRecorderTest {
         onEnter(
             threadName,
             name,
-            "Class."+name,
+            name+"Class",
             method,
             entryTime
         );

@@ -25,17 +25,19 @@ public class TestHelper {
     }
 
     public static JSONObject spanJSON(
-            String name,
-            String method,
-            int entryTime,
-            int exitTime,
-            int value,
-            String[][] arguments,
-            JSONObject... children
+        String name,
+        String className,
+        String method,
+        int entryTime,
+        int exitTime,
+        int value,
+        String[][] arguments,
+        JSONObject... children
     ){
         try {
             JSONObject result = new JSONObject()
                 .put("name", name)
+                .put("className", className)
                 .put("method", method)
                 .put("entryTime", entryTime)
                 .put("exitTime", exitTime)
@@ -67,6 +69,7 @@ public class TestHelper {
 
     public static JSONObject spanJSON(
         String name,
+        String className,
         String method,
         int entryTime,
         int exitTime,
@@ -76,6 +79,7 @@ public class TestHelper {
         try {
             JSONObject result = new JSONObject()
                 .put("name", name)
+                .put("className", className)
                 .put("method", method)
                 .put("entryTime", entryTime)
                 .put("exitTime", exitTime)
@@ -97,7 +101,7 @@ public class TestHelper {
         return new Span(
             "1",
             name,
-            "Class."+name,
+            "Class",
             method,
             entryTime,
             null,
@@ -116,7 +120,7 @@ public class TestHelper {
         return new Span(
             "1",
             name,
-            "Class."+name,
+            "Class",
             method,
             entryTime,
             null,
@@ -127,32 +131,74 @@ public class TestHelper {
     }
 
     public static Span spanTest(
+            final String id,
             final String name,
+            final String className,
             final String method,
             final long entryTime,
-            final long exitTime,
-            final List<Span> children
+            final long exitTime
     ){
         return new Span(
-                "1",
-                name,
-                "Class."+name,
-                method,
-                entryTime,
-                null,
-                exitTime,
-                null,
-                children
+            id,
+            name,
+            className,
+            method,
+            entryTime,
+            null,
+            exitTime,
+            null,
+            new ArrayList<>()
+        );
+    }
+
+
+    public static Span spanTest(
+        final String name,
+        final String className,
+        final String method,
+        final long entryTime,
+        final long exitTime
+    ){
+        return new Span(
+            "1",
+            name,
+            className,
+            method,
+            entryTime,
+            null,
+            exitTime,
+            null,
+            new ArrayList<>()
         );
     }
 
     public static Span spanTest(
-            final String name,
-            final String method,
-            final long entryTime,
-            final String[][] arguments,
-            final long exitTime,
-            final List<Span> children
+        final String name,
+        final String method,
+        final long entryTime,
+        final long exitTime,
+        final List<Span> children
+    ){
+        return new Span(
+            "1",
+            name,
+            "Class."+name,
+            method,
+            entryTime,
+            null,
+            exitTime,
+            null,
+            children
+        );
+    }
+
+    public static Span spanTest(
+        final String name,
+        final String method,
+        final long entryTime,
+        final String[][] arguments,
+        final long exitTime,
+        final List<Span> children
     ){
         return new Span(
             "1",
@@ -168,6 +214,29 @@ public class TestHelper {
     }
 
     public static Span spanTest(
+            final String id,
+            final String name,
+            final String className,
+            final String method,
+            final long entryTime,
+            final String[][] arguments,
+            final long exitTime,
+            final List<Span> children
+    ){
+        return new Span(
+                id,
+                name,
+                className,
+                method,
+                entryTime,
+                arguments,
+                exitTime,
+                null,
+                children
+        );
+    }
+
+    public static Span spanTest(
             final String name,
             final String method,
             final long entryTime,
@@ -176,7 +245,7 @@ public class TestHelper {
         return new Span(
             "1",
             name,
-            "Class."+name,
+            "Class",
             method,
             entryTime,
             null,

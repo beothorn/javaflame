@@ -162,7 +162,9 @@ public class Span{
         String nameEscaped = escapeString(nameMaybeWithReturn);
 
         StringBuilder result = new StringBuilder("{" +
+            "\"id\":\""+ id +"\"," +
             "\"name\":\""+ nameEscaped +"\"," +
+            "\"className\":\""+ className +"\"," +
             "\"method\":\""+ method +"\"," +
             "\"entryTime\":"+ entryTime +"," +
             "\"exitTime\":"+ exitTime +"," +
