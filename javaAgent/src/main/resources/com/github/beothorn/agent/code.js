@@ -33,11 +33,12 @@ function mergeSnapshots(data) {
 }
 
 function mergeSpans(spanA, spanB) {
-    if(spanA.name!== spanB.name){
-        throw new Error(`Different spans can't be merged. 
-            Function names are different '${spanA.name}' and '${spanB.span.name}'`);
+    if(spanA.id!== spanB.id){
+        throw new Error(`Different spans can't be merged.
+            Function ids are different '${spanA.name}:${spanA.id}' and '${spanB.span.name}:${spanB.span.id}'`);
     }
     let finalSpan = {
+        ...spanA,
         "name": spanA.name,
         "entryTime":spanA.entryTime,
         "exitTime":spanB.exitTime,
@@ -63,9 +64,7 @@ function mergeChildren(childrenA, childrenB){
     // merge spans
     const lastSpanOnChildrenA = childrenA[childrenA.length - 1];
     const firstSpanOnChildrenB = childrenB[0];
-    if(lastSpanOnChildrenA.name === firstSpanOnChildrenB.name 
-        && lastSpanOnChildrenA.entryTime === firstSpanOnChildrenB.entryTime
-    ){
+    if(lastSpanOnChildrenA.id === firstSpanOnChildrenB.id){
         const intersection = mergeSpans(lastSpanOnChildrenA, firstSpanOnChildrenB);
         const childrenAExceptLast = childrenA.slice(0, childrenA.length - 1);
         const childrenBExceptFirst = childrenB.slice(1);
