@@ -1,10 +1,11 @@
 package com.github.beothorn.agent;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Span{
 
-    public static final int ID_SIZE = 10_000_000;
+    public final static AtomicLong counter = new AtomicLong(0);
     private final String id;
     private final String name;
     private final String method;
@@ -25,7 +26,9 @@ public class Span{
         final String[][] arguments
     ){
         return new Span(
-            Double.toString((Math.random() * ID_SIZE)),
+            // Although all calls are contingent on this id gen, at least they are unique and can be ordered
+            // Performance is not the point of this agent anyway (and this is not so bad)
+            Long.toString(counter.getAndIncrement()),
             name,
             className,
             method,
@@ -46,7 +49,9 @@ public class Span{
         final Span parent
     ){
         return new Span(
-            Double.toString((Math.random() * ID_SIZE)),
+            // Although all calls are contingent on this id gen, at least they are unique and can be ordered
+            // Performance is not the point of this agent anyway (and this is not so bad)
+            Long.toString(counter.getAndIncrement()),
             name,
             className,
             method,
