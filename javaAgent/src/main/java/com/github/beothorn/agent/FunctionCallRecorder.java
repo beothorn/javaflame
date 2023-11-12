@@ -38,7 +38,7 @@ public class FunctionCallRecorder {
             onEnter(
                 threadName,
                 finalMethodSignature,
-                ownerClass,
+                method.getDeclaringClass().getName(),
                 methodName,
                 entryTime
             );
