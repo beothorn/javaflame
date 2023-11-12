@@ -13,18 +13,21 @@ const tests = {
                     "thread": "main",
                     "snapshotTime": 0,
                     "span": {
+                        "id": "1",
                         "name": "functionMain",
                         "entryTime":1000,
                         "exitTime":-1, // -1 means that the span has not exited.
                         "value":0, // while not finished, the value is 0. value is duration.
                         "children":[
                             {
+                                "id": "2",
                                 "name": "functionA",
                                 "entryTime":1000,
                                 "exitTime":-1, // -1 means that the span has not exited.
                                 "value":0,
                                 "children":[
                                     {
+                                        "id": "3",
                                         "name": "functionAA",
                                         "entryTime":1000,
                                         "exitTime":1100, // >-1 means that the span has exited.
@@ -40,18 +43,21 @@ const tests = {
                     "thread": "main",
                     "snapshotTime": 1101,
                     "span": {
+                        "id": "1",
                         "name": "functionMain",
                         "entryTime":1000,
                         "exitTime":-1, // program will always exit with the main function unfinished.
                         "value":0,
                         "children":[
                             {
+                                "id": "2",
                                 "name": "functionA",
                                 "entryTime":1000, // same as the previous entry time, so still executing functionA.
                                 "exitTime":1250, // >1 means that the span has exited.
                                 "value":250,
                                 "children":[
                                     {
+                                        "id": "4",
                                         "name": "functionAB",
                                         "entryTime":1100,
                                         "exitTime":1250, // >-1 means that the span has exited.
@@ -70,23 +76,27 @@ const tests = {
                 "thread": "main",
                 "snapshotTime": 1101, // snapshot 1101 is the same as the last snapshot.
                 "span": {
+                    "id": "1",
                     "name": "functionMain",
                     "entryTime":1000,
                     "exitTime":1250, // exit time is the same as the last child exit time.
                     "value":250, // exit time minus entry time
                     "children":[
                         {
+                            "id": "2",
                             "name": "functionA",
                             "entryTime":1000,
                             "exitTime":1250, // exit time is the same as the last child exit time.
                             "value":250,
                             "children":[
                                 {
+                                    "id": "3",
                                     "name": "functionAA",
                                     "entryTime":1000,
                                     "exitTime":1100,
                                     "value":100,
                                 },{
+                                    "id": "4",
                                     "name": "functionAB",
                                     "entryTime":1100,
                                     "exitTime":1250,
