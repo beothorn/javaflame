@@ -35,7 +35,13 @@ public class FunctionCallRecorder {
 
             final String threadName = Thread.currentThread().getName();
             long entryTime = System.currentTimeMillis();
-            onEnter(threadName, finalMethodSignature, methodName, entryTime);
+            onEnter(
+                threadName,
+                finalMethodSignature,
+                ownerClass,
+                methodName,
+                entryTime
+            );
         } catch (Exception e){
             // Should never get here, but if it does, execution needs to go on
             log(DEBUG, e.getMessage());
@@ -65,12 +71,14 @@ public class FunctionCallRecorder {
     public static void onEnter(
         final String threadName,
         final String name,
+        final String className,
         final String method,
         final long entryTime
     ){
         onEnter(
             threadName,
             name,
+            className,
             method,
             entryTime,
             null
@@ -80,6 +88,7 @@ public class FunctionCallRecorder {
     public static void onEnter(
             final String threadName,
             final String name,
+            final String className,
             final String method,
             final long entryTime,
             String[][] arguments
@@ -107,6 +116,7 @@ public class FunctionCallRecorder {
                 span(
                     threadName + "Root",
                     threadName + "Root",
+                    threadName + "Root",
                     entryTime,
                     arguments
                 )
@@ -116,6 +126,7 @@ public class FunctionCallRecorder {
 
         Span newCurrentRunning = stack.enter(
             name,
+            className,
             method,
             entryTime,
             arguments
