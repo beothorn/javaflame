@@ -30,7 +30,7 @@ public class MethodInstrumentationAgent {
 
     private static final long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
 
-    static ReentrantLock fileWriteLock = new ReentrantLock();
+    private static final ReentrantLock fileWriteLock = new ReentrantLock();
 
     public enum Flag{
 
