@@ -47,7 +47,7 @@ class SpanTest {
     void jsonWithNullValues() throws JSONException {
         String name = "x.funAcceptsNull";
         String method = "funAcceptsNull";
-        Span subject = span(name, method, 0, new String[][]{
+        Span subject = span(name,"Class."+name, method, 0, new String[][]{
                 {
                     "Object", null
                 }
@@ -261,16 +261,16 @@ class SpanTest {
     @Test
     void spanFlow(){
         Span subject = TestHelper.spanTest("root", "root", 0)
-                .enter("x.A", "A", 0)
-                    .enter("x.AA", "AA", 0)
+                .enter("x.A", "x", "A", 0)
+                    .enter("x.AA", "x", "AA", 0)
                         .leave(1)
-                    .enter("x.AB", "AB", 1)
+                    .enter("x.AB", "x", "AB", 1)
                         .leave(2)
                     .leave(2)
-                .enter("x.B", "B", 2)
-                    .enter("x.BA", "BA", 2)
+                .enter("x.B", "x", "B", 2)
+                    .enter("x.BA", "x", "BA", 2)
                         .leave(3)
-                    .enter("x.BB", "BB", 3)
+                    .enter("x.BB", "x", "BB", 3)
                         .leave(4);
 
         Span expected = TestHelper.spanTest("root", "root", 0, of(

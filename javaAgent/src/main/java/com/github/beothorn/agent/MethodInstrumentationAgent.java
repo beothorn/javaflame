@@ -14,10 +14,7 @@ import java.lang.instrument.Instrumentation;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,7 +29,7 @@ public class MethodInstrumentationAgent {
 
     private static final long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
 
-    static ReentrantLock fileWriteLock = new ReentrantLock();
+    private static final ReentrantLock fileWriteLock = new ReentrantLock();
 
     public enum Flag{
 
@@ -444,7 +441,7 @@ public class MethodInstrumentationAgent {
             if(noConstructorMode){
                 matcher = matcher.and(not(isConstructor()));
             }
-            if(typeDescription.getCanonicalName().equals("com.github.beothorn.sorts.algorithms.InplaceQuickSort")){
+            if(Objects.equals(typeDescription.getCanonicalName(), "com.github.beothorn.sorts.algorithms.InplaceQuickSort")){
                 matcher = matcher.and(nameContains("findNextValueSmallerOrEqualThanPivotOnRight"));
             }
             //findNextValueSmallerOrEqualThanPivotOnRight

@@ -152,6 +152,7 @@ class FunctionCallRecorderTest {
         onEnter(
             threadName,
             name,
+            "Class."+name,
             method,
             entryTime
         );

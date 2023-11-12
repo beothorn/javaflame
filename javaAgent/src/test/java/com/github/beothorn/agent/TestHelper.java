@@ -95,7 +95,9 @@ public class TestHelper {
             final long entryTime
     ){
         return new Span(
+            "1",
             name,
+            "Class."+name,
             method,
             entryTime,
             null,
@@ -112,7 +114,9 @@ public class TestHelper {
             final long exitTime
     ){
         return new Span(
+            "1",
             name,
+            "Class."+name,
             method,
             entryTime,
             null,
@@ -130,7 +134,9 @@ public class TestHelper {
             final List<Span> children
     ){
         return new Span(
+                "1",
                 name,
+                "Class."+name,
                 method,
                 entryTime,
                 null,
@@ -149,13 +155,15 @@ public class TestHelper {
             final List<Span> children
     ){
         return new Span(
-                name,
-                method,
-                entryTime,
-                arguments,
-                exitTime,
-                null,
-                children
+            "1",
+            name,
+            "Class."+name,
+            method,
+            entryTime,
+            arguments,
+            exitTime,
+            null,
+            children
         );
     }
 
@@ -166,7 +174,9 @@ public class TestHelper {
             final List<Span> children
     ){
         return new Span(
+            "1",
             name,
+            "Class."+name,
             method,
             entryTime,
             null,

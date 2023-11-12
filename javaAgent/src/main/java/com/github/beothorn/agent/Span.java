@@ -4,8 +4,11 @@ import java.util.*;
 
 public class Span{
 
+    public static final int ID_SIZE = 10_000_000;
+    private final String id;
     private final String name;
     private final String method;
+    private final String className;
     private Span parent;
     private List<Span> children;
     public final long entryTime;
@@ -16,12 +19,15 @@ public class Span{
 
     public static Span span(
         final String name,
+        final String className,
         final String method,
         final long entryTime,
         final String[][] arguments
     ){
         return new Span(
+            Double.toString((Math.random() * ID_SIZE)),
             name,
+            className,
             method,
             entryTime,
             arguments,
@@ -33,13 +39,16 @@ public class Span{
 
     public static Span span(
         final String name,
+        final String className,
         final String method,
         final long entryTime,
         final String[][] arguments,
         final Span parent
     ){
         return new Span(
+            Double.toString((Math.random() * ID_SIZE)),
             name,
+            className,
             method,
             entryTime,
             arguments,
@@ -50,7 +59,9 @@ public class Span{
     }
 
     public Span(
+        final String id,
         final String name,
+        final String className,
         final String method,
         final long entryTime,
         final String[][] arguments,
@@ -59,7 +70,9 @@ public class Span{
         final List<Span> children
     ){
         this.name = name;
+        this.id = id;
         this.method = method;
+        this.className = className;
         this.entryTime = entryTime;
         this.arguments = arguments;
         this.exitTime = exitTime;
@@ -70,11 +83,13 @@ public class Span{
 
     public Span enter(
         final String name,
+        final String className,
         final String method,
         final long entryTime
     ){
         return enter(
             name,
+            className,
             method,
             entryTime,
             null
@@ -83,12 +98,14 @@ public class Span{
 
     public Span enter(
             final String name,
+            final String className,
             final String method,
             final long entryTime,
             final String[][] arguments
     ){
         Span child = span(
             name,
+            className,
             method,
             entryTime,
             arguments,
@@ -114,7 +131,7 @@ public class Span{
      * To be called after the span has exited.
      * @param exitTime The exit timestamp of the span.
      * @param returnValue An array with two elements, the return type and the return value.
-     * @return
+     * @return Itself
      */
     public Span leave(
             final long exitTime,
@@ -263,7 +280,9 @@ public class Span{
             oldChildren.add(activeChild);
             children = new ArrayList<>();
             return Optional.of(new Span(
+                id,
                 name,
+                className,
                 method,
                 entryTime,
                 arguments,
@@ -292,7 +311,9 @@ public class Span{
         children = new ArrayList<>();
         children.add(activeChild);
         return Optional.of(new Span(
+            id,
             name,
+            className,
             method,
             entryTime,
             arguments,
