@@ -304,7 +304,7 @@ public class Span{
         Optional<Span> activeChildrenPastSpans = activeChild.removeFinishedFunction();
 
         boolean thereIsNoMoreChildren = children.isEmpty();
-        boolean noSpanWasRemoved = activeChildrenPastSpans.isEmpty();
+        boolean noSpanWasRemoved = !activeChildrenPastSpans.isPresent();
         boolean thereAreNoOldSpansToReturn = thereIsNoMoreChildren && noSpanWasRemoved;
 
         if(thereAreNoOldSpansToReturn){

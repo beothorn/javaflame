@@ -104,7 +104,7 @@ public class MethodInstrumentationAgent {
                 .map(File::new)
                 .filter(f -> f.exists() || f.isDirectory());
 
-        if(maybeFilePath.isPresent() && file.isEmpty()){
+        if(maybeFilePath.isPresent() && !file.isPresent()){
             log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
             log(ERROR, "Directory needs to exist!");
             log(ERROR, "Will use temporary instead");
@@ -362,6 +362,32 @@ public class MethodInstrumentationAgent {
         return Optional.of(filePath);
     }
 
+    public static byte[] readAllBytes(InputStream inputStream) throws IOException {
+        final int bufLen = 4 * 0x400; // 4KB
+        byte[] buf = new byte[bufLen];
+        int readLen;
+        IOException exception = null;
+
+        try {
+            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                while ((readLen = inputStream.read(buf, 0, bufLen)) != -1)
+                    outputStream.write(buf, 0, readLen);
+
+                return outputStream.toByteArray();
+            }
+        } catch (IOException e) {
+            exception = e;
+            throw e;
+        } finally {
+            if (exception == null) inputStream.close();
+            else try {
+                inputStream.close();
+            } catch (IOException e) {
+                exception.addSuppressed(e);
+            }
+        }
+    }
+
     private static void extractFromResources(final File snapshotDirectory, final String fileToBeExtracted) throws IOException {
         File indexHtmlOut = new File(snapshotDirectory.getAbsolutePath(), fileToBeExtracted);
         try(InputStream in = MethodInstrumentationAgent.class.getResourceAsStream(fileToBeExtracted)){
@@ -369,7 +395,7 @@ public class MethodInstrumentationAgent {
                 throw new RuntimeException("[JAVA_AGENT] ERROR Jar is corrupted, missing file '"+ fileToBeExtracted +"'");
             }
             try(FileOutputStream out = new FileOutputStream(indexHtmlOut)){
-                out.write(in.readAllBytes());
+                out.write(readAllBytes(in));
             }
         }
     }
