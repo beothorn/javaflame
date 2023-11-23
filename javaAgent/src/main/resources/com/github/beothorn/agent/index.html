@@ -67,6 +67,7 @@
     const dataForGraph = increaseZeroValues(mergedData);
 
 function showNode(id, n) {
+    console.log(n);
     document.getElementById(id).innerHTML = `<pre>{
     name: ${n.node.name},
     entryTime: ${n.node.entryTime},
