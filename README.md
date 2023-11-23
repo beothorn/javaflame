@@ -9,7 +9,7 @@ Want to see it in action? [Check out this rendering of some sort algorithms flam
 
 # Screenshots  
 
-![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotDetailed.png?raw=true)
+![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotTooltip.png?raw=true)
 
 # What is this for?
 
