@@ -1,7 +1,6 @@
 <html>
 
 <head>
-    <link rel="stylesheet" type="text/css" href="d3-flamegraph.css">
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
@@ -23,8 +22,7 @@
 </div>
 <div id="errorOutput"></div>
 <div id="charts"></div>
-<script type="text/javascript" src="d3.v7.js"></script>
-<script type="text/javascript" src="d3-flamegraph.min.js"></script>
+<script type="text/javascript" src="stackignite.js"></script>
 <script type="text/javascript" src="data.js"></script>
 <script type="text/javascript" src="code.js"></script>
 <script type="text/javascript">
@@ -68,11 +66,22 @@
 
     const dataForGraph = increaseZeroValues(mergedData);
 
+function showNode(id, n) {
+    document.getElementById(id).innerHTML = `<pre>{
+    name: ${n.node.name},
+    entryTime: ${n.node.entryTime},
+    exitTime: ${n.node.exitTime},
+    value": ${n.node.value},
+    arguments: ${JSON.stringify(n.node.arguments)},
+}</pre>`;
+}
+
     function buildGraph(dataToPlot){
         for(let i = 0; i < dataToPlot.length; i++){
-            const newDiv = document.createElement("div");
-            newDiv.classList.add("box");
-            newDiv.id = "chart"+i;
+            const box = document.createElement("div");
+            box.classList.add("box");
+
+            box.id = "chartBox"+i;
             const threadName = document.createElement("h1");
             threadName.classList.add("threadName");
             threadName.appendChild(document.createTextNode(dataToPlot[i].thread));
@@ -80,26 +89,36 @@
             hide.appendChild(document.createTextNode("-"));
             hide.classList.add("hideButton");
             hide.addEventListener("click", () => {
-                if(newDiv.classList.contains("smallBox")){
-                    newDiv.classList.remove("smallBox");
+                if(box.classList.contains("smallBox")){
+                    box.classList.remove("smallBox");
                     hide.textContent = "-";
                 } else {
-                    newDiv.classList.add("smallBox");
+                    box.classList.add("smallBox");
                     hide.textContent = "+";
                 }
             });
-            newDiv.appendChild(threadName);
-            newDiv.appendChild(hide);
-            charts.appendChild(newDiv);
-            // get div charts width
-            const chartsWidth = charts.offsetWidth;
-
-            var chart = flamegraph().width(chartsWidth - 10); // minus border
+            box.appendChild(threadName);
+            box.appendChild(hide);
+            charts.appendChild(box);
 
             try {
-                d3.select("#"+newDiv.id)
-                    .datum(dataToPlot[i].span)
-                    .call(chart);
+                const flamegraph = document.createElement("div");
+                flamegraph.id = "flamegraph"+i;
+                flamegraph.classList.add("flamegraph");
+                box.appendChild(flamegraph);
+
+                const nodeOutput = document.createElement("div");
+                nodeOutput.id = "nodeOut"+i;
+                box.appendChild(nodeOutput);
+                loadData({
+                    elementId: flamegraph.id,
+                    data: dataToPlot[i].span,
+                    graphType: "ChildrenCallCount",
+                    colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
+                    zoomOnClick: true,
+                    onClick: (n) => showNode(nodeOutput.id, n),
+                    tooltip: (n) => `<div class="tooltip">${n.name}</div>`
+                });
             } catch (e) {
                 const errorOutput = document.getElementById("errorOutput");
                 errorOutput.appendChild(document.createTextNode(`There was an error loading the chart.`));

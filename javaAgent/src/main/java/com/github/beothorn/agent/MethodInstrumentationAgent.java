@@ -265,9 +265,7 @@ public class MethodInstrumentationAgent {
             extractFromResources(snapshotDirectory, "code.js");
             extractFromResources(snapshotDirectory, "style.css");
             extractFromResources(snapshotDirectory, "logo.svg");
-            extractFromResources(snapshotDirectory, "d3.v7.js");
-            extractFromResources(snapshotDirectory, "d3-flamegraph.css");
-            extractFromResources(snapshotDirectory, "d3-flamegraph.min.js");
+            extractFromResources(snapshotDirectory, "stackignite.js");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
