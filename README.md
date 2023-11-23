@@ -65,7 +65,6 @@ Anything without exclusions will generate lots of data. Either it will not rende
 | out:path | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
 
 
-## Libraries used
+## Libraries u
 
-[d3-flame-graph](https://github.com/spiermar/d3-flame-graph)  
 [ByteBuddy](https://bytebuddy.net)  

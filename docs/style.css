@@ -59,3 +59,18 @@ body {
 .hideButton {
     float: right;
 }
+
+.tooltip{
+    background: #edff59;
+    padding: 10px;
+    border-radius: 3px;
+    border: 1px solid black;
+    box-shadow: 7px 4px 1px rgba(0, 0, 0, 0.3);
+    border: 1px solid black;
+    font-size: x-small;
+    font-family: monospace;
+}
+
+.flamegraph{
+    height: 20rem;
+}
