@@ -8,7 +8,7 @@
 <div id="header" class="box">
     <img id="logo" width="100px" src="./logo.svg"/>
     <div id="metadata">
-        <p>Javaflame v12.0.0</p>
+        <p>Javaflame v13.0.0</p>
         <p id="arguments"></p>
         <p>First snapshot timestamp: <span id="startTimestamp"></span></p>
         <p>Last snapshot timestamp: &nbsp;<span id="finalTimestamp"></span></p>
@@ -75,6 +75,7 @@
     const dataForGraph = increaseZeroValues(mergedData);
 
 function showNode(id, n) {
+    console.log(n);
     document.getElementById(id).innerHTML = `<pre>{
     name: ${n.node.name},
     entryTime: ${n.node.entryTime},
@@ -110,16 +111,16 @@ function showNode(id, n) {
             charts.appendChild(box);
 
             try {
-                const flamegraph = document.createElement("div");
-                flamegraph.id = "flamegraph"+i;
-                flamegraph.classList.add("flamegraph");
-                box.appendChild(flamegraph);
+                const flamegraphByChildrenCount = document.createElement("div");
+                flamegraphByChildrenCount.id = "flamegraphByChildrenCount"+i;
+                flamegraphByChildrenCount.classList.add("flamegraph");
+                const labelByChildrenCount = document.createElement("h2");
+                labelByChildrenCount.appendChild(document.createTextNode("ByChildrenCount"));
+                box.appendChild(labelByChildrenCount);  
+                box.appendChild(flamegraphByChildrenCount);
 
-                const nodeOutput = document.createElement("div");
-                nodeOutput.id = "nodeOut"+i;
-                box.appendChild(nodeOutput);
                 loadData({
-                    elementId: flamegraph.id,
+                    elementId: flamegraphByChildrenCount.id,
                     data: dataToPlot[i].span,
                     graphType: "ChildrenCallCount",
                     colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
@@ -127,6 +128,28 @@ function showNode(id, n) {
                     onClick: (n) => showNode(nodeOutput.id, n),
                     tooltip: (n) => `<div class="tooltip">${n.name}</div>`
                 });
+
+                const flamegraphByTimestamp = document.createElement("div");
+                flamegraphByTimestamp.id = "flamegraphByTimestamp"+i;
+                flamegraphByTimestamp.classList.add("flamegraph");
+                const labelByTimestamp = document.createElement("h2");
+                labelByTimestamp.appendChild(document.createTextNode("By Execution Time"));
+                box.appendChild(labelByTimestamp);
+                box.appendChild(flamegraphByTimestamp);
+
+                loadData({
+                    elementId: flamegraphByTimestamp.id,
+                    data: dataToPlot[i].span,
+                    graphType: "Timestamp",
+                    colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
+                    zoomOnClick: true,
+                    onClick: (n) => showNode(nodeOutput.id, n),
+                    tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`
+                });
+
+                const nodeOutput = document.createElement("div");
+                nodeOutput.id = "nodeOut"+i;
+                box.appendChild(nodeOutput);
             } catch (e) {
                 const errorOutput = document.getElementById("errorOutput");
                 errorOutput.appendChild(document.createTextNode(`There was an error loading the chart.`));
