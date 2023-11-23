@@ -86,6 +86,9 @@ function increaseSpanValue(span) {
     if(span.children && span.children.length > 0){
         newSpan.children = span.children.map(increaseSpanValue);
         newSpan.value = newSpan.children.map(c => c.value).reduce((a, b) => a + b);
+        if ( newSpan.exitTime == -1) {
+            newSpan.exitTime = newSpan.children[newSpan.children.length -1].exitTime;
+        }
     } else {
         if(newSpan.value == 0) newSpan.value = 1;
     }
