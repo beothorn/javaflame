@@ -27,6 +27,14 @@
 <script type="text/javascript" src="code.js"></script>
 <script type="text/javascript">
 
+    // If data file is not loaded data is undefined
+    // check if data is a declared variable
+    if (typeof data === 'undefined') {
+        const error = document.createElement("h1");
+        error.textContent = "No data loaded. Maybe nothing matches the filters?";
+        document.body.appendChild(error);
+    }
+
     const argumentsField = document.getElementById("arguments");
     argumentsField.innerHTML = executionMetadata;
 
@@ -120,9 +128,9 @@ function showNode(id, n) {
                         tooltip: (n) => `<div class="tooltip">${n.name}</div>`
                     });
 
-                    flamegraphByChildrenCountContainer.style.display = "none"; 
-                } 
-                
+                    flamegraphByChildrenCountContainer.style.display = "none";
+                }
+
                 if (flamegraphByChildrenCountContainer.style.display === "block") {
                     flamegraphByChildrenCountContainer.style.display = "none";
                     showGraph.textContent = "Show FlameGraph";
@@ -148,7 +156,7 @@ function showNode(id, n) {
                     flamegraphByTimestamp.id = "flamegraphByTimestamp"+i;
                     flamegraphByTimestamp.classList.add("flamegraph");
                     const labelByTimestamp = document.createElement("h2");
-                    const rootTime = dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime; 
+                    const rootTime = dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime;
                     if (rootTime === 0) {
                         labelByTimestamp.appendChild(document.createTextNode(`Execution Time took less than 1ms`));
                     } else {
@@ -159,8 +167,8 @@ function showNode(id, n) {
                     const byTimestampNodeOutput = document.createElement("div");
                     byTimestampNodeOutput.id = "byTimestampNodeOutput"+i;
                     flamegraphByTimestampContainer.appendChild(byTimestampNodeOutput);
-                    
-                    
+
+
                     loadData({
                         elementId: flamegraphByTimestamp.id,
                         data: dataToPlot[i].span,
@@ -171,9 +179,9 @@ function showNode(id, n) {
                         tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`
                     });
 
-                    flamegraphByTimestampContainer.style.display = "none"; 
+                    flamegraphByTimestampContainer.style.display = "none";
                 }
-                
+
                 if (flamegraphByTimestampContainer.style.display === "block") {
                     flamegraphByTimestampContainer.style.display = "none";
                     showExecTime.textContent = "Show Execution Time";
