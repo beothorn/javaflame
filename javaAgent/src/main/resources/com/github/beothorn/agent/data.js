@@ -1,7 +1,7 @@
 var executionMetadata = "some arguments";
 
 var data = [[
-{"thread":"main","snapshotTime":1698585698020,"span":{"name":"mainRoot","entryTime":1698585697056,"exitTime":1698585697452,"value":396,"children":[{"name":"com.github.beothorn.App.main([Ljava.lang.String; arg0 = [])","entryTime":1698585697056,"exitTime":1698585697452,"value":396,"children":[{"name":"com.github.junrar.Junrar.extract(java.lang.String arg0 = /tmp/foo.rar, java.lang.String arg1 = /tmp)","entryTime":1698585697254,"exitTime":1698585697452,"value":198,"children":[{"name":"com.github.junrar.Junrar.validateRarPath(java.io.File arg0 = /tmp/foo.rar)","entryTime":1698585697452,"exitTime":1698585697452,"value":0}
+{"thread":"main","snapshotTime":1698585698020,"span":{"name":"mainRoot","entryTime":1698585697056,"exitTime":-1,"value":396,"children":[{"name":"com.github.beothorn.App.main([Ljava.lang.String; arg0 = [])","entryTime":1698585697056,"exitTime":1698585697452,"value":396,"children":[{"name":"com.github.junrar.Junrar.extract(java.lang.String arg0 = /tmp/foo.rar, java.lang.String arg1 = /tmp)","entryTime":1698585697254,"exitTime":1698585697452,"value":198,"children":[{"name":"com.github.junrar.Junrar.validateRarPath(java.io.File arg0 = /tmp/foo.rar)","entryTime":1698585697452,"exitTime":1698585697452,"value":0}
 ]}
 ]}
 ]}

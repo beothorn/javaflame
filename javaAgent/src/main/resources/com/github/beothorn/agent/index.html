@@ -135,7 +135,7 @@ function showNode(id, n) {
             // Execution Time
 
             const showExecTime = document.createElement("button");
-            showExecTime.appendChild(document.createTextNode("Show FlameGraph"));
+            showExecTime.appendChild(document.createTextNode("Show Execution Time"));
             showExecTime.classList.add("topButton");
             const flamegraphByTimestampContainer = document.createElement("div");
             flamegraphByTimestampContainer.classList.add("container");
@@ -148,13 +148,16 @@ function showNode(id, n) {
                     flamegraphByTimestamp.id = "flamegraphByTimestamp"+i;
                     flamegraphByTimestamp.classList.add("flamegraph");
                     const labelByTimestamp = document.createElement("h2");
-                    labelByTimestamp.appendChild(document.createTextNode("Execution Time"));
+                    const rootTime = dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime; 
+                    console.log(dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime);
+                    labelByTimestamp.appendChild(document.createTextNode(`Execution Time ${rootTime}ms (Values with 1ms or more)`));
                     flamegraphByTimestampContainer.appendChild(labelByTimestamp);
                     flamegraphByTimestampContainer.appendChild(flamegraphByTimestamp);
                     const byTimestampNodeOutput = document.createElement("div");
                     byTimestampNodeOutput.id = "byTimestampNodeOutput"+i;
                     flamegraphByTimestampContainer.appendChild(byTimestampNodeOutput);
-
+                    
+                    
                     loadData({
                         elementId: flamegraphByTimestamp.id,
                         data: dataToPlot[i].span,
