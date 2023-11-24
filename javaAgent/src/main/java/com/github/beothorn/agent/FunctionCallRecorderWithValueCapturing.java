@@ -55,7 +55,7 @@ public class FunctionCallRecorderWithValueCapturing {
                 }
                 shouldDetailThread.put(threadName, true);
             } else {
-                prettyCall.append("JAVAFLAME_DETAILED_TOSTRING");
+                prettyCall.append("ARGUMENT_CAPTURING_OFF");
             }
             prettyCall.append(")");
             long entryTime = System.currentTimeMillis();
