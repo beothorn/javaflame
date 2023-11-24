@@ -297,7 +297,6 @@ function loadData(config){
     canvas.height = parentDiv.clientHeight;
     
     
-
     // Append the canvas to the parent div
     parentDiv.appendChild(canvas);
     canvas.style.width='100%';
@@ -308,7 +307,7 @@ function loadData(config){
     const canvasHeight = canvas.offsetHeight;
 
 
-    const lineHeight = config.lineHeight || 20;
+    const lineHeight = config.lineHeight || 24;
     let lines = [];
     
     const ctx = canvas.getContext("2d");

@@ -81,73 +81,111 @@ function showNode(id, n) {
         for(let i = 0; i < dataToPlot.length; i++){
             const box = document.createElement("div");
             box.classList.add("box");
+            box.classList.add("smallBox");
 
             box.id = "chartBox"+i;
             const threadName = document.createElement("h1");
             threadName.classList.add("threadName");
             threadName.appendChild(document.createTextNode(dataToPlot[i].thread));
-            const hide = document.createElement("button");
-            hide.appendChild(document.createTextNode("-"));
-            hide.classList.add("hideButton");
-            hide.addEventListener("click", () => {
-                if(box.classList.contains("smallBox")){
-                    box.classList.remove("smallBox");
-                    hide.textContent = "-";
+
+            // Flamegraph
+            const showGraph = document.createElement("button");
+            showGraph.appendChild(document.createTextNode("Show FlameGraph"));
+            showGraph.classList.add("topButton");
+            const flamegraphByChildrenCountContainer = document.createElement("div");
+            flamegraphByChildrenCountContainer.classList.add("container");
+            flamegraphByChildrenCountContainer.style.display = "none";
+            let flamegraphByChildrenCount;
+            showGraph.addEventListener("click", () => {
+                if (!flamegraphByChildrenCount) {
+                    flamegraphByChildrenCountContainer.style.display = "block";
+                    flamegraphByChildrenCount = document.createElement("div");
+                    flamegraphByChildrenCount.id = "flamegraphByChildrenCount"+i;
+                    flamegraphByChildrenCount.classList.add("flamegraph");
+                    const labelByChildrenCount = document.createElement("h2");
+                    labelByChildrenCount.appendChild(document.createTextNode("FlameGraph"));
+                    flamegraphByChildrenCountContainer.appendChild(labelByChildrenCount);
+                    flamegraphByChildrenCountContainer.appendChild(flamegraphByChildrenCount);
+                    const flameGraphNodeOutput = document.createElement("div");
+                    flameGraphNodeOutput.id = "flameGraphNodeOutput"+i;
+                    flamegraphByChildrenCountContainer.appendChild(flameGraphNodeOutput);
+
+                    loadData({
+                        elementId: flamegraphByChildrenCount.id,
+                        data: dataToPlot[i].span,
+                        graphType: "ChildrenCallCount",
+                        colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
+                        zoomOnClick: true,
+                        onClick: (n) => showNode(flameGraphNodeOutput.id, n),
+                        tooltip: (n) => `<div class="tooltip">${n.name}</div>`
+                    });
+
+                    flamegraphByChildrenCountContainer.style.display = "none"; 
+                } 
+                
+                if (flamegraphByChildrenCountContainer.style.display === "block") {
+                    flamegraphByChildrenCountContainer.style.display = "none";
+                    showGraph.textContent = "Show FlameGraph";
                 } else {
-                    box.classList.add("smallBox");
-                    hide.textContent = "+";
+                    flamegraphByChildrenCountContainer.style.display = "block";
+                    showGraph.textContent = "Hide FlameGraph";
                 }
             });
+
+            // Execution Time
+
+            const showExecTime = document.createElement("button");
+            showExecTime.appendChild(document.createTextNode("Show FlameGraph"));
+            showExecTime.classList.add("topButton");
+            const flamegraphByTimestampContainer = document.createElement("div");
+            flamegraphByTimestampContainer.classList.add("container");
+            flamegraphByTimestampContainer.style.display = "none";
+            let flamegraphByTimestamp;
+            showExecTime.addEventListener("click", () => {
+                if (!flamegraphByTimestamp) {
+                    flamegraphByTimestampContainer.style.display = "block";
+                    flamegraphByTimestamp = document.createElement("div");
+                    flamegraphByTimestamp.id = "flamegraphByTimestamp"+i;
+                    flamegraphByTimestamp.classList.add("flamegraph");
+                    const labelByTimestamp = document.createElement("h2");
+                    labelByTimestamp.appendChild(document.createTextNode("Execution Time"));
+                    flamegraphByTimestampContainer.appendChild(labelByTimestamp);
+                    flamegraphByTimestampContainer.appendChild(flamegraphByTimestamp);
+                    const byTimestampNodeOutput = document.createElement("div");
+                    byTimestampNodeOutput.id = "byTimestampNodeOutput"+i;
+                    flamegraphByTimestampContainer.appendChild(byTimestampNodeOutput);
+
+                    loadData({
+                        elementId: flamegraphByTimestamp.id,
+                        data: dataToPlot[i].span,
+                        graphType: "Timestamp",
+                        colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
+                        zoomOnClick: true,
+                        onClick: (n) => showNode(byTimestampNodeOutput.id, n),
+                        tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`
+                    });
+
+                    flamegraphByTimestampContainer.style.display = "none"; 
+                }
+                
+                if (flamegraphByTimestampContainer.style.display === "block") {
+                    flamegraphByTimestampContainer.style.display = "none";
+                    showExecTime.textContent = "Show Execution Time";
+                } else {
+                    flamegraphByTimestampContainer.style.display = "block";
+                    showExecTime.textContent = "Hide Execution Time";
+                }
+
+            });
+
+            // ---------------------------
+
             box.appendChild(threadName);
-            box.appendChild(hide);
+            box.appendChild(showGraph);
+            box.appendChild(showExecTime);
+            box.appendChild(flamegraphByChildrenCountContainer);
+            box.appendChild(flamegraphByTimestampContainer);
             charts.appendChild(box);
-
-            try {
-                const flamegraphByChildrenCount = document.createElement("div");
-                flamegraphByChildrenCount.id = "flamegraphByChildrenCount"+i;
-                flamegraphByChildrenCount.classList.add("flamegraph");
-                const labelByChildrenCount = document.createElement("h2");
-                labelByChildrenCount.appendChild(document.createTextNode("ByChildrenCount"));
-                box.appendChild(labelByChildrenCount);
-                box.appendChild(flamegraphByChildrenCount);
-
-                loadData({
-                    elementId: flamegraphByChildrenCount.id,
-                    data: dataToPlot[i].span,
-                    graphType: "ChildrenCallCount",
-                    colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
-                    zoomOnClick: true,
-                    onClick: (n) => showNode(nodeOutput.id, n),
-                    tooltip: (n) => `<div class="tooltip">${n.name}</div>`
-                });
-
-                const flamegraphByTimestamp = document.createElement("div");
-                flamegraphByTimestamp.id = "flamegraphByTimestamp"+i;
-                flamegraphByTimestamp.classList.add("flamegraph");
-                const labelByTimestamp = document.createElement("h2");
-                labelByTimestamp.appendChild(document.createTextNode("By Execution Time"));
-                box.appendChild(labelByTimestamp);
-                box.appendChild(flamegraphByTimestamp);
-
-                loadData({
-                    elementId: flamegraphByTimestamp.id,
-                    data: dataToPlot[i].span,
-                    graphType: "Timestamp",
-                    colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
-                    zoomOnClick: true,
-                    onClick: (n) => showNode(nodeOutput.id, n),
-                    tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`
-                });
-
-                const nodeOutput = document.createElement("div");
-                nodeOutput.id = "nodeOut"+i;
-                box.appendChild(nodeOutput);
-            } catch (e) {
-                const errorOutput = document.getElementById("errorOutput");
-                errorOutput.appendChild(document.createTextNode(`There was an error loading the chart.`));
-                errorOutput.appendChild(document.createTextNode(`You can still open the devtools (F12) and type "mergedData" to see the graph as json.`));
-                errorOutput.appendChild(document.createTextNode(`The exception: ${e}`));
-            }
         }
     }
 
