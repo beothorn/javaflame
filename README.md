@@ -33,7 +33,7 @@ You still can use it to have some idea about the performance, if you assume the 
 - Pure html output in a simple file and all captured data available as a JSON at data.js.
 - Optional, start and stop recording whenever a method with a certain name is called.
 
-## Usage
+# Usage
 
 `java -javaagent:javaAgent.jar -jar yourApp.jar` 
 
@@ -47,9 +47,9 @@ For example, this will silently output a flame graph including function paramete
 
 Anything without exclusions will generate lots of data. Either it will not render or you will need to filter it first.
 
-## Arguments
+# Arguments
 
-### Arguments
+## Arguments
 
 | Flag | Description | Example |
 | --- | --- | --- |
@@ -64,7 +64,11 @@ Anything without exclusions will generate lots of data. Either it will not rende
 | stopRecordingTriggerFunction:method | Will stop recording the stack when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=stopRecordingTriggerFunction:afterJobIsDone -jar yourApp.jar` |
 | out:path | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
 
+# Known issues  
 
-## Libraries u
+- May conflict with libraries that do bytecode manipulation (For example: Guice)  
+- Debugging will not match the source code for methods that match the filter, so turn it off when debugging on IDE.  
+
+# Libraries
 
 [ByteBuddy](https://bytebuddy.net)  
