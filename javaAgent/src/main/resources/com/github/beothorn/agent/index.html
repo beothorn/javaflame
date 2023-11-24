@@ -149,8 +149,11 @@ function showNode(id, n) {
                     flamegraphByTimestamp.classList.add("flamegraph");
                     const labelByTimestamp = document.createElement("h2");
                     const rootTime = dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime; 
-                    console.log(dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime);
-                    labelByTimestamp.appendChild(document.createTextNode(`Execution Time ${rootTime}ms (Values with 1ms or more)`));
+                    if (rootTime === 0) {
+                        labelByTimestamp.appendChild(document.createTextNode(`Execution Time took less than 1ms`));
+                    } else {
+                        labelByTimestamp.appendChild(document.createTextNode(`Execution Time ${rootTime}ms (Values with 1ms or more)`));
+                    }
                     flamegraphByTimestampContainer.appendChild(labelByTimestamp);
                     flamegraphByTimestampContainer.appendChild(flamegraphByTimestamp);
                     const byTimestampNodeOutput = document.createElement("div");
