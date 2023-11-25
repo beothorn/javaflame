@@ -110,19 +110,19 @@ class MethodInstrumentationAgentTest {
     void commandFile(){
         assertEquals(
             "C:/foo/bar",
-            MethodInstrumentationAgent.outputFileOnArgument("out:C:/foo/bar").orElseThrow()
+            MethodInstrumentationAgent.outputFileOnArgument("out:C:/foo/bar").orElseThrow(RuntimeException::new)
         );
         assertEquals(
                 "C:/foo/bar",
-                MethodInstrumentationAgent.outputFileOnArgument("mode:xyz,out:C:/foo/bar").orElseThrow()
+                MethodInstrumentationAgent.outputFileOnArgument("mode:xyz,out:C:/foo/bar").orElseThrow(RuntimeException::new)
         );
         assertEquals(
                 "C:/foo/bar",
-                MethodInstrumentationAgent.outputFileOnArgument("out:C:/foo/bar,mode:xyz").orElseThrow()
+                MethodInstrumentationAgent.outputFileOnArgument("out:C:/foo/bar,mode:xyz").orElseThrow(RuntimeException::new)
         );
         assertEquals(
                 "C:/foo/bar",
-                MethodInstrumentationAgent.outputFileOnArgument("mode:abc,out:C:/foo/bar,mode:xyz").orElseThrow()
+                MethodInstrumentationAgent.outputFileOnArgument("mode:abc,out:C:/foo/bar,mode:xyz").orElseThrow(RuntimeException::new)
         );
     }
 

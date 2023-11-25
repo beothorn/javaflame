@@ -139,8 +139,8 @@ class FunctionCallRecorderTest {
     @Test
     void shouldNotPrintEmptyCallStack(){
         assertTrue(FunctionCallRecorder.stackPerThread.isEmpty());
-        assertTrue(FunctionCallRecorder.getOldCallStack().isEmpty());
-        assertTrue(FunctionCallRecorder.getFinalCallStack().isEmpty());
+        assertTrue(!FunctionCallRecorder.getOldCallStack().isPresent());
+        assertTrue(!FunctionCallRecorder.getFinalCallStack().isPresent());
     }
 
     private static void e(
@@ -160,7 +160,7 @@ class FunctionCallRecorderTest {
 
     private static JSONArray getOldStack() {
         String jsonStringResult = FunctionCallRecorder.getOldCallStack()
-            .orElseThrow()
+            .orElseThrow(RuntimeException::new)
             .replaceAll("\n", "")
             .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,");
         try {
@@ -172,7 +172,7 @@ class FunctionCallRecorderTest {
 
     private static JSONArray getFinalStack() {
         String jsonStringResult = FunctionCallRecorder.getFinalCallStack()
-            .orElseThrow()
+            .orElseThrow(RuntimeException::new)
             .replaceAll("\n", "")
             .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,");
         try {

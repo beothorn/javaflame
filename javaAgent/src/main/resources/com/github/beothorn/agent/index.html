@@ -111,7 +111,7 @@ function showNode(id, n) {
                     flamegraphByChildrenCount.id = "flamegraphByChildrenCount"+i;
                     flamegraphByChildrenCount.classList.add("flamegraph");
                     const labelByChildrenCount = document.createElement("h2");
-                    labelByChildrenCount.appendChild(document.createTextNode("FlameGraph"));
+                    labelByChildrenCount.appendChild(document.createTextNode("CallGraph"));
                     flamegraphByChildrenCountContainer.appendChild(labelByChildrenCount);
                     flamegraphByChildrenCountContainer.appendChild(flamegraphByChildrenCount);
                     const flameGraphNodeOutput = document.createElement("div");
@@ -133,10 +133,10 @@ function showNode(id, n) {
 
                 if (flamegraphByChildrenCountContainer.style.display === "block") {
                     flamegraphByChildrenCountContainer.style.display = "none";
-                    showGraph.textContent = "Show FlameGraph";
+                    showGraph.textContent = "Show Call Graph";
                 } else {
                     flamegraphByChildrenCountContainer.style.display = "block";
-                    showGraph.textContent = "Hide FlameGraph";
+                    showGraph.textContent = "Hide Call Graph";
                 }
             });
 

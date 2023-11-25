@@ -8,7 +8,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import java.util.Optional;
 
 import static com.github.beothorn.agent.Span.span;
-import static java.util.List.of;
+import static com.github.beothorn.agent.TestHelper.of;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SpanTest {
@@ -158,7 +158,7 @@ class SpanTest {
         Span expectedWithoutOld = TestHelper.spanTest("root", "root", 0, 4, of(
             TestHelper.spanTest("x.D", "D", 3, -1)
         ));
-        Span actualOnlyOld = subject.removeFinishedFunction().orElseThrow();
+        Span actualOnlyOld = subject.removeFinishedFunction().orElseThrow(RuntimeException::new);
         assertEquals(expectedWithoutOld, subject);
         assertEquals(expectedOnlyOld, actualOnlyOld);
     }
@@ -173,7 +173,7 @@ class SpanTest {
         Span expected = TestHelper.spanTest("root", "root", 0, of(
             TestHelper.spanTest("x.A", "A", 0)
         ));
-        assertTrue(subject.removeFinishedFunction().isEmpty());
+        assertTrue(!subject.removeFinishedFunction().isPresent());
         assertEquals(expected, subject);
     }
 
@@ -198,7 +198,7 @@ class SpanTest {
             ))
         ));
 
-        Span actualOnlyOld = subject.removeFinishedFunction().orElseThrow();
+        Span actualOnlyOld = subject.removeFinishedFunction().orElseThrow(RuntimeException::new);
         assertEquals(expectedWithoutOld, subject);
         assertEquals(expectedOnlyOld, actualOnlyOld);
     }
@@ -230,7 +230,7 @@ class SpanTest {
             ))
         ));
 
-        Span actualOld = subject.removeFinishedFunction().orElseThrow();
+        Span actualOld = subject.removeFinishedFunction().orElseThrow(RuntimeException::new);
 
         assertEquals(expectedWithoutOld, subject);
         assertEquals(expectedOnlyOld, actualOld);
@@ -255,7 +255,7 @@ class SpanTest {
 
         Optional<Span> actualOld = subject.removeFinishedFunction();
 
-        assertTrue(actualOld.isEmpty());
+        assertTrue(!actualOld.isPresent());
         assertEquals(expected, subject);
     }
 
@@ -303,7 +303,7 @@ class SpanTest {
         ));
         Span expectedWithoutOld = TestHelper.spanTest("x.foo", "foo", 0, 2);
 
-        Span actualOld = subject.removeFinishedFunction().orElseThrow();
+        Span actualOld = subject.removeFinishedFunction().orElseThrow(RuntimeException::new);
 
         assertEquals(expectedWithoutOld, subject);
         assertEquals(expectedOnlyOld, actualOld);
