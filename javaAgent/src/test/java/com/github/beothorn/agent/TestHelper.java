@@ -254,4 +254,12 @@ public class TestHelper {
             children
         );
     }
+
+    public static <T> List<T> of(T... elements){
+        List<T> result = new ArrayList<>();
+        for (int i = 0; i < elements.length; i++) {
+            result.add(elements[i]);
+        }
+        return result;
+    }
 }

@@ -160,7 +160,7 @@ public class TestDummyProgram {
 
     private static String getFinalStack() {
         return FunctionCallRecorder.getFinalCallStack()
-            .orElseThrow()
+            .orElseThrow(RuntimeException::new)
             .replaceAll("\n", "")
             .replaceAll("\"snapshotTime\":[0-9]+,", "\"snapshotTime\":0,")
             .replaceAll("\"entryTime\":[0-9]+,", "\"entryTime\":0,")
