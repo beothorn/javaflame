@@ -126,21 +126,22 @@ public class MethodInstrumentationAgent {
         Optional<String> maybeStartRecordingTriggerFunction = argumentStartRecordingTriggerFunction(argument);
         Optional<String> maybeStopRecordingTriggerFunction = argumentStopRecordingTriggerFunction(argument);
 
+        String[] allFlags = allFlagsOnArgument(argument);
+        String allFlagsAsString = Arrays.toString(allFlags);
+        String outputDirectory = snapshotDirectory.getAbsolutePath();
+        String excludesAsString = MethodInstrumentationAgent.argumentsToString(excludes);
+        String filtersAsString = MethodInstrumentationAgent.argumentsToString(filters);
+
         String executionMetadata = "logLevel :" + currentLevel.name()
-                + " flags:" + Arrays.toString(allFlagsOnArgument(argument))
-                + " output to '" + snapshotDirectory.getAbsolutePath() + "'"
-                + " excludes:" + Arrays.toString(excludes.toArray())
-                + " filters:" + Arrays.toString(filters.toArray())
+                + " flags:" + allFlagsAsString
+                + " output to '" + outputDirectory + "'"
+                + " excludes:" + excludesAsString
+                + " filters:" + filtersAsString
                 + maybeStartRecordingTriggerFunction.map(s -> "Start recording trigger function" + s).orElse("")
                 + maybeStopRecordingTriggerFunction.map(s -> "Stop recording trigger function" + s).orElse("");
         log(DEBUG, executionMetadata);
 
-        String executionMetadataFormatted = "<p>Flags: " + Arrays.toString(allFlagsOnArgument(argument)) + "</p>"
-                + "<p>Output: '" + snapshotDirectory.getAbsolutePath() + "'</p>"
-                + "<p>Excludes: " + Arrays.toString(excludes.toArray()) + "</p>"
-                + "<p>Filters: " + Arrays.toString(filters.toArray()) + "</p>"
-                + maybeStartRecordingTriggerFunction.map(s -> "<p>Start recording trigger function" + s + "</p>").orElse("")
-                + maybeStopRecordingTriggerFunction.map(s -> "<p>Stop recording trigger function" + s + "</p>").orElse("");
+        String executionMetadataFormatted = getExecutionMetadataAsHtml(allFlagsAsString, outputDirectory, excludesAsString, filtersAsString, maybeStartRecordingTriggerFunction, maybeStopRecordingTriggerFunction);
 
         maybeStartRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStartTrigger);
         maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
@@ -193,6 +194,29 @@ public class MethodInstrumentationAgent {
             snapshotThread.setDaemon(true);
             snapshotThread.start();
         }
+    }
+
+    public static String argumentsToString(List<String[]> args) {
+        return "[" + args.stream()
+                .map(Arrays::toString)
+                .collect(Collectors.joining(", "))
+                + "]";
+    }
+
+    public static String getExecutionMetadataAsHtml(
+        String allFlagsAsString,
+        String outputDirectory,
+        String excludesAsString,
+        String filtersAsString,
+        Optional<String> maybeStartRecordingTriggerFunction,
+        Optional<String> maybeStopRecordingTriggerFunction
+    ) {
+        return "<p>Flags: " + allFlagsAsString + "</p>"
+                + "<p>Output: '" + outputDirectory + "'</p>"
+                + "<p>Excludes: " + excludesAsString + "</p>"
+                + "<p>Filters: " + filtersAsString + "</p>"
+                + maybeStartRecordingTriggerFunction.map(s -> "<p>Start recording trigger function: '" + s + "'</p>").orElse("")
+                + maybeStopRecordingTriggerFunction.map(s -> "<p>Stop recording trigger function: '" + s + "'</p>").orElse("");
     }
 
     private static void writeSnapshotToFile(String executionMetadataFormatted) {
@@ -263,6 +287,7 @@ public class MethodInstrumentationAgent {
             }
             extractFromResources(snapshotDirectory, "index.html");
             extractFromResources(snapshotDirectory, "code.js");
+            extractFromResources(snapshotDirectory, "ui.js");
             extractFromResources(snapshotDirectory, "style.css");
             extractFromResources(snapshotDirectory, "logo.svg");
             extractFromResources(snapshotDirectory, "stackignite.js");
