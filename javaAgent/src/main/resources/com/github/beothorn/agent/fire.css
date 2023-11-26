@@ -1,13 +1,13 @@
 body {
-    background-color: #f4f4f4;
-    color: #333333;
+    background-color: #1a1a1a;
+    color: #e6e6e6;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
 }
 
 .box {
-    background-color: #ffffff;
+    background-color: #2e2e2e;
     border-radius: 8px;
     padding: 20px;
     margin: 10px;
@@ -53,7 +53,7 @@ p {
 }
 
 a {
-    color: #007bff;
+    color: #f94c10;
 }
 
 .container {
@@ -61,12 +61,12 @@ a {
 }
 
 .tooltip {
-    background-color: #f0f0f0;
-    color: #333333;
+    background-color: #4a525e;
+    color: #abb2bf;
     padding: 10px;
     border-radius: 3px;
-    border: 1px solid #333333;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #000000;
+    box-shadow: 7px 4px 1px rgba(0, 0, 0, 0.3);
     font-size: x-small;
     font-family: monospace;
 }
@@ -79,8 +79,8 @@ a {
 
 input,
 button {
-    background-color: #007bff;
-    color: #ffffff;
+    background-color: #4a525e;
+    color: #abb2bf;
     border: none;
     padding: 8px;
     margin-right: 5px;
@@ -96,15 +96,15 @@ button {
 }
 
 .notSelectedButton {
-    background-color: #dc3545;
+    background-color: #c70039;
 }
 
 .selectedButton {
-    background-color: #007bff;
+    background-color: #f94c10;
 }
 
 .topButton {
-    color: #ffffff;
+    color: #1a1a1a;
     border: none;
     padding: 8px;
     margin-right: 5px;
@@ -115,12 +115,12 @@ button {
 }
 
 .flamegraph {
-    background-color: #ffffff;
+    background-color: #2e2e2e;
     margin-top: 10px;
     overflow: hidden;
 }
 
 h1,
 h2 {
-    color: #007bff;
+    color: #f94c10;
 }

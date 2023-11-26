@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link id="theme-style" rel="stylesheet" type="text/css" href="fire.css">
 </head>
 <body>
 
@@ -13,12 +13,8 @@
         <p>First snapshot timestamp: <span id="startTimestamp"></span></p>
         <p>Last snapshot timestamp: &nbsp;<span id="finalTimestamp"></span></p>
         <p>Created with <a href="https://github.com/beothorn/javaflame">Javaflame</a></p>
+        <button onclick="toggleTheme()">Toggle Theme</button>
     </div>
-</div>
-<div id="filter" class="box">
-    <h2>Filter</h2>
-    <input type="text" id="filterInput" placeholder="span.return && span.return.value === '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]'" />
-    <button id="filterButton">Filter</button>
 </div>
 <div id="errorOutput"></div>
 <div id="charts"></div>
@@ -26,5 +22,17 @@
 <script type="text/javascript" src="data.js"></script>
 <script type="text/javascript" src="code.js"></script>
 <script type="text/javascript" src="ui.js"></script>
+
+<script>
+    function toggleTheme() {
+        var themeStyle = document.getElementById('theme-style');
+        if (themeStyle.getAttribute('href') === 'style.css') {
+            themeStyle.setAttribute('href', 'fire.css');
+        } else {
+            themeStyle.setAttribute('href', 'style.css');
+        }
+    }
+</script>
+
 </body>
 </html>

@@ -267,7 +267,16 @@ const tests = {
                         }
                     ]
                 }
-            }
+            },{
+                "thread": "keepIt",
+                "snapshotTime": 1000,
+                "span": {
+                    "name": "functionKeep",
+                    "entryTime":1000,
+                    "exitTime":1000,
+                    "value":0,
+                }
+            },
         ];
 
         const expected = [
@@ -300,12 +309,22 @@ const tests = {
                         }
                     ]
                 }
+            },{
+                "thread": "keepIt",
+                "snapshotTime": 1000,
+                "span": {
+                    "name": "functionKeep",
+                    "entryTime":1000,
+                    "exitTime":1000,
+                    "value":0,
+                }
             }
         ];
 
         const filterString = 'span.return && span.return.type === "String" && span.return.value === "ababa"';
 
-        assert.deepEquals("Filtered values", expected, filterDataByLambda(subject, filterString));
+        assert.deepEquals("Filtered values with no change", subject, filterDataByLambda(subject, "main", ""));
+        assert.deepEquals("Filtered values", expected, filterDataByLambda(subject, "main", filterString));
     }
 };
 
