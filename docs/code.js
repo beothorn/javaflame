@@ -95,12 +95,16 @@ function increaseSpanValue(span) {
     return newSpan;
 }
 
-function filterDataByLambda(data, filterLambda){
+function filterDataByLambda(data, threadName, filterLambda){
+    if(filterLambda.trim() === "") return data;
     const filterFunction = new Function('span', `return ${filterLambda};`);
-    return data.map( d => ({
-      ...d,
-      "span": filterSpans(d.span, filterFunction)
-    }));
+    return data.map( d => {
+        if(d.thread !== threadName) return d;
+        return {
+            ...d,
+            "span": filterSpans(d.span, filterFunction)
+        };
+    });
 }
 
 function filterSpans(span, filterFunction) {
