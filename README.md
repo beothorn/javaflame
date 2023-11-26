@@ -31,7 +31,19 @@ You still can use it to have some idea about the performance, if you assume the 
 - Exclude classes and packages.
 - Continuous snapshots.
 - Pure html output in a simple file and all captured data available as a JSON at data.js.
-- Optional, start and stop recording whenever a method with a certain name is called.
+- Optional, start and stop recording whenever a method with a certain name is called
+
+# Use cases
+
+Usually without filtering too much data is generated.  
+You may start by finding what class you want to understand and filter its namespace and the namespaces of the classes it calls.  
+So for example lets say I want to see what functions are called from the example [MergeSort](https://github.com/beothorn/javaflame/blob/main/javaExampleApp/src/main/java/com/github/beothorn/sorts/algorithms/MergeSort.java) and the helper Class [Common.java](https://github.com/beothorn/javaflame/blob/main/javaExampleApp/src/main/java/com/github/beothorn/sorts/Common.java).  
+I can use the command:  
+`java -javaagent:/PathTo/javaAgent.jar=filter:com.github.beothorn.sorts.Common,filter:com.github.beothorn.sorts.algorithms.MergeSort -jar ./javaExampleApp/build/libs/javaExampleApp.jar`  
+And all calls coming from MergeSort will show up on the graph, including arguent and return values.  
+
+The nice thing is that this is not restricted to classes on your code. You can filter third party libraries.  
+That means if you know where some network call is done, or a GRPC or whatever else, you can build a graph listing all external calls.  
 
 # Usage
 
