@@ -200,30 +200,36 @@ function buildGraph(dataToPlot){
         // ---------------------------
 
         filterButton.addEventListener("click", () => {
-            document.getElementById("flamegraphByTimestamp"+i).innerHTML = '';
-            document.getElementById("flamegraphByChildrenCount"+i).innerHTML = '';
             const filterString = filterInput.value;
             const filtered = filterDataByLambda(dataForGraph, dataToPlot[i].thread, filterString);
             
-            loadData({
-                elementId: "flamegraphByChildrenCount"+i,
-                data: filtered[i].span,
-                graphType: "ChildrenCallCount",
-                colorPalette,
-                zoomOnClick: true,
-                onClick: (n) => showNode(flameGraphNodeOutput.id, n.node),
-                tooltip: (n) => `<div class="tooltip">${n.name}</div>`
-            });
-
-            loadData({
-                elementId: "flamegraphByTimestamp"+i,
-                data: filtered[i].span,
-                graphType: "Timestamp",
-                colorPalette,
-                zoomOnClick: true,
-                onClick: (n) => showNode(byTimestampNodeOutput.id, n.node),
-                tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`
-            });
+            const oldFlameGraphByTime = document.getElementById("flamegraphByTimestamp"+i);
+            if (oldFlameGraphByTime) {
+                oldFlameGraphByTime.innerHTML = '';
+                loadData({
+                    elementId: oldFlameGraphByTime.id,
+                    data: filtered[i].span,
+                    graphType: "Timestamp",
+                    colorPalette,
+                    zoomOnClick: true,
+                    onClick: (n) => showNode(byTimestampNodeOutput.id, n.node),
+                    tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`      
+                });
+            } 
+            
+            const oldFlameGraphByCallCount = document.getElementById("flamegraphByChildrenCount"+i);
+            if (oldFlameGraphByCallCount) {
+                oldFlameGraphByCallCount.innerHTML = '';
+                loadData({
+                    elementId: oldFlameGraphByCallCount.id,
+                    data: filtered[i].span,
+                    graphType: "ChildrenCallCount",
+                    colorPalette,
+                    zoomOnClick: true,
+                    onClick: (n) => showNode(flameGraphNodeOutput.id, n.node),
+                    tooltip: (n) => `<div class="tooltip">${n.name}</div>`
+                });
+            }
         });
 
         headerLeft.appendChild(threadName);
