@@ -288,6 +288,7 @@ public class MethodInstrumentationAgent {
             extractFromResources(snapshotDirectory, "index.html");
             extractFromResources(snapshotDirectory, "code.js");
             extractFromResources(snapshotDirectory, "ui.js");
+            extractFromResources(snapshotDirectory, "fire.css");
             extractFromResources(snapshotDirectory, "style.css");
             extractFromResources(snapshotDirectory, "logo.svg");
             extractFromResources(snapshotDirectory, "stackignite.js");
