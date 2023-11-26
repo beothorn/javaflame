@@ -2,6 +2,7 @@ package com.github.beothorn.agent;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -217,4 +218,51 @@ class MethodInstrumentationAgentTest {
         assertEquals("Foo.onEnd", maybeStopRecordingTrigger.get());
     }
 
+    @Test
+    void metadataRendersCorrectly(){
+        String argument = "exclude:a.b,"
+                + "exclude:c.d,"
+                + "filter:x.y,"
+                + "filter:w.q,"
+                + "startRecordingTriggerFunction:onStart,"
+                + "stopRecordingTriggerFunction:onEnd";
+        /*
+         * I know these are bad tests, exposing internals of the MethodInstrumentationAgent class
+         * and replicating business logic on tests, but I started this project with as little
+         * dependencies as possible, and now it is kinda late to switch (unless I happen to get
+         * a lot of free time).
+         * The right way here is to use mockito and test all at once.
+         * We could refactor the code and isolate the logic, but I really do not want to introduce
+         * too many classes, nor I want to return some dynamic structure with the data.
+         * I already did it with types and values, it felt wrooonnng.
+         */
+        List<String[]> excludes = MethodInstrumentationAgent.argumentExcludes(argument);
+        List<String[]> filters = MethodInstrumentationAgent.argumentFilter(argument);
+        Optional<String> maybeStartRecordingTriggerFunction = MethodInstrumentationAgent.argumentStartRecordingTriggerFunction(argument);
+        Optional<String> maybeStopRecordingTriggerFunction = MethodInstrumentationAgent.argumentStopRecordingTriggerFunction(argument);
+
+        String[] allFlags = allFlagsOnArgument(argument);
+        String allFlagsAsString = Arrays.toString(allFlags);
+        String outputDirectory = "/foo/bar";
+        String excludesAsString = MethodInstrumentationAgent.argumentsToString(excludes);
+        String filtersAsString = MethodInstrumentationAgent.argumentsToString(filters);
+
+        String actual = MethodInstrumentationAgent.getExecutionMetadataAsHtml(
+            allFlagsAsString,
+            outputDirectory,
+            excludesAsString,
+            filtersAsString,
+            maybeStartRecordingTriggerFunction,
+            maybeStopRecordingTriggerFunction
+        );
+
+        String expected = "<p>Flags: []</p>" +
+                "<p>Output: '/foo/bar'</p>" +
+                "<p>Excludes: [[a.b], [c.d]]</p>" +
+                "<p>Filters: [[x.y], [w.q]]</p>" +
+                "<p>Start recording trigger function: 'onStart'</p>" +
+                "<p>Stop recording trigger function: 'onEnd'</p>";
+
+        assertEquals(expected, actual);
+    }
 }
