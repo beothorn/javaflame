@@ -43,7 +43,8 @@ I can use the command:
 And all calls coming from MergeSort will show up on the graph, including arguent and return values.  
 
 The nice thing is that this is not restricted to classes on your code. You can filter third party libraries.  
-That means if you know where some network call is done, or a GRPC or whatever else, you can build a graph listing all external calls.  
+That means if you know where some network call is done, or a GRPC or whatever else, you can build a graph listing all external calls. For example, to log postgres sql calls yoou could do:  
+`java -javaagent:/PathTo/javaAgent.jar=filter:org.postgresql.jdbc.PgConnection:prepareStatement -jar yourapp.jar`
 
 # Usage
 
