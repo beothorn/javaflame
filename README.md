@@ -3,7 +3,7 @@
 Simple and easy flame graph for java.  
 No servers or open connections, just plug the agent and get the results.   
 See function calls, parameters and return values all at once.  
-[Latest release v14.0.1](https://github.com/beothorn/javaflame/releases/download/v14.0.1/javaAgent.jar)
+[Latest release v15.0.0](https://github.com/beothorn/javaflame/releases/download/v15.0.0/javaAgent.jar)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
