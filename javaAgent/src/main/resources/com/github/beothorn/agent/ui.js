@@ -129,7 +129,7 @@ function addVisualization(config) {
                 extraDetailsOutput
             );
 
-            countContainer.style.display = "none";
+            container.style.display = "none";
         }
 
         toggleVisualization(
@@ -144,6 +144,57 @@ function addVisualization(config) {
         button,
         container
     };
+}
+
+function appendChildrenOnHierarchicalView(liParent, children) {
+    if (!children) return;
+    const unorderedList = document.createElement("ul");
+    unorderedList.classList.add("nested");
+    for (let c of children) {
+        const listItem = document.createElement("li");
+        let args = "";
+        for (let arg of c.arguments) {
+            args+= arg.type +" "+ arg.value+", ";
+        }
+        const returnValue = c.return.type +" "+ c.return.value
+        const listItemName = document.createElement("span");
+        listItemName.appendChild(document.createTextNode(c.className+"."+c.method+"("+args+") => "+returnValue));
+        if (c.children) {
+            listItemName.classList.add("caret");
+            listItemName.addEventListener("click", () => {
+                // maybe lazy load children here instead
+                listItemName.classList.toggle("caret-down");
+                listItemName.parentElement.querySelector(".nested").classList.toggle("active");
+            });
+        }
+        listItem.appendChild(listItemName);
+
+        appendChildrenOnHierarchicalView(listItem, c.children);
+
+        unorderedList.appendChild(listItem);
+    }
+    liParent.appendChild(unorderedList);
+}
+
+function createHierarchicalView(treeData, visualizationDiv) {
+    const unorderedList = document.createElement("ul");
+
+    const listItem = document.createElement("li");
+
+    const span = treeData.span;
+    const listItemName = document.createElement("span");
+    listItemName.classList.add("caret");
+    listItemName.appendChild(document.createTextNode(span.className));
+    listItemName.addEventListener("click", () => {
+       listItemName.classList.toggle("caret-down");
+       listItemName.parentElement.querySelector(".nested").classList.toggle("active");
+    });
+    listItem.appendChild(listItemName);
+    unorderedList.appendChild(listItem);
+
+    appendChildrenOnHierarchicalView(listItem, span.children);
+
+    visualizationDiv.appendChild(unorderedList);
 }
 
 function buildGraph(dataToPlot){
@@ -214,7 +265,7 @@ function buildGraph(dataToPlot){
         const execTimeTitle = (rootTime === 0)?`Execution Time took less than 1ms`:`Execution Time ${rootTime}ms (Values with 1ms or more)`;
 
         const {
-            button: showExecTime,
+            button: showExecTimeButton,
             container: flamegraphByTimestampContainer
         } = addVisualization({
             turnOnText: "Show Execution Time",
@@ -237,7 +288,23 @@ function buildGraph(dataToPlot){
             }
         });
 
-        // Raw mode
+        // Hierarchical mode
+        const {
+            button: rawVisualizationButton,
+            container: rawVisualizationContainer
+        } = addVisualization({
+            turnOnText: "Show Hierarchical",
+            turnOffText: "Hide Hierarchical",
+            title: "Hierarchical",
+            loadVisualization: (
+                label,
+                visualization,
+                extraDetailsOutput
+            ) => {
+                visualization.classList.add("hierarchicalView");
+                createHierarchicalView(dataToPlot[i], visualization);
+            }
+        });
 
         // ---------------------------
 
@@ -274,14 +341,18 @@ function buildGraph(dataToPlot){
             }
         });
 
+
         headerLeft.appendChild(threadName);
         headerLeft.appendChild(filter);
+
         // Buttons
+        headerRight.appendChild(rawVisualizationButton);
         headerRight.appendChild(flamegraphByChildrenButton);
-        headerRight.appendChild(showExecTime);
+        headerRight.appendChild(showExecTimeButton);
 
         box.appendChild(header);
-        // containers
+        // containers,
+        box.appendChild(rawVisualizationContainer);
         box.appendChild(flamegraphByChildrenCountContainer);
         box.appendChild(flamegraphByTimestampContainer);
 
