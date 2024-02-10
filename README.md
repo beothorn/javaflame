@@ -1,15 +1,16 @@
 # Javaflame
 
-Simple and easy flame graph for java.  
+Capture all function calls including argument and return values.  
 No servers or open connections, just plug the agent and get the results.   
 See function calls, parameters and return values all at once.  
-[Latest release v15.1.0](https://github.com/beothorn/javaflame/releases/download/v15.1.0/javaAgent.jar)
+[Latest release v16.0.0](https://github.com/beothorn/javaflame/releases/download/v16.0.0/javaAgent.jar)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
 # Screenshots  
 
 ![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotTooltip.png?raw=true)
+![flamegraph hierarchy](https://github.com/beothorn/javaflame/blob/main/screenshotHierarchical.png?raw=true)
 
 # What is this for?
 
