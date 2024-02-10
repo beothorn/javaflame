@@ -47,8 +47,13 @@ const dataForGraph = increaseZeroValues(mergedData);
 
 function showNode(id, n) {
     let jsonString = "";
+    console.log(n);
     for (const property in n) {
-        jsonString += `<p> span.${property}: ${n[property]}</p>`;
+        if (property === "children") {
+            jsonString += `<p> immediate children count: ${n["children"].length}</p>`;
+        } else {
+            jsonString += `<p> span.${property}: ${JSON.stringify(n[property])}</p>`;
+        }
     }
     document.getElementById(id).innerHTML = jsonString;
 }
