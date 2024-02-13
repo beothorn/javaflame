@@ -153,10 +153,12 @@ function appendChildrenOnHierarchicalView(liParent, children) {
     for (let c of children) {
         const listItem = document.createElement("li");
         let args = "";
-        for (let arg of c.arguments) {
-            args+= arg.type +" "+ arg.value+", ";
+        if (c.arguments) {
+            for (let arg of c.arguments) {
+                args+= arg.type +" "+ arg.value+", ";
+            }
         }
-        const returnValue = c.return.type +" "+ c.return.value
+        const returnValue = (c.return) ? (c.return.type +" "+ c.return.value) : "no_return";
         const listItemName = document.createElement("span");
         listItemName.appendChild(document.createTextNode(c.className+"."+c.method+"("+args+") => "+returnValue));
         if (c.children) {
