@@ -47,10 +47,156 @@ const dataForGraph = increaseZeroValues(mergedData);
 
 function showNode(id, n) {
     let jsonString = "";
+    console.log(n);
     for (const property in n) {
-        jsonString += `<p> span.${property}: ${n[property]}</p>`;
+        if (property === "children") {
+            jsonString += `<p> immediate children count: ${n["children"].length}</p>`;
+        } else {
+            jsonString += `<p> span.${property}: ${JSON.stringify(n[property])}</p>`;
+        }
     }
     document.getElementById(id).innerHTML = jsonString;
+}
+
+function buildVisualizationButton(text) {
+    const newButton = document.createElement("button");
+    newButton.appendChild(document.createTextNode(text));
+    newButton.classList.add("topButton");
+    newButton.classList.add("notSelectedButton");
+    return newButton;
+}
+
+function buildVisualizationContainer() {
+    const container = document.createElement("div");
+    container.classList.add("container");
+    container.style.display = "none";
+    return container;
+}
+
+let id = 0;
+function buildVisualization(visualizationContainer, title) {
+    const label = document.createElement("h2");
+    label.appendChild(document.createTextNode(title));
+    visualizationContainer.appendChild(label);
+
+    visualizationContainer.style.display = "block";
+    let visualization = document.createElement("div");
+    visualization.id = "visual"+id;
+    id = id + 1;
+    visualization.classList.add("flamegraph");
+    visualizationContainer.appendChild(visualization);
+
+    const extraDetailsOutput = document.createElement("div");
+    extraDetailsOutput.id = "extraDetails"+id;
+    visualizationContainer.appendChild(extraDetailsOutput);
+    return {
+        label,
+        visualization,
+        extraDetailsOutput
+    };
+}
+
+function toggleVisualization(button, container, showText, hideText) {
+    if (container.style.display === "block") {
+        container.style.display = "none";
+        button.textContent = showText;
+        button.classList.remove("selectedButton");
+        button.classList.add("notSelectedButton");
+    } else {
+        container.style.display = "block";
+        button.textContent = hideText;
+        button.classList.remove("notSelectedButton");
+        button.classList.add("selectedButton");
+    }
+}
+
+function addVisualization(config) {
+    const button = buildVisualizationButton(config.turnOnText);
+    const container = buildVisualizationContainer();
+    let loadedVisualization;
+    button.addEventListener("click", () => {
+        if (!loadedVisualization) {
+            const {
+                label,
+                visualization,
+                extraDetailsOutput
+            } = buildVisualization(container, config.title);
+            loadedVisualization = visualization;
+
+            config.loadVisualization(
+                label,
+                loadedVisualization,
+                extraDetailsOutput
+            );
+
+            container.style.display = "none";
+        }
+
+        toggleVisualization(
+            button,
+            container,
+            config.turnOnText,
+            config.turnOffText
+        );
+    });
+
+    return {
+        button,
+        container
+    };
+}
+
+function appendChildrenOnHierarchicalView(liParent, children) {
+    if (!children) return;
+    const unorderedList = document.createElement("ul");
+    unorderedList.classList.add("nested");
+    for (let c of children) {
+        const listItem = document.createElement("li");
+        let args = "";
+        if (c.arguments) {
+            for (let arg of c.arguments) {
+                args+= arg.type +" "+ arg.value+", ";
+            }
+        }
+        const returnValue = (c.return) ? (c.return.type +" "+ c.return.value) : "no_return";
+        const listItemName = document.createElement("span");
+        listItemName.appendChild(document.createTextNode(c.className+"."+c.method+"("+args+") => "+returnValue));
+        if (c.children) {
+            listItemName.classList.add("caret");
+            listItemName.addEventListener("click", () => {
+                // maybe lazy load children here instead
+                listItemName.classList.toggle("caret-down");
+                listItemName.parentElement.querySelector(".nested").classList.toggle("active");
+            });
+        }
+        listItem.appendChild(listItemName);
+
+        appendChildrenOnHierarchicalView(listItem, c.children);
+
+        unorderedList.appendChild(listItem);
+    }
+    liParent.appendChild(unorderedList);
+}
+
+function createHierarchicalView(treeData, visualizationDiv) {
+    const unorderedList = document.createElement("ul");
+
+    const listItem = document.createElement("li");
+
+    const span = treeData.span;
+    const listItemName = document.createElement("span");
+    listItemName.classList.add("caret");
+    listItemName.appendChild(document.createTextNode(span.className));
+    listItemName.addEventListener("click", () => {
+       listItemName.classList.toggle("caret-down");
+       listItemName.parentElement.querySelector(".nested").classList.toggle("active");
+    });
+    listItem.appendChild(listItemName);
+    unorderedList.appendChild(listItem);
+
+    appendChildrenOnHierarchicalView(listItem, span.children);
+
+    visualizationDiv.appendChild(unorderedList);
 }
 
 function buildGraph(dataToPlot){
@@ -92,109 +238,74 @@ function buildGraph(dataToPlot){
         filter.appendChild(filterButton);
 
         // Flamegraph
-        const showGraph = document.createElement("button");
-        showGraph.appendChild(document.createTextNode("Show Call Graph"));
-        showGraph.classList.add("topButton");
-        showGraph.classList.add("notSelectedButton");
-        const flamegraphByChildrenCountContainer = document.createElement("div");
-        flamegraphByChildrenCountContainer.classList.add("container");
-        flamegraphByChildrenCountContainer.style.display = "none";
-        let flamegraphByChildrenCount;
-        showGraph.addEventListener("click", () => {
-            if (!flamegraphByChildrenCount) {
-                flamegraphByChildrenCountContainer.style.display = "block";
-                flamegraphByChildrenCount = document.createElement("div");
-                flamegraphByChildrenCount.id = "flamegraphByChildrenCount"+i;
-                flamegraphByChildrenCount.classList.add("flamegraph");
-                const labelByChildrenCount = document.createElement("h2");
-                labelByChildrenCount.appendChild(document.createTextNode("CallGraph"));
-                flamegraphByChildrenCountContainer.appendChild(labelByChildrenCount);
-                flamegraphByChildrenCountContainer.appendChild(flamegraphByChildrenCount);
-                const flameGraphNodeOutput = document.createElement("div");
-                flameGraphNodeOutput.id = "flameGraphNodeOutput"+i;
-                flamegraphByChildrenCountContainer.appendChild(flameGraphNodeOutput);
-
+        const {
+            button: flamegraphByChildrenButton,
+            container: flamegraphByChildrenCountContainer
+        } = addVisualization({
+            turnOnText: "Show Call Graph",
+            turnOffText: "Hide Call Graph",
+            title: "CallGraph",
+            loadVisualization: (
+                label,
+                visualization,
+                extraDetailsOutput
+            ) => {
                 loadData({
-                    elementId: flamegraphByChildrenCount.id,
+                    elementId: visualization.id,
                     data: dataToPlot[i].span,
                     graphType: "ChildrenCallCount",
                     colorPalette,
                     zoomOnClick: true,
-                    onClick: (n) => showNode(flameGraphNodeOutput.id, n.node),
+                    onClick: (n) => showNode(extraDetailsOutput.id, n.node),
                     tooltip: (n) => `<div class="tooltip">${n.name}</div>`
                 });
-
-                flamegraphByChildrenCountContainer.style.display = "none";
-            }
-
-            if (flamegraphByChildrenCountContainer.style.display === "block") {
-                flamegraphByChildrenCountContainer.style.display = "none";
-                showGraph.textContent = "Show Call Graph";
-                showGraph.classList.remove("selectedButton");
-                showGraph.classList.add("notSelectedButton");
-            } else {
-                flamegraphByChildrenCountContainer.style.display = "block";
-                showGraph.textContent = "Hide Call Graph";
-                showGraph.classList.remove("notSelectedButton");
-                showGraph.classList.add("selectedButton");
             }
         });
 
         // Execution Time
+        const rootTime = dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime;
+        const execTimeTitle = (rootTime === 0)?`Execution Time took less than 1ms`:`Execution Time ${rootTime}ms (Values with 1ms or more)`;
 
-        const showExecTime = document.createElement("button");
-        showExecTime.appendChild(document.createTextNode("Show Execution Time"));
-        showExecTime.classList.add("topButton");
-        showExecTime.classList.add("notSelectedButton");
-        const flamegraphByTimestampContainer = document.createElement("div");
-        flamegraphByTimestampContainer.classList.add("container");
-        flamegraphByTimestampContainer.style.display = "none";
-        let flamegraphByTimestamp;
-        showExecTime.addEventListener("click", () => {
-            if (!flamegraphByTimestamp) {
-                flamegraphByTimestampContainer.style.display = "block";
-                flamegraphByTimestamp = document.createElement("div");
-                flamegraphByTimestamp.id = "flamegraphByTimestamp"+i;
-                flamegraphByTimestamp.classList.add("flamegraph");
-                const labelByTimestamp = document.createElement("h2");
-                const rootTime = dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime;
-                if (rootTime === 0) {
-                    labelByTimestamp.appendChild(document.createTextNode(`Execution Time took less than 1ms`));
-                } else {
-                    labelByTimestamp.appendChild(document.createTextNode(`Execution Time ${rootTime}ms (Values with 1ms or more)`));
-                }
-                flamegraphByTimestampContainer.appendChild(labelByTimestamp);
-                flamegraphByTimestampContainer.appendChild(flamegraphByTimestamp);
-                const byTimestampNodeOutput = document.createElement("div");
-                byTimestampNodeOutput.id = "byTimestampNodeOutput"+i;
-                flamegraphByTimestampContainer.appendChild(byTimestampNodeOutput);
-
-
+        const {
+            button: showExecTimeButton,
+            container: flamegraphByTimestampContainer
+        } = addVisualization({
+            turnOnText: "Show Execution Time",
+            turnOffText: "Hide Execution Time",
+            title: execTimeTitle,
+            loadVisualization: (
+                label,
+                visualization,
+                extraDetailsOutput
+            ) => {
                 loadData({
-                    elementId: flamegraphByTimestamp.id,
+                    elementId: visualization.id,
                     data: dataToPlot[i].span,
                     graphType: "Timestamp",
                     colorPalette,
                     zoomOnClick: true,
-                    onClick: (n) => showNode(byTimestampNodeOutput.id, n.node),
+                    onClick: (n) => showNode(extraDetailsOutput.id, n.node),
                     tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`
                 });
-
-                flamegraphByTimestampContainer.style.display = "none";
             }
+        });
 
-            if (flamegraphByTimestampContainer.style.display === "block") {
-                flamegraphByTimestampContainer.style.display = "none";
-                showExecTime.textContent = "Show Execution Time";
-                showExecTime.classList.remove("selectedButton");
-                showExecTime.classList.add("notSelectedButton");
-            } else {
-                flamegraphByTimestampContainer.style.display = "block";
-                showExecTime.textContent = "Hide Execution Time";
-                showExecTime.classList.remove("notSelectedButton");
-                showExecTime.classList.add("selectedButton");
+        // Hierarchical mode
+        const {
+            button: rawVisualizationButton,
+            container: rawVisualizationContainer
+        } = addVisualization({
+            turnOnText: "Show Hierarchical",
+            turnOffText: "Hide Hierarchical",
+            title: "Hierarchical",
+            loadVisualization: (
+                label,
+                visualization,
+                extraDetailsOutput
+            ) => {
+                visualization.classList.add("hierarchicalView");
+                createHierarchicalView(dataToPlot[i], visualization);
             }
-
         });
 
         // ---------------------------
@@ -232,13 +343,21 @@ function buildGraph(dataToPlot){
             }
         });
 
+
         headerLeft.appendChild(threadName);
         headerLeft.appendChild(filter);
-        headerRight.appendChild(showGraph);
-        headerRight.appendChild(showExecTime);
+
+        // Buttons
+        headerRight.appendChild(rawVisualizationButton);
+        headerRight.appendChild(flamegraphByChildrenButton);
+        headerRight.appendChild(showExecTimeButton);
+
         box.appendChild(header);
+        // containers,
+        box.appendChild(rawVisualizationContainer);
         box.appendChild(flamegraphByChildrenCountContainer);
         box.appendChild(flamegraphByTimestampContainer);
+
         charts.appendChild(box);
     }
 }
