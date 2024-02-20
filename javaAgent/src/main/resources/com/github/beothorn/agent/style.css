@@ -1,13 +1,70 @@
+:root {
+    --background-theme: #f4f4f4;
+    --color-theme: #333333;
+    --box-background-theme: #ffffff;
+    --tooltip-background-theme: #f0f0f0;
+    --tooltip-color-theme: #333333;
+    --tooltip-border-theme: #333333;
+    --input-background-theme: #007bff;
+    --input-color-theme: #ffffff;
+    --input-placeholder-color-theme: #7db8ff;
+    --notSelectedButton-background-theme: #007bff;
+    --selectedButton-background-theme: #395068;
+    --link-color-theme: #007bff;
+    --flamegraph-background-theme: #ffffff;
+    --title-color-theme: #007bff;
+    --top-button-color-theme: #ffffff;
+    --caret-color-theme: black;
+}
+
+.light-theme {
+    --background-theme: #f4f4f4;
+    --color-theme: #333333;
+    --box-background-theme: #ffffff;
+    --tooltip-background-theme: #f0f0f0;
+    --tooltip-color-theme: #333333;
+    --tooltip-border-theme: #333333;
+    --input-background-theme: #007bff;
+    --input-color-theme: #ffffff;
+    --input-placeholder-color-theme: #7db8ff;
+    --notSelectedButton-background-theme: #007bff;
+    --selectedButton-background-theme: #395068;
+    --link-color-theme: #007bff;
+    --flamegraph-background-theme: #ffffff;
+    --title-color-theme: #007bff;
+    --top-button-color-theme: #ffffff;
+    --caret-color-theme: black;
+}
+
+.dark-theme {
+    --background-theme: #1a1a1a;
+    --color-theme: #e6e6e6;
+    --box-background-theme: #2e2e2e;
+    --tooltip-background-theme: #4a525e;
+    --tooltip-color-theme: #abb2bf;
+    --tooltip-border-theme: #fff;
+    --input-background-theme: #4a525e;
+    --input-color-theme: #abb2bf;
+    --input-placeholder-color-theme: #666;
+    --notSelectedButton-background-theme: #c70039;
+    --selectedButton-background-theme: #f94c10;
+    --link-color-theme: #f94c10;
+    --flamegraph-background-theme: #2e2e2e;
+    --title-color-theme: #f94c10;
+    --top-button-color-theme: #1a1a1a;
+    --caret-color-theme: white;
+}
+
 body {
-    background-color: #f4f4f4;
-    color: #333333;
+    background-color: var(--background-theme);
+    color: var(--color-theme);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
 }
 
 .box {
-    background-color: #ffffff;
+    background-color: var(--box-background-theme);
     border-radius: 8px;
     padding: 20px;
     margin: 10px;
@@ -38,7 +95,7 @@ body {
 }
 
 .headerRight{
-    justify-content: flex-end; 
+    justify-content: flex-end;
 }
 
 #logo {
@@ -54,7 +111,7 @@ p {
 }
 
 a {
-    color: #007bff;
+    color: var(--link-color-theme);
 }
 
 .container {
@@ -62,11 +119,11 @@ a {
 }
 
 .tooltip {
-    background-color: #f0f0f0;
-    color: #333333;
+    background-color: var(--tooltip-background-theme);
+    color: var(--tooltip-color-theme);
     padding: 10px;
     border-radius: 3px;
-    border: 1px solid #333333;
+    border: 1px solid var(--tooltip-border-theme);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     font-size: x-small;
     font-family: monospace;
@@ -80,8 +137,8 @@ a {
 
 input,
 button {
-    background-color: #007bff;
-    color: #ffffff;
+    background-color: var(--input-background-theme);
+    color: var(--input-color-theme);
     border: none;
     padding: 8px;
     margin-right: 5px;
@@ -89,7 +146,7 @@ button {
 }
 
 input::placeholder {
-    color: #666;
+    color: var(--input-placeholder-color-theme);
 }
 
 button {
@@ -97,15 +154,16 @@ button {
 }
 
 .notSelectedButton {
-    background-color: #dc3545;
+    background-color: var(--notSelectedButton-background-theme);
 }
 
 .selectedButton {
-    background-color: #007bff;
+    background-color: var(--selectedButton-background-theme);
+    box-shadow: #00000057 inset 2px 2px 3px 0px;
 }
 
 .topButton {
-    color: #ffffff;
+    color: var(--top-button-color-theme);
     border: none;
     padding: 8px;
     margin-right: 5px;
@@ -116,14 +174,14 @@ button {
 }
 
 .flamegraph {
-    background-color: #ffffff;
+    background-color: var(--flamegraph-background-theme);
     margin-top: 10px;
     overflow: hidden;
 }
 
 h1,
 h2 {
-    color: #007bff;
+    color: var(--title-color-theme);
 }
 
 .hierarchicalView {
@@ -148,7 +206,7 @@ ul, .root {
 /* Create the caret/arrow with a unicode, and style it */
 .caret::before {
   content: "\25B6";
-  color: black;
+  color: var(--caret-color-theme);
   display: inline-block;
   margin-right: 6px;
 }

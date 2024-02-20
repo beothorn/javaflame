@@ -1,9 +1,9 @@
 <html>
 
 <head>
-    <link id="theme-style" rel="stylesheet" type="text/css" href="fire.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
-<body>
+<body id="customizable-theme" class="light-theme">
 
 <div id="header" class="box">
     <img id="logo" width="100px" src="./logo.svg"/>
@@ -25,12 +25,7 @@
 
 <script>
     function toggleTheme() {
-        var themeStyle = document.getElementById('theme-style');
-        if (themeStyle.getAttribute('href') === 'style.css') {
-            themeStyle.setAttribute('href', 'fire.css');
-        } else {
-            themeStyle.setAttribute('href', 'style.css');
-        }
+        document.getElementById("customizable-theme").className = (document.getElementById("customizable-theme").className == 'dark-theme')?'light-theme':'dark-theme';
     }
 </script>
 
