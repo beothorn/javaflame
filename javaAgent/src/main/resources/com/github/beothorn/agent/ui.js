@@ -243,6 +243,7 @@ function buildGraph(dataToPlot){
         filter.appendChild(filterButton);
 
         // Flamegraph
+        let byTimestampNodeOutput = {};
         const {
             button: flamegraphByChildrenButton,
             container: flamegraphByChildrenCountContainer
@@ -255,6 +256,7 @@ function buildGraph(dataToPlot){
                 visualization,
                 extraDetailsOutput
             ) => {
+                flameGraphNodeOutput = extraDetailsOutput;
                 loadData({
                     elementId: visualization.id,
                     data: dataToPlot[i].span,
@@ -271,6 +273,7 @@ function buildGraph(dataToPlot){
         const rootTime = dataToPlot[i].span.exitTime - dataToPlot[i].span.entryTime;
         const execTimeTitle = (rootTime === 0)?`Execution Time took less than 1ms`:`Execution Time ${rootTime}ms (Values with 1ms or more)`;
 
+        let flameGraphNodeOutput = {};
         const {
             button: showExecTimeButton,
             container: flamegraphByTimestampContainer
@@ -283,6 +286,7 @@ function buildGraph(dataToPlot){
                 visualization,
                 extraDetailsOutput
             ) => {
+                byTimestampNodeOutput = extraDetailsOutput;
                 loadData({
                     elementId: visualization.id,
                     data: dataToPlot[i].span,
@@ -319,7 +323,7 @@ function buildGraph(dataToPlot){
             const filterString = filterInput.value;
             const filtered = filterDataByLambda(dataForGraph, dataToPlot[i].thread, filterString);
             
-            const oldFlameGraphByTime = document.getElementById("flamegraphByTimestamp"+i);
+            const oldFlameGraphByTime = document.getElementById("visual"+i);
             if (oldFlameGraphByTime) {
                 oldFlameGraphByTime.innerHTML = '';
                 loadData({
@@ -333,7 +337,7 @@ function buildGraph(dataToPlot){
                 });
             } 
             
-            const oldFlameGraphByCallCount = document.getElementById("flamegraphByChildrenCount"+i);
+            const oldFlameGraphByCallCount = document.getElementById("visual"+i);
             if (oldFlameGraphByCallCount) {
                 oldFlameGraphByCallCount.innerHTML = '';
                 loadData({
