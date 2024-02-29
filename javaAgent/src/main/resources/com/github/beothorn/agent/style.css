@@ -98,6 +98,26 @@ body {
     justify-content: flex-end;
 }
 
+#searchLeft{
+    justify-content: flex-start;
+}
+
+#searchRight{
+    justify-content: flex-end;
+    flex-grow: 1;
+}
+
+#searchInputWithButton {
+    display: flex;
+    align-items: center;
+    margin-left: 1rem;
+    width: 100%;
+}
+
+#searchButton{
+    background-color: var(--notSelectedButton-background-theme);
+}
+
 #logo {
     margin-right: 20px;
 }

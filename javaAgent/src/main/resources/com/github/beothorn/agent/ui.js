@@ -372,3 +372,17 @@ function buildGraph(dataToPlot){
 }
 
 buildGraph(dataForGraph);
+
+document.getElementById("searchButton").addEventListener("click", () => {
+    const searchInputValue = document.getElementById("searchInput").value;
+    if (searchInputValue === '') {
+        document.getElementById("searchResult").innerHTML = 'This will return all nodes, please improve your search.';
+        return;
+    }
+    const result = searchString(searchInputValue);
+    document.getElementById("searchResult").innerHTML = '';
+    console.log(result);
+    for(let r of result) {
+        document.getElementById("searchResult").innerHTML += `<p>${r.thread}::${r.name}</p>`;
+    }
+});
