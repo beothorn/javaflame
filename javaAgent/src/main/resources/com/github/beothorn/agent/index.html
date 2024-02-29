@@ -17,6 +17,17 @@
     </div>
 </div>
 <div id="errorOutput"></div>
+<div id="searchBox" class="box smallBox">
+    <div class="boxHeader">
+        <div class="headerLeft">
+            <h1 class="threadName">Search</h1>
+            <div id="searchInputWithButton">
+                <input id="searchInput" type="text" placeholder="Search for...">
+                <button class="topButton" id="searchButton">Search</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div id="charts"></div>
 <script type="text/javascript" src="stackignite.js"></script>
 <script type="text/javascript" src="data.js"></script>
@@ -24,6 +35,10 @@
 <script type="text/javascript" src="ui.js"></script>
 
 <script>
+    if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.getElementById("customizable-theme").className = 'dark-theme';
+    }
+
     function toggleTheme() {
         document.getElementById("customizable-theme").className = (document.getElementById("customizable-theme").className == 'dark-theme')?'light-theme':'dark-theme';
     }

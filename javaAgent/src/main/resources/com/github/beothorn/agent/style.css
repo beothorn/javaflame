@@ -85,13 +85,13 @@ body {
 }
 
 .headerLeft, .headerRight {
-    flex: 1;
     display: flex;
     align-items: center;
 }
 
 .headerLeft{
     justify-content: flex-start;
+    flex-grow: 1;
 }
 
 .headerRight{
@@ -133,6 +133,7 @@ a {
     display: flex;
     align-items: center;
     margin-left: 1rem;
+    width: 100%;
 }
 
 input,
@@ -143,6 +144,10 @@ button {
     padding: 8px;
     margin-right: 5px;
     border-radius: 4px;
+}
+
+input {
+    width: 100%;
 }
 
 input::placeholder {

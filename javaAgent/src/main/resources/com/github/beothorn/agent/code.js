@@ -106,15 +106,40 @@ function increaseSpanValue(span) {
 Return a copy of data with only spans that match the filter.
 */
 function filterDataByLambda(data, threadName, filterLambda){
-    if(filterLambda.trim() === "") return data;
-    const filterFunction = new Function('span', `return ${filterLambda};`);
-    return data.map( d => {
-        if(d.thread !== threadName) return d;
-        return {
-            ...d,
-            "span": filterSpans(d.span, filterFunction)
-        };
-    });
+    if (filterLambda.trim() === "") return data;
+    if (!filterLambda.includes("span")) {
+        alert("Filter function must include span. Example: span.name.includes('Foo'). Will search string instead.");
+        return data.map( d => {
+            if(d.thread !== threadName) return d;
+            return {
+                ...d,
+                "span": filterSpans(d.span, (s) => s.name.includes(filterLambda))
+            };
+        });
+    }
+    try {
+        const filterFunction = new Function('span', `return ${filterLambda};`);
+        const result = data.map( d => {
+            if(d.thread !== threadName) return d;
+            return {
+               ...d,
+               "span": filterSpans(d.span, filterFunction)
+            };
+        });
+        if (result.filter(r => r.thread === threadName)[0].span === null) {
+            alert("Nothing found");
+        }
+        return result;
+    } catch {
+        alert("Invalid filter function, searching string instead");
+        return data.map( d => {
+            if(d.thread !== threadName) return d;
+            return {
+                ...d,
+                "span": filterSpans(d.span, (s) => s.name.includes(filterLambda))
+            };
+        });
+    }
 }
 
 /*
