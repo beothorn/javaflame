@@ -41,7 +41,7 @@ lastSnapshot.appendChild(document.createTextNode(lastSnapshotTimestampFormatted)
 const charts = document.getElementById("charts");
 
 // join data and filter here
-const mergedData = mergeSnapshots(data);
+const mergedData = prepareData(data);
 
 const dataForGraph = increaseZeroValues(mergedData);
 
@@ -51,6 +51,11 @@ function showNode(id, n) {
     for (const property in n) {
         if (property === "children") {
             jsonString += `<p> immediate children count: ${n["children"].length}</p>`;
+        } else if  (property === "parent") {
+            const parentSearchResult = searchId(n["parent"]);
+            const parentName = (parentSearchResult.length > 0) ? parentSearchResult[0].name : 'n/a';
+            jsonString += `<p> span.parentId: ${n["parent"]}</p>`;
+            jsonString += `<p> span.parent: ${parentName}</p>`;
         } else {
             jsonString += `<p> span.${property}: ${JSON.stringify(n[property])}</p>`;
         }

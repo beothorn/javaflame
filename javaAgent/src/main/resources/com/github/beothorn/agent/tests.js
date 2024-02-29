@@ -325,7 +325,89 @@ const tests = {
 
         assert.deepEquals("Filtered values with no change", subject, filterDataByLambda(subject, "main", ""));
         assert.deepEquals("Filtered values", expected, filterDataByLambda(subject, "main", filterString));
-    }
+    },
+    "Enrich node info": (assert) => {
+        const actual = [{
+            "thread": "main",
+            "snapshotTime": 1101, // snapshot 1101 is the same as the last snapshot.
+            "span": {
+                "id": "1",
+                "name": "functionMain",
+                "entryTime":1000,
+                "exitTime":1250, // exit time is the same as the last child exit time.
+                "value":250, // exit time minus entry time
+                "children":[
+                    {
+                        "id": "2",
+                        "name": "functionA",
+                        "entryTime":1000,
+                        "exitTime":1250, // exit time is the same as the last child exit time.
+                        "value":250,
+                        "children":[
+                            {
+                                "id": "3",
+                                "name": "functionAA",
+                                "entryTime":1000,
+                                "exitTime":1100,
+                                "value":100,
+                            },{
+                                "id": "4",
+                                "name": "functionAB",
+                                "entryTime":1100,
+                                "exitTime":1250,
+                                "value":150,
+                            },
+                        ]
+                    }
+                ]
+            }
+        }];
+        enrichNodes(actual);
+        const expected = [{
+            "thread": "main",
+            "snapshotTime": 1101, // snapshot 1101 is the same as the last snapshot.
+            "span": {
+                "id": "1",
+                "parent": "",
+                "thread": "main",
+                "name": "functionMain",
+                "entryTime":1000,
+                "exitTime":1250, // exit time is the same as the last child exit time.
+                "value":250, // exit time minus entry time
+                "children":[
+                    {
+                        "id": "2",
+                        "parent": "1",
+                        "thread": "main",
+                        "name": "functionA",
+                        "entryTime":1000,
+                        "exitTime":1250, // exit time is the same as the last child exit time.
+                        "value":250,
+                        "children":[
+                            {
+                                "id": "3",
+                                "parent": "2",
+                                "thread": "main",
+                                "name": "functionAA",
+                                "entryTime":1000,
+                                "exitTime":1100,
+                                "value":100,
+                            },{
+                                "id": "4",
+                                "parent": "2",
+                                "thread": "main",
+                                "name": "functionAB",
+                                "entryTime":1100,
+                                "exitTime":1250,
+                                "value":150,
+                            },
+                        ]
+                    }
+                ]
+            }
+        }];
+        assert.deepEquals("Enriched noses", expected, actual);
+    },
 };
 
 // Test logic
@@ -349,6 +431,20 @@ function failure(str) {
 
 info("Starting tests.");
 
+function orderedObject(obj) {
+    const sorter = (a, b) =>JSON.stringify(a).localeCompare(JSON.stringify(b));
+    if (Array.isArray(obj)) {
+        return obj.map(orderedObject).sort(sorter);
+    }
+    if (typeof obj === 'object') {
+        const sortedKeys = Object.keys(obj).sort();
+        return sortedKeys.reduce((newObj, key) => {
+            newObj[key] = orderedObject(obj[key]);
+            return newObj;
+        },{});
+    }
+    return obj;
+}
 
 let assertObj = {
     isTrue: (msg, val) => {
@@ -359,11 +455,20 @@ let assertObj = {
         }
     },
     deepEquals: (msg, expected, actual) => {
-        if(JSON.stringify(actual) !== JSON.stringify(expected)){
-            const outputMsg = `${msg} is not equal to expected. 
-                expected: ${JSON.stringify(expected)}
-                actual  : ${JSON.stringify(actual)}`;
-            failure(outputMsg);
+        const expectedOrdered = orderedObject(expected);
+        const actualOrdered = orderedObject(actual);
+
+        if(JSON.stringify(actualOrdered) !== JSON.stringify(expectedOrdered)){
+            const outputMsg = `<p style="color:red">${msg} is not equal to expected.</p>
+                <p style="color:red">Expected:</p>
+                <p style="color:red">${JSON.stringify(expectedOrdered)}</p>
+                <p style="color:red">Actual:</p>
+                <p style="color:red">${JSON.stringify(actualOrdered)}</p>`;
+            failure(`${msg} is not equal to expected.`);
+            failure('<h3 style="color:red">Expected:</h3>');
+            failure(JSON.stringify(expectedOrdered));
+            failure('<h3 style="color:red">Actual:</h3>');
+            failure(JSON.stringify(actualOrdered));
             throw new Error(outputMsg);
         }
     }
@@ -371,10 +476,11 @@ let assertObj = {
 
 for (let testName of Object.keys(tests)) {
     try {
-        info(`Running ${testName}`);
+        document.getElementById("output").innerHTML += `<hr><h2>${testName}</h2>`;
         tests[testName](assertObj);
     } catch (error) {
-        failure(`'${testName}' failed with ${error}`);
+        console.error(error);
+        failure(`<h3 style="color:red">'${testName}' failed with error:</h3><p style="color:red">${error}</p>`);
         continue;
     }
     pass(`'${testName}' passed`);
