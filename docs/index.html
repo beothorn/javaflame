@@ -1,14 +1,14 @@
 <html>
 
 <head>
-    <link id="theme-style" rel="stylesheet" type="text/css" href="fire.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
-<body>
+<body id="customizable-theme" class="light-theme">
 
 <div id="header" class="box">
     <img id="logo" width="100px" src="./logo.svg"/>
     <div id="metadata">
-        <p>Javaflame v16.1.0</p>
+        <p>Javaflame v17.0.0</p>
         <p id="arguments"></p>
         <p>First snapshot timestamp: <span id="startTimestamp"></span></p>
         <p>Last snapshot timestamp: &nbsp;<span id="finalTimestamp"></span></p>
@@ -17,6 +17,21 @@
     </div>
 </div>
 <div id="errorOutput"></div>
+<div id="searchBox" class="box smallBox">
+    <div class="boxHeader">
+        <div id="searchLeft">
+            <h1 class="threadName">Search</h1>
+        </div>
+        <div id="searchRight">
+            <div id="searchInputWithButton">
+                <input id="searchInput" type="text" placeholder="Search for...">
+                <button id="searchButton" class="topButton">Search</button>
+            </div>
+        </div>
+    </div>
+    <div id="searchResult">
+    </div>
+</div>
 <div id="charts"></div>
 <script type="text/javascript" src="stackignite.js"></script>
 <script type="text/javascript" src="data.js"></script>
@@ -24,13 +39,12 @@
 <script type="text/javascript" src="ui.js"></script>
 
 <script>
+    if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.getElementById("customizable-theme").className = 'dark-theme';
+    }
+
     function toggleTheme() {
-        var themeStyle = document.getElementById('theme-style');
-        if (themeStyle.getAttribute('href') === 'style.css') {
-            themeStyle.setAttribute('href', 'fire.css');
-        } else {
-            themeStyle.setAttribute('href', 'style.css');
-        }
+        document.getElementById("customizable-theme").className = (document.getElementById("customizable-theme").className == 'dark-theme')?'light-theme':'dark-theme';
     }
 </script>
 
