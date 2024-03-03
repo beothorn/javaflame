@@ -1,5 +1,8 @@
 package com.github.beothorn.agent;
 
+import com.github.beothorn.agent.parser.Parser;
+import com.github.beothorn.agent.recorder.FunctionCallRecorder;
+import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.NamedElement;
@@ -93,6 +96,8 @@ public class MethodInstrumentationAgent {
         String argumentParameter,
         Instrumentation instrumentation
     ) {
+        Parser parser = new Parser();
+        System.out.println(parser.hello());
         String argument = argumentParameter == null ? "" : argumentParameter;
 
         currentLevel = argumentLogLevel(argument);
@@ -117,9 +122,13 @@ public class MethodInstrumentationAgent {
             throw new RuntimeException(e);
         }
 
-        log(INFO, "Output at "+javaFlameDirectory.getAbsolutePath());
+        snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
+        log(INFO, "Output at "+snapshotDirectory.getAbsolutePath());
+        if(!snapshotDirectory.mkdir()){
+            log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
+        }
 
-        writeHtmlFiles(javaFlameDirectory);
+        writeHtmlFiles();
 
         List<String[]> excludes = argumentExcludes(argument);
         List<String[]> filters = argumentFilter(argument);
@@ -279,12 +288,8 @@ public class MethodInstrumentationAgent {
         return withExclusions;
     }
 
-    private static void writeHtmlFiles(File javaFlameDirectory) {
+    private static void writeHtmlFiles() {
         try {
-            snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
-            if(!snapshotDirectory.mkdir()){
-                log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
-            }
             extractFromResources(snapshotDirectory, "index.html");
             extractFromResources(snapshotDirectory, "code.js");
             extractFromResources(snapshotDirectory, "ui.js");

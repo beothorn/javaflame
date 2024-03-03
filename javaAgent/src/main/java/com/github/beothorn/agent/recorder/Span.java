@@ -1,4 +1,4 @@
-package com.github.beothorn.agent;
+package com.github.beothorn.agent.recorder;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;

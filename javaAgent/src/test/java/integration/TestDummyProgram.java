@@ -1,14 +1,14 @@
 package integration;
 
-import com.github.beothorn.agent.FunctionCallRecorder;
+import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.TestHelper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-import static com.github.beothorn.agent.FunctionCallRecorderWithValueCapturing.enter;
-import static com.github.beothorn.agent.FunctionCallRecorderWithValueCapturing.exit;
+import static com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing.enter;
+import static com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing.exit;
 import static com.github.beothorn.agent.TestHelper.threadJSON;
 
 public class TestDummyProgram {

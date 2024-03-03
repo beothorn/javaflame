@@ -1,5 +1,6 @@
 package com.github.beothorn.agent;
 
+import com.github.beothorn.agent.recorder.Span;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
@@ -7,7 +8,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 
 import java.util.Optional;
 
-import static com.github.beothorn.agent.Span.span;
+import static com.github.beothorn.agent.recorder.Span.span;
 import static com.github.beothorn.agent.TestHelper.of;
 import static org.junit.jupiter.api.Assertions.*;
 
