@@ -1,5 +1,6 @@
 package com.github.beothorn.agent;
 
+import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -7,8 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-import static com.github.beothorn.agent.FunctionCallRecorder.onEnter;
-import static com.github.beothorn.agent.FunctionCallRecorder.onLeave;
+import static com.github.beothorn.agent.recorder.FunctionCallRecorder.onEnter;
+import static com.github.beothorn.agent.recorder.FunctionCallRecorder.onLeave;
 import static com.github.beothorn.agent.TestHelper.spanJSON;
 import static com.github.beothorn.agent.TestHelper.threadJSON;
 import static org.junit.jupiter.api.Assertions.assertTrue;

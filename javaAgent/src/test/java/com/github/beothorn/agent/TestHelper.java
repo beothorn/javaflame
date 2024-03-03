@@ -1,5 +1,6 @@
 package com.github.beothorn.agent;
 
+import com.github.beothorn.agent.recorder.Span;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

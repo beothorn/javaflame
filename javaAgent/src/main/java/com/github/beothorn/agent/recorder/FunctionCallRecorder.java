@@ -1,4 +1,4 @@
-package com.github.beothorn.agent;
+package com.github.beothorn.agent.recorder;
 
 import net.bytebuddy.asm.Advice;
 
@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
-import static com.github.beothorn.agent.Span.span;
+import static com.github.beothorn.agent.recorder.Span.span;
 
 /**
  * This class is responsible for recording the call stack of a function call.

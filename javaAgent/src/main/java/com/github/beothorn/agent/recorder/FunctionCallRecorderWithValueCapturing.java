@@ -1,4 +1,4 @@
-package com.github.beothorn.agent;
+package com.github.beothorn.agent.recorder;
 
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.github.beothorn.agent.FunctionCallRecorder.*;
+import static com.github.beothorn.agent.recorder.FunctionCallRecorder.*;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 
