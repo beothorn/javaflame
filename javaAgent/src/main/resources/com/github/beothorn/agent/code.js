@@ -1,9 +1,15 @@
-// get all thread names
-// for each thread join
-// filter function
-// join last child, first child if same start and name
-
-
+/*
+The format for data.js is a series of snapshots.
+Inside those, you have one entry per thread and then the spans.
+If there are more than two snapshots, they need to be merged.
+the spans have all function calls, each time there is a snapshot, all functions
+that have already finished are removed from the snapshot.
+So the only special case is if a function has not finished between two or more snapshots.
+In any case, for joining all snapshots all that is needed is to concatenate the calls
+and if the last one on one snapshot is the same as the first on the next on, they need to be
+joined.
+After this, all nodes are enriched with extra information, like thread name and parent function.
+*/
 function prepareData(data) {
     const result = mergeSnapshots(data);
     enrichNodes(result);
@@ -167,10 +173,11 @@ function filterSpans(span, filterFunction) {
 }
 
 function search(searchPredicate) {
+    const rootNodes = dataForGraph.flatMap(t => t.span);
     const rootChildren = dataForGraph.flatMap(t => t.span.children);
 
     const result = [];
-    for(let n of rootChildren){
+    for(let n of rootNodes.concat(rootChildren)){
         searchNodes(n, searchPredicate, result);
     }
     return result;
@@ -192,7 +199,8 @@ function searchString(searchTerm) {
 }
 
 function searchId(idToSearch) {
-    return search((n) => n.id === idToSearch);
+    const result = search((n) => n.id === idToSearch);
+    return result[0];
 }
 
 function enrichNodesRecursively(node, parent, threadName) {
