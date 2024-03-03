@@ -373,6 +373,47 @@ function buildGraph(dataToPlot){
 
 buildGraph(dataForGraph);
 
+function createReverseHierarchyEntryListItem(entry) {
+    const listItem = document.createElement("li");
+    const listItemName = document.createElement("span");
+    if (entry.parent !== '') {
+        listItemName.classList.add("caret");
+        listItemName.addEventListener("click", () => {
+            console.log(entry);
+            if (listItemName.parentElement.querySelector(".nested")) {
+                listItemName.parentElement.querySelector(".nested").classList.toggle("active");
+            } else {
+                const parentNode = searchId(entry.parent);
+                if(!parentNode) {
+                    console.error(`${entry.parent} id not found! Parent is not found!`);
+                    return;
+                }
+                const newLI = createReverseHierarchyEntryListItem(parentNode); 
+                const newUnorderedList = document.createElement("ul");
+                newUnorderedList.classList.add("nested");
+                newUnorderedList.appendChild(newLI);    
+                newUnorderedList.classList.toggle("active");
+                listItem.appendChild(newUnorderedList);
+            }
+            listItemName.classList.toggle("caret-down");
+        });
+    }
+    listItemName.appendChild(document.createTextNode(`${entry.thread}::${entry.name}`));
+    listItem.appendChild(listItemName);
+    return listItem;
+}
+
+function createReverseHierarchyView(entries, visualizationDiv) {
+    const unorderedList = document.createElement("ul");
+
+    for(let entry of entries) {
+        const listItem = createReverseHierarchyEntryListItem(entry);
+        unorderedList.appendChild(listItem);
+    }
+
+    visualizationDiv.appendChild(unorderedList);
+}
+
 document.getElementById("searchButton").addEventListener("click", () => {
     const searchInputValue = document.getElementById("searchInput").value;
     if (searchInputValue === '') {
@@ -381,8 +422,5 @@ document.getElementById("searchButton").addEventListener("click", () => {
     }
     const result = searchString(searchInputValue);
     document.getElementById("searchResult").innerHTML = '';
-    console.log(result);
-    for(let r of result) {
-        document.getElementById("searchResult").innerHTML += `<p>${r.thread}::${r.name}</p>`;
-    }
+    createReverseHierarchyView(result, document.getElementById("searchResult"));
 });
