@@ -34,6 +34,8 @@ public class MethodInstrumentationAgent {
 
     private static final ReentrantLock fileWriteLock = new ReentrantLock();
 
+    private static final Set<String> loadedClasses = new HashSet<>();
+
     public enum Flag{
 
         NO_CAPTURING_VALUES("no_capturing_values"),
@@ -255,6 +257,36 @@ public class MethodInstrumentationAgent {
                     e.printStackTrace();
                 }
             });
+
+            if (!loadedClasses.isEmpty()){
+                try {
+                    File transformedFile = new File(snapshotDirectory.getAbsolutePath(), "classesTransformed.txt");
+                    if (transformedFile.exists()) {
+                        RandomAccessFile raf = new RandomAccessFile(transformedFile, "rw");
+                        long length = raf.length();
+                        long pos = length - 3; // 3 bytes = \n];
+                        raf.seek(pos);
+                        for (String className: loadedClasses) {
+                            raf.writeBytes(className + "\n");
+                        }
+                        raf.close();
+                    } else {
+                        try (FileWriter fw = new FileWriter(transformedFile)) {
+                            for (String className: loadedClasses) {
+                                fw.write(className + "\n");
+                            }
+                            fw.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    loadedClasses.clear();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+
+
         } finally {
             fileWriteLock.unlock();
         }
@@ -444,6 +476,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded, DynamicType dynamicType) {
+            loadedClasses.add(typeDescription.getCanonicalName());
             log(DEBUG, "onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +

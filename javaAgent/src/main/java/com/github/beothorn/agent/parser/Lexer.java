@@ -94,7 +94,7 @@ public class Lexer {
         return stringOrFunctionCursor;
     }
 
-    private boolean add(final Token t) {
-        return tokens.add(t);
+    private void add(final Token t) {
+        tokens.add(t);
     }
 }
