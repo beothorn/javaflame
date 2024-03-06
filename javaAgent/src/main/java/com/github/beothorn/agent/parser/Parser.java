@@ -1,8 +1,18 @@
 package com.github.beothorn.agent.parser;
 
-public class Parser {
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.matcher.ElementMatcher;
 
-    public String hello(){
-        return "Hello";
+import static net.bytebuddy.matcher.ElementMatchers.*;
+
+public class Parser {
+    public ElementMatcher.Junction<TypeDescription> parse(String expression){
+        /*
+        todo: named namedIgnoreCase nameStartsWith nameStartsWithIgnoreCase nameEndsWith
+        nameEndsWithIgnoreCase nameContains nameContainsIgnoreCase
+         nameMatches <- regex
+
+         */
+        return nameContains(expression);
     }
 }

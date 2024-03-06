@@ -1,6 +1,5 @@
 package com.github.beothorn.agent;
 
-import com.github.beothorn.agent.parser.Parser;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -96,8 +95,6 @@ public class MethodInstrumentationAgent {
         String argumentParameter,
         Instrumentation instrumentation
     ) {
-        Parser parser = new Parser();
-        System.out.println(parser.hello());
         String argument = argumentParameter == null ? "" : argumentParameter;
 
         currentLevel = argumentLogLevel(argument);
