@@ -3,12 +3,9 @@ package com.github.beothorn.agent.parser;
 import java.util.Objects;
 
 public class Token {
-    public enum TokenType {
-        STRING_VALUE, FUNCTION_CALL, OPERATOR_OR, OPERATOR_AND, OPERATOR_NOT, OPEN_PAREN, CLOSE_PAREN
-    }
 
-    public TokenType type;
-    public String value;
+    public final TokenType type;
+    public final String value;
 
     private Token(TokenType type, String value) {
         this.type = type;
