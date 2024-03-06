@@ -7,12 +7,7 @@ class ParserTest {
 
     @Test
     void simpleParse(){
-        String expression = "foo";
+        // new Lexer("foo"); mockito here for true unit tests
+//        new Parser()
     }
-
-    void complexParse(){
-        String expression = "!bla&&(named(foo.bar.Baz)||nameMatches(.*foo.*))";
-        String expression2 = "(named(foo.bar.Baz)||nameMatches(.*foo.*))&&!nameEndsWith(bla)";
-    }
-
 }
