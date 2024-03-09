@@ -180,7 +180,7 @@ public class MethodInstrumentationAgent {
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-//                .with(new DebugListener())
+                .with(new DebugListener())
                 .type(argumentsMatcher);
         withoutExtraExcludes
             .transform(new IntroduceMethodInterception(
@@ -271,9 +271,6 @@ public class MethodInstrumentationAgent {
                     File transformedFile = new File(snapshotDirectory.getAbsolutePath(), "classesTransformed.txt");
                     if (transformedFile.exists()) {
                         RandomAccessFile raf = new RandomAccessFile(transformedFile, "rw");
-                        long length = raf.length();
-                        long pos = length - 3; // 3 bytes = \n];
-                        raf.seek(pos);
                         for (String className: loadedClasses) {
                             raf.writeBytes(className + "\n");
                         }
