@@ -1,6 +1,8 @@
 package com.github.beothorn.agent.parser;
 
-public interface Assembler {
-    Object assemble(Token token);
-    Object assemble(Token token, Object[] args);
+import java.util.List;
+
+public interface Assembler<T> {
+    T assemble(Token token);
+    T assemble(Token token, List<T> args);
 }

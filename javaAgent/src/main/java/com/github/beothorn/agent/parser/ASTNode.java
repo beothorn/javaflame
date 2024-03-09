@@ -24,7 +24,7 @@ public class ASTNode {
         return new ASTNode(token, children);
     }
 
-    public Object apply(Assembler assembler) {
+    public <T> T apply(Assembler<T> assembler) {
         Object result = null;
         if (children.length == 0) {
             return assembler.assemble(token);
@@ -33,7 +33,7 @@ public class ASTNode {
         for (ASTNode child : children) {
             results.add(child.apply(assembler));
         }
-        return assembler.assemble(token, results.toArray());
+        return assembler.assemble(token, (List<T>) results);
     }
 
     @Override

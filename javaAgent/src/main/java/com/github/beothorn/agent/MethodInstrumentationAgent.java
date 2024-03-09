@@ -1,5 +1,7 @@
 package com.github.beothorn.agent;
 
+import com.github.beothorn.agent.parser.CompilationException;
+import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -154,10 +156,16 @@ public class MethodInstrumentationAgent {
         maybeStartRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStartTrigger);
         maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
 
-        ElementMatcher.Junction<TypeDescription> argumentsMatcher = getMatcherFromArguments(
-            excludes,
-            filters
-        );
+        ElementMatcher.Junction<TypeDescription> argumentsMatcher = null;
+        try {
+            argumentsMatcher = getMatcherFromArguments(
+                excludes,
+                filters
+            );
+        } catch (CompilationException e) {
+            log(ERROR, e.getMessage());
+            return;
+        }
 
         AgentBuilder agentBuilder = new AgentBuilder.Default();
 
@@ -172,7 +180,7 @@ public class MethodInstrumentationAgent {
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                .with(new DebugListener())
+//                .with(new DebugListener())
                 .type(argumentsMatcher);
         withoutExtraExcludes
             .transform(new IntroduceMethodInterception(
@@ -295,7 +303,7 @@ public class MethodInstrumentationAgent {
     private static ElementMatcher.Junction<TypeDescription> getMatcherFromArguments(
             List<String[]> excludes,
             List<String[]> filters
-    ) {
+    ) throws CompilationException {
         ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent")
                 .or(nameContains("net.bytebuddy"));
 
@@ -308,9 +316,11 @@ public class MethodInstrumentationAgent {
         ElementMatcher.Junction<TypeDescription> withExclusions = not(exclusions);
 
         if(!filters.isEmpty()){
-            ElementMatcher.Junction<NamedElement> namedElementJunction = nameContains(filters.get(0)[0]);
+            ElementMatcher.Junction<NamedElement> namedElementJunction = ElementMatcherFromExpression.forExpression(filters.get(0)[0]);
+            log(DEBUG, namedElementJunction.toString());
             for (int i = 1; i < filters.size(); i++) {
-                namedElementJunction = namedElementJunction.or(nameContains(filters.get(i)[0]));
+                namedElementJunction = namedElementJunction.or(ElementMatcherFromExpression.forExpression(filters.get(i)[0]));
+                log(DEBUG, namedElementJunction.toString());
             }
             withExclusions = withExclusions.and(namedElementJunction);
         }
