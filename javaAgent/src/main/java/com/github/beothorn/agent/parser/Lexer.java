@@ -6,7 +6,6 @@ import java.util.Deque;
 import static com.github.beothorn.agent.parser.Token.*;
 
 public class Lexer {
-    Deque<Token> tokens;
 
     /**
      * This Lexer will generate tokens for our string matcher.
@@ -18,17 +17,18 @@ public class Lexer {
      *
      * @throws Exception with clear error message
      *
-     * @param input
+     * @param input The expression to be tokenized
      */
-    public Lexer(String input) throws CompilationException {
-        tokens = new ArrayDeque<>();
+    public static Deque<Token> tokenize(String input) throws CompilationException {
+        Deque<Token> tokens = new ArrayDeque<>();
         int cursor = 0;
         while (cursor < input.length()) {
-            cursor = readNextToken(input, cursor);
+            cursor = readNextToken(tokens, input, cursor);
         }
+        return tokens;
     }
 
-    private int readNextToken(String input, int cursor) throws CompilationException {
+    private static int readNextToken(Deque<Token> tokens, String input, int cursor) throws CompilationException {
         char currentChar = input.charAt(cursor);
 
         if(currentChar == ' ') {
@@ -36,17 +36,17 @@ public class Lexer {
         }
 
         if(currentChar == '(') {
-            add(openParen());
+            tokens.add(openParen());
             return cursor + 1;
         }
 
         if(currentChar == ')') {
-            add(closeParen());
+            tokens.add(closeParen());
             return cursor + 1;
         }
 
         if(currentChar == '!') {
-            add(not());
+            tokens.add(not());
             return cursor + 1;
         }
 
@@ -54,7 +54,7 @@ public class Lexer {
             if (cursor + 1 >= input.length() || input.charAt(cursor + 1) != '|') {
                 throw new CompilationException(cursor, input, "Invalid input: Expected '||' after '|'");
             }
-            add(or());
+            tokens.add(or());
             return cursor + 2;
         }
 
@@ -62,7 +62,7 @@ public class Lexer {
             if (cursor + 1 >= input.length() || input.charAt(cursor + 1) != '&') {
                 throw new CompilationException(cursor, input, "Invalid input: Expected '&&' after '&'");
             }
-            add(and());
+            tokens.add(and());
             return cursor + 2;
         }
 
@@ -73,11 +73,11 @@ public class Lexer {
                 throw new CompilationException(stringOrFunctionCursor, input, "Invalid input: Spaces are not allowed");
             }
             if(currentWordChar == ')' || currentWordChar == '&' || currentWordChar == '|') {
-                add(string(input.substring(cursor, stringOrFunctionCursor)));
+                tokens.add(string(input.substring(cursor, stringOrFunctionCursor)));
                 return stringOrFunctionCursor;
             }
             if(currentWordChar == '(') {
-                add(function(input.substring(cursor, stringOrFunctionCursor)));
+                tokens.add(function(input.substring(cursor, stringOrFunctionCursor)));
                 return stringOrFunctionCursor;
             }
             if(currentWordChar == '!') {
@@ -90,11 +90,7 @@ public class Lexer {
             stringOrFunctionCursor++;
         }
 
-        add(string(input.substring(cursor, stringOrFunctionCursor)));
+        tokens.add(string(input.substring(cursor, stringOrFunctionCursor)));
         return stringOrFunctionCursor;
-    }
-
-    private void add(final Token t) {
-        tokens.add(t);
     }
 }
