@@ -1,6 +1,8 @@
 package com.github.beothorn.agent.parser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class ASTNode {
@@ -20,6 +22,18 @@ public class ASTNode {
 
     public static ASTNode n(Token token, ASTNode... children) {
         return new ASTNode(token, children);
+    }
+
+    public Object apply(Assembler assembler) {
+        Object result = null;
+        if (children.length == 0) {
+            return assembler.assemble(token);
+        }
+        List<Object> results = new ArrayList<>();
+        for (ASTNode child : children) {
+            results.add(child.apply(assembler));
+        }
+        return assembler.assemble(token, results.toArray());
     }
 
     @Override
