@@ -22,7 +22,6 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.*;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
@@ -36,7 +35,11 @@ public class MethodInstrumentationAgent {
 
     private static final ReentrantLock fileWriteLock = new ReentrantLock();
 
-    private static final Set<String> loadedClasses = new HashSet<>();
+    private static final Set<String> debugTransformedClasses = new HashSet<>();
+    private static final Set<String> debugDiscoveredClasses = new HashSet<>();
+    private static final Set<String> debugIgnoredClasses = new HashSet<>();
+    private static final Set<String> debugErrorClasses = new HashSet<>();
+    private static final Set<String> debugCompletedClasses = new HashSet<>();
 
     public enum Flag{
 
@@ -131,37 +134,36 @@ public class MethodInstrumentationAgent {
 
         writeHtmlFiles();
 
-        List<String[]> excludes = argumentExcludes(argument);
-        List<String[]> filters = argumentFilter(argument);
+        Optional<String> filter = argumentFilter(argument);
         Optional<String> maybeStartRecordingTriggerFunction = argumentStartRecordingTriggerFunction(argument);
         Optional<String> maybeStopRecordingTriggerFunction = argumentStopRecordingTriggerFunction(argument);
 
         String[] allFlags = allFlagsOnArgument(argument);
         String allFlagsAsString = Arrays.toString(allFlags);
         String outputDirectory = snapshotDirectory.getAbsolutePath();
-        String excludesAsString = MethodInstrumentationAgent.argumentsToString(excludes);
-        String filtersAsString = MethodInstrumentationAgent.argumentsToString(filters);
 
         String executionMetadata = "logLevel :" + currentLevel.name()
                 + " flags:" + allFlagsAsString
                 + " output to '" + outputDirectory + "'"
-                + " excludes:" + excludesAsString
-                + " filters:" + filtersAsString
+                + " filters:" + filter.orElse("No filter parameter")
                 + maybeStartRecordingTriggerFunction.map(s -> "Start recording trigger function" + s).orElse("")
                 + maybeStopRecordingTriggerFunction.map(s -> "Stop recording trigger function" + s).orElse("");
         log(DEBUG, executionMetadata);
 
-        String executionMetadataFormatted = getExecutionMetadataAsHtml(allFlagsAsString, outputDirectory, excludesAsString, filtersAsString, maybeStartRecordingTriggerFunction, maybeStopRecordingTriggerFunction);
+        String executionMetadataFormatted = getExecutionMetadataAsHtml(
+            allFlagsAsString,
+            outputDirectory,
+            filter,
+            maybeStartRecordingTriggerFunction,
+            maybeStopRecordingTriggerFunction
+        );
 
         maybeStartRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStartTrigger);
         maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
 
-        ElementMatcher.Junction<TypeDescription> argumentsMatcher = null;
+        ElementMatcher.Junction<TypeDescription> argumentsMatcher;
         try {
-            argumentsMatcher = getMatcherFromArguments(
-                excludes,
-                filters
-            );
+            argumentsMatcher = createMatcher(filter);
         } catch (CompilationException e) {
             log(ERROR, e.getMessage());
             return;
@@ -186,8 +188,7 @@ public class MethodInstrumentationAgent {
             .transform(new IntroduceMethodInterception(
                 noConstructorMode,
                 advice,
-                filters,
-                excludes
+                filter
             ))
             .installOn(instrumentation);
 
@@ -212,25 +213,16 @@ public class MethodInstrumentationAgent {
         }
     }
 
-    public static String argumentsToString(List<String[]> args) {
-        return "[" + args.stream()
-                .map(Arrays::toString)
-                .collect(Collectors.joining(", "))
-                + "]";
-    }
-
     public static String getExecutionMetadataAsHtml(
         String allFlagsAsString,
         String outputDirectory,
-        String excludesAsString,
-        String filtersAsString,
+        Optional<String> filter,
         Optional<String> maybeStartRecordingTriggerFunction,
         Optional<String> maybeStopRecordingTriggerFunction
     ) {
         return "<p>Flags: " + allFlagsAsString + "</p>"
                 + "<p>Output: '" + outputDirectory + "'</p>"
-                + "<p>Excludes: " + excludesAsString + "</p>"
-                + "<p>Filters: " + filtersAsString + "</p>"
+                + "<p>Filters: " + filter.orElse("No filter parameter") + "</p>"
                 + maybeStartRecordingTriggerFunction.map(s -> "<p>Start recording trigger function: '" + s + "'</p>").orElse("")
                 + maybeStopRecordingTriggerFunction.map(s -> "<p>Stop recording trigger function: '" + s + "'</p>").orElse("");
     }
@@ -266,62 +258,62 @@ public class MethodInstrumentationAgent {
                 }
             });
 
-            if (!loadedClasses.isEmpty()){
-                try {
-                    File transformedFile = new File(snapshotDirectory.getAbsolutePath(), "classesTransformed.txt");
-                    if (transformedFile.exists()) {
-                        RandomAccessFile raf = new RandomAccessFile(transformedFile, "rw");
-                        for (String className: loadedClasses) {
-                            raf.writeBytes(className + "\n");
-                        }
-                        raf.close();
-                    } else {
-                        try (FileWriter fw = new FileWriter(transformedFile)) {
-                            for (String className: loadedClasses) {
-                                fw.write(className + "\n");
-                            }
-                            fw.flush();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    loadedClasses.clear();
-                } catch (Exception e){
-                    e.printStackTrace();
-                }
+            if (DEBUG.equals(currentLevel)) {
+                writeDebufFile(debugTransformedClasses, "debugTransformedClasses.txt");
+                writeDebufFile(debugDiscoveredClasses, "debugDiscoveredClasses.txt");
+                writeDebufFile(debugIgnoredClasses, "debugIgnoredClasses.txt");
+                writeDebufFile(debugErrorClasses, "debugErrorClasses.txt");
+                writeDebufFile(debugCompletedClasses, "debugCompletedClasses.txt");
+
             }
-
-
         } finally {
             fileWriteLock.unlock();
         }
     }
 
-    private static ElementMatcher.Junction<TypeDescription> getMatcherFromArguments(
-            List<String[]> excludes,
-            List<String[]> filters
+    private static void writeDebufFile(final Set<String> debugClassesToWrite, final String file) {
+        if (!debugClassesToWrite.isEmpty()){
+            try {
+                File debugLogFile = new File(snapshotDirectory.getAbsolutePath(), file);
+                if (debugLogFile.exists()) {
+                    RandomAccessFile raf = new RandomAccessFile(debugLogFile, "rw");
+                    for (String className: debugClassesToWrite) {
+                        raf.writeBytes(className + "\n");
+                    }
+                    raf.close();
+                } else {
+                    try (FileWriter fw = new FileWriter(debugLogFile)) {
+                        for (String className: debugClassesToWrite) {
+                            fw.write(className + "\n");
+                        }
+                        fw.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                debugClassesToWrite.clear();
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static ElementMatcher.Junction<TypeDescription> createMatcher(
+        Optional<String> maybeFilter
     ) throws CompilationException {
-        ElementMatcher.Junction<TypeDescription> exclusions = nameContains("com.github.beothorn.agent")
-                .or(nameContains("net.bytebuddy"));
+        ElementMatcher.Junction<TypeDescription> exclusions = not(
+            nameContains("com.github.beothorn.agent")
+            .or(nameContains("net.bytebuddy"))
+        );
 
-        for (String[] exclude: excludes) {
-            if(exclude.length == 1){ // This excludes the whole package, not only one function
-                exclusions = exclusions.or(nameContains(exclude[0]));
-            }
-            // If the exclude is for a single function, this is done somewhere else
+        if (!maybeFilter.isPresent()) {
+            return exclusions;
         }
-        ElementMatcher.Junction<TypeDescription> withExclusions = not(exclusions);
 
-        if(!filters.isEmpty()){
-            ElementMatcher.Junction<NamedElement> namedElementJunction = ElementMatcherFromExpression.forExpression(filters.get(0)[0]);
-            log(DEBUG, namedElementJunction.toString());
-            for (int i = 1; i < filters.size(); i++) {
-                namedElementJunction = namedElementJunction.or(ElementMatcherFromExpression.forExpression(filters.get(i)[0]));
-                log(DEBUG, namedElementJunction.toString());
-            }
-            withExclusions = withExclusions.and(namedElementJunction);
-        }
-        return withExclusions;
+        String filter = maybeFilter.get();
+        ElementMatcher.Junction<NamedElement> filterMatcher = ElementMatcherFromExpression.forExpression(filter);
+        log(DEBUG, filterMatcher.toString());
+        return exclusions.and(filterMatcher);
     }
 
     private static void writeHtmlFiles() {
@@ -357,29 +349,21 @@ public class MethodInstrumentationAgent {
         return NO_SNAPSHOTS.isOnArguments(argument);
     }
 
-    public static List<String[]> argumentExcludes(String argument){
-        return matchCommand(
-            argument,
-            "exclude"
-        );
-    }
-
-    public static List<String[]> argumentFilter(String argument){
+    public static Optional<String> argumentFilter(String argument){
         return matchCommand(
             argument,
             "filter"
         );
     }
 
-    private static List<String[]> matchCommand(
+    private static Optional<String> matchCommand(
         String argument,
         String command
     ) {
         Matcher matcher = Pattern.compile(command + ":([^,]+)")
                 .matcher(argument);
-        ArrayList<String> allMatches = getAllStringsForMatcher(matcher);
-        return allMatches.stream().map(m -> m.split(":"))
-                .collect(Collectors.toList());
+        if(!matcher.find()) return Optional.empty();
+        return Optional.of(matcher.group(1));
     }
 
     public static Optional<String> argumentStartRecordingTriggerFunction(String argument){
@@ -479,11 +463,12 @@ public class MethodInstrumentationAgent {
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
+            debugDiscoveredClasses.add(typeName);
         }
 
         @Override
         public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded, DynamicType dynamicType) {
-            loadedClasses.add(typeDescription.getCanonicalName());
+            debugTransformedClasses.add(typeDescription.getCanonicalName());
             log(DEBUG, "onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
@@ -493,6 +478,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onIgnored(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded) {
+            debugIgnoredClasses.add(typeDescription.getCanonicalName());
             log(DEBUG, "onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
@@ -501,6 +487,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {
+            debugErrorClasses.add(typeName);
             log(WARN, "onError(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
@@ -510,6 +497,7 @@ public class MethodInstrumentationAgent {
 
         @Override
         public void onComplete(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded) {
+            debugCompletedClasses.add(typeName);
             log(DEBUG, "onComplete(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
@@ -520,19 +508,16 @@ public class MethodInstrumentationAgent {
     private static class IntroduceMethodInterception implements AgentBuilder.Transformer {
         private final boolean noConstructorMode;
         private final Advice advice;
-        private final List<String[]> filters;
-        private final List<String[]> excludes;
+        private final Optional<String> filter;
 
         public IntroduceMethodInterception(
             boolean noConstructorMode,
             Advice advice,
-            List<String[]> filters,
-            List<String[]> excludes
+            Optional<String> filter
         ) {
             this.noConstructorMode = noConstructorMode;
             this.advice = advice;
-            this.filters = filters;
-            this.excludes = excludes;
+            this.filter = filter;
         }
 
         public DynamicType.Builder<?> transform(
@@ -566,21 +551,14 @@ public class MethodInstrumentationAgent {
                 matcher = matcher.and(not(isConstructor()));
             }
 
-            for (String[] f : filters) {
-                if (f.length > 1) {
-                    if (Objects.equals(typeDescription.getCanonicalName(), f[0])) {
-                        matcher = matcher.and(nameContains(f[1]));
-                    }
-                }
-            }
-
-            for (String[] e : excludes) {
-                if (e.length > 1) {
-                    if (Objects.equals(typeDescription.getCanonicalName(), e[0])) {
-                        matcher = matcher.and(not(nameContains(e[1])));
-                    }
-                }
-            }
+            // TODO: Restore function filter in case namespace matches
+//            for (String[] f : filters) {
+//                if (f.length > 1) {
+//                    if (Objects.equals(typeDescription.getCanonicalName(), f[0])) {
+//                        matcher = matcher.and(nameContains(f[1]));
+//                    }
+//                }
+//            }
 
             return builder.visit(advice.on(matcher));
         }
