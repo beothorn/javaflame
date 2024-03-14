@@ -12,10 +12,6 @@ public class Token {
         this.value = value;
     }
 
-    public static Token t(TokenType type, String value) {
-        return new Token(type, value);
-    }
-
     public static Token and() {
         return new Token(TokenType.OPERATOR_AND, "&&");
     }
@@ -26,6 +22,10 @@ public class Token {
 
     public static Token not() {
         return new Token(TokenType.OPERATOR_NOT, "!");
+    }
+
+    public static Token startFunction() {
+        return new Token(TokenType.FUNCTION_MATCHER_VALUE, "#");
     }
 
     public static Token openParen() {

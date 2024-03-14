@@ -3,7 +3,6 @@ package com.github.beothorn.agent;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -128,74 +127,17 @@ class MethodInstrumentationAgentTest {
     }
 
     @Test
-    void whenItHasExcludes(){
-        testArgumentsForExcludes("", new String[][]{});
-        testArgumentsForExcludes("xxx", new String[][]{});
-        testArgumentsForExcludes("exclude:foo.bar", new String[][]{
-            {"foo.bar"}
-        });
-        testArgumentsForExcludes("exclude:foo.bar,xxx", new String[][]{
-                {"foo.bar"}
-        });
-        testArgumentsForExcludes("xxx,exclude:foo.bar", new String[][]{
-                {"foo.bar"}
-        });
-        testArgumentsForExcludes("exclude:foo.bar,exclude:bar.baz", new String[][]{
-                {"foo.bar"},
-                {"bar.baz"}
-        });
-        testArgumentsForExcludes("exclude:foo.bar,fda,exclude:bar.baz,acd,wfae", new String[][]{
-                {"foo.bar"},
-                {"bar.baz"}
-        });
-    }
-
-    @Test
     void whenItHasFilter(){
-        testArgumentsForFilter("", new String[][]{});
-        testArgumentsForFilter("xxx", new String[][]{});
-        testArgumentsForFilter("filter:foo.bar", new String[][]{
-            {"foo.bar"}
-        });
-        testArgumentsForFilter("filter:foo.bar,xxx", new String[][]{
-            {"foo.bar"}
-        });
-        testArgumentsForFilter("xxx,filter:foo.bar", new String[][]{
-            {"foo.bar"}
-        });
-        testArgumentsForFilter("filter:foo.bar,filter:bar.baz", new String[][]{
-            {"foo.bar"},
-            {"bar.baz"},
-        });
-        testArgumentsForFilter("aaa:bbb:ccc,filter:foo.bar,fda,filter:bar.baz,acd,wfae", new String[][]{
-            {"foo.bar"},
-            {"bar.baz"},
-        });
-        testArgumentsForFilter("aaa:bbb:ccc,filter:foo.bar:baz,fda,filter:bar.baz,acd,wfae", new String[][]{
-            {"foo.bar", "baz"},
-            {"bar.baz"},
-        });
+        testArgumentsForFilter("", Optional.empty());
+        testArgumentsForFilter("xxx", Optional.empty());
+        testArgumentsForFilter("filter:foo.bar", Optional.of("foo.bar"));
+        testArgumentsForFilter("filter:foo.bar,xxx", Optional.of("foo.bar"));
+        testArgumentsForFilter("xxx,filter:foo.bar", Optional.of("foo.bar"));
     }
 
-    private static void testArgumentsForFilter(String stringArgument, String[][] expectation) {
-        List<String[]> args = MethodInstrumentationAgent.argumentFilter(stringArgument);
-        testArguments(expectation, args);
-    }
-
-    private static void testArgumentsForExcludes(String stringArgument, String[][] expectation) {
-        List<String[]> args = MethodInstrumentationAgent.argumentExcludes(stringArgument);
-        testArguments(expectation, args);
-    }
-
-    private static void testArguments(String[][] expectation, List<String[]> args) {
-        assertEquals(expectation.length, args.size());
-        for (int i = 0; i < expectation.length; i++) {
-            String[] arg = args.get(i);
-            assertEquals(expectation[i][0], arg[0]);
-            if (expectation[i].length > 1) {
-                assertEquals(expectation[i][1], arg[1]);
-            }
-        }
+    private static void testArgumentsForFilter(String stringArgument, Optional<String> expectation) {
+        Optional<String> actual = MethodInstrumentationAgent.argumentFilter(stringArgument);
+        assertEquals(expectation, actual);
     }
 
     @Test
@@ -220,10 +162,7 @@ class MethodInstrumentationAgentTest {
 
     @Test
     void metadataRendersCorrectly(){
-        String argument = "exclude:a.b,"
-                + "exclude:c.d,"
-                + "filter:x.y,"
-                + "filter:w.q,"
+        String argument = "filter:x.y,"
                 + "startRecordingTriggerFunction:onStart,"
                 + "stopRecordingTriggerFunction:onEnd";
         /*
@@ -236,30 +175,25 @@ class MethodInstrumentationAgentTest {
          * too many classes, nor I want to return some dynamic structure with the data.
          * I already did it with types and values, it felt wrooonnng.
          */
-        List<String[]> excludes = MethodInstrumentationAgent.argumentExcludes(argument);
-        List<String[]> filters = MethodInstrumentationAgent.argumentFilter(argument);
+        Optional<String> filter = MethodInstrumentationAgent.argumentFilter(argument);
         Optional<String> maybeStartRecordingTriggerFunction = MethodInstrumentationAgent.argumentStartRecordingTriggerFunction(argument);
         Optional<String> maybeStopRecordingTriggerFunction = MethodInstrumentationAgent.argumentStopRecordingTriggerFunction(argument);
 
         String[] allFlags = allFlagsOnArgument(argument);
         String allFlagsAsString = Arrays.toString(allFlags);
         String outputDirectory = "/foo/bar";
-        String excludesAsString = MethodInstrumentationAgent.argumentsToString(excludes);
-        String filtersAsString = MethodInstrumentationAgent.argumentsToString(filters);
 
         String actual = MethodInstrumentationAgent.getExecutionMetadataAsHtml(
             allFlagsAsString,
             outputDirectory,
-            excludesAsString,
-            filtersAsString,
+            filter,
             maybeStartRecordingTriggerFunction,
             maybeStopRecordingTriggerFunction
         );
 
         String expected = "<p>Flags: []</p>" +
                 "<p>Output: '/foo/bar'</p>" +
-                "<p>Excludes: [[a.b], [c.d]]</p>" +
-                "<p>Filters: [[x.y], [w.q]]</p>" +
+                "<p>Filters: x.y</p>" +
                 "<p>Start recording trigger function: 'onStart'</p>" +
                 "<p>Stop recording trigger function: 'onEnd'</p>";
 

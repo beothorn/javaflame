@@ -66,13 +66,21 @@ public class Lexer {
             return cursor + 2;
         }
 
+        if(currentChar == '#') {
+            tokens.add(startFunction());
+            return cursor + 1;
+        }
+
         int stringOrFunctionCursor = cursor + 1;
         while (stringOrFunctionCursor < input.length()) {
             char currentWordChar = input.charAt(stringOrFunctionCursor);
             if(currentWordChar == ' ') {
                 throw new CompilationException(stringOrFunctionCursor, input, "Invalid input: Spaces are not allowed");
             }
-            if(currentWordChar == ')' || currentWordChar == '&' || currentWordChar == '|') {
+            if(currentWordChar == ')'
+                    || currentWordChar == '&'
+                    || currentWordChar == '|'
+                    || currentWordChar == '#') {
                 tokens.add(string(input.substring(cursor, stringOrFunctionCursor)));
                 return stringOrFunctionCursor;
             }

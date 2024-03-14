@@ -9,4 +9,8 @@ public class CompilationException extends Exception{
                 + "\"");
     }
 
+    public CompilationException(String error){
+        super(error);
+    }
+
 }
