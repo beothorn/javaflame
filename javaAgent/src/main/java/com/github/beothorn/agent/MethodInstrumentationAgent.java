@@ -2,6 +2,7 @@ package com.github.beothorn.agent;
 
 import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
+import com.github.beothorn.agent.parser.MethodMatcher;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -19,6 +20,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -169,6 +171,8 @@ public class MethodInstrumentationAgent {
             return;
         }
 
+        Optional<MethodMatcher> methodMatcher = filter.map(MethodMatcher::forExpression);
+
         AgentBuilder agentBuilder = new AgentBuilder.Default();
 
         boolean coreClassesMode = argumentHasIncludeCoreClasses(argument);
@@ -188,7 +192,7 @@ public class MethodInstrumentationAgent {
             .transform(new IntroduceMethodInterception(
                 noConstructorMode,
                 advice,
-                filter
+                methodMatcher
             ))
             .installOn(instrumentation);
 
@@ -507,12 +511,12 @@ public class MethodInstrumentationAgent {
     private static class IntroduceMethodInterception implements AgentBuilder.Transformer {
         private final boolean noConstructorMode;
         private final Advice advice;
-        private final Optional<String> filter;
+        private final Optional<MethodMatcher> filter;
 
         public IntroduceMethodInterception(
             boolean noConstructorMode,
             Advice advice,
-            Optional<String> filter
+            Optional<MethodMatcher> filter
         ) {
             this.noConstructorMode = noConstructorMode;
             this.advice = advice;
@@ -543,23 +547,20 @@ public class MethodInstrumentationAgent {
             DynamicType.Builder<?> builder,
             TypeDescription typeDescription
         ) {
-            log(DEBUG, "Transform '"+ typeDescription.getCanonicalName()+"'");
+            String canonicalName = typeDescription.getCanonicalName();
+            log(DEBUG, "Transform '"+ canonicalName +"'");
 
-            ElementMatcher.Junction<MethodDescription> matcher = isMethod();
+            AtomicReference<ElementMatcher.Junction<MethodDescription>> matcherWrapper = new AtomicReference<>(isMethod());
+
             if(noConstructorMode){
-                matcher = matcher.and(not(isConstructor()));
+                matcherWrapper.updateAndGet(m -> m.and(not(isConstructor())));
             }
 
-            // TODO: Restore function filter in case namespace matches
-//            for (String[] f : filters) {
-//                if (f.length > 1) {
-//                    if (Objects.equals(typeDescription.getCanonicalName(), f[0])) {
-//                        matcher = matcher.and(nameContains(f[1]));
-//                    }
-//                }
-//            }
+            filter
+                .map(f -> f.matcherForCanonicalName(canonicalName))
+                .ifPresent(xm -> matcherWrapper.updateAndGet(m -> m.and(xm)));
 
-            return builder.visit(advice.on(matcher));
+            return builder.visit(advice.on(matcherWrapper.get()));
         }
     }
 }

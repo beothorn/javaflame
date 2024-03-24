@@ -35,6 +35,7 @@ public class ASTNode {
         for (ASTNode child : children) {
             results.add(child.apply(assembler));
         }
+        //noinspection unchecked
         return assembler.assemble(token, (List<T>) results);
     }
 
