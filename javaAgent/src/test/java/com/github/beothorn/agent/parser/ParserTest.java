@@ -27,12 +27,16 @@ class ParserTest {
     @Test
     void simpleParseWithFunction() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
-                string("foo"), startFunction(), string("bar")
+            // foo#bar
+            string("foo"),
+            functionMatcher(),
+            string("bar")
         ));
         ASTNode root = Parser.parse(tokens);
         assertEquals(
             n(
-                string("foo"),
+                functionMatcher(),
+                n(string("foo")),
                 n(string("bar"))
             ),
             root
@@ -42,12 +46,21 @@ class ParserTest {
     @Test
     void simpleParseWithFunctionAnFunctionCallMatcher() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
-                string("foo#endsWith(bar)")
+            // foo#endsWith(bar)
+            string("foo"),
+            functionMatcher(),
+            function("endsWith"),
+            openParen(),
+            string("bar"),
+            closeParen()
         ));
         ASTNode root = Parser.parse(tokens);
         assertEquals(
             n(
-                string("foo"),
+                functionMatcher(),
+                n(
+                    string("foo")
+                ),
                 n(
                     function("endsWith"),
                     n(string("bar"))
@@ -60,17 +73,28 @@ class ParserTest {
     @Test
     void simpleParseWithTwoValuesWithOneFunction() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
-                string("foo#bar&&baz")
+            // Tricky, one could interpret this two ways, and applied to function or another class name
+            // but if it was applied to the function we would need a terminator for the function matcher
+            // If we want it, we can use parenthesis (see other tests)
+            // foo#bar&&baz
+            string("foo"),
+            functionMatcher(),
+            string("bar"),
+            and(),
+            string("baz")
         ));
         ASTNode root = Parser.parse(tokens);
         assertEquals(
             n(
                 and(),
                 n(
-                    string("foo"),
+                    functionMatcher(),
+                    n(string("foo")),
                     n(string("bar"))
                 ),
-                n(string("baz"))
+                n(
+                    string("baz")
+                )
             ),
             root
         );
@@ -79,23 +103,34 @@ class ParserTest {
     @Test
     void simpleParseWithTwoValuesWithOneFunctionMatcher() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
-                string("foo#(bar||funBar)&&baz")
+            // Only way to have complex function name matcher after hash is using parenthesis
+            // foo#(bar||funBar)&&baz
+            string("foo"),
+            functionMatcher(),
+            openParen(),
+            string("bar"),
+            or(),
+            string("funBar"),
+            closeParen(),
+            and(),
+            string("baz")
         ));
         ASTNode root = Parser.parse(tokens);
         assertEquals(
+            n(
+                and(),
                 n(
-                    and(),
+                    functionMatcher(),
+                    n(string("foo")),
                     n(
-                        string("foo"),
-                        n(
-                            or(),
-                            n(string("bar")),
-                            n(string("funBar"))
-                        )
-                    ),
-                    n(string("baz"))
+                        or(),
+                        n(string("bar")),
+                        n(string("funBar"))
+                    )
                 ),
-                root
+                n(string("baz"))
+            ),
+            root
         );
     }
 
@@ -103,9 +138,10 @@ class ParserTest {
     @Test
     void simpleParseAnd() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
-                string("foo"),
-                and(),
-                string("bar")
+            // foo&&bar
+            string("foo"),
+            and(),
+            string("bar")
         ));
         ASTNode root = Parser.parse(tokens);
         assertEquals(
@@ -121,6 +157,7 @@ class ParserTest {
     @Test
     void simpleParseOr() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
+            // foo||bar
             string("foo"),
             or(),
             string("bar")
@@ -139,6 +176,7 @@ class ParserTest {
     @Test
     void simpleParseNot() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
+            // !foo
             not(),
             string("foo")
         ));
@@ -155,12 +193,13 @@ class ParserTest {
     @Test
     void simpleParseManyOperators() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
+            //foo&&bar||baz
             string("foo"),
             and(),
             string("bar"),
             or(),
             string("baz")
-        )); // false && true || false = false because left comparision is first = ((false && true) || false)
+        )); // false && true || false = false because left comparison is first = ((false && true) || false)
         ASTNode root = Parser.parse(tokens);
         assertEquals(
             n(
@@ -178,8 +217,8 @@ class ParserTest {
 
     @Test
     void simpleParseParenthesis() throws CompilationException {
-        // foo&&(bar||baz)
         Deque<Token> tokens = new ArrayDeque<>(asList(
+            // foo&&(bar||baz)
             string("foo"),
             and(),
             openParen(),
@@ -205,8 +244,8 @@ class ParserTest {
 
     @Test
     void doubleParenthesis() throws CompilationException {
-        // ((foo&&bar)||baz)
         Deque<Token> tokens = new ArrayDeque<>(asList(
+            // ((foo&&bar)||baz)
             openParen(),
             openParen(),
             string("foo"),
@@ -234,17 +273,17 @@ class ParserTest {
 
     @Test
     void singleItemParenthesis() throws CompilationException {
-        // (foo&&(bar)||baz)
         Deque<Token> tokens = new ArrayDeque<>(asList(
-                openParen(),
-                string("foo"),
-                and(),
-                openParen(),
-                string("bar"),
-                closeParen(),
-                or(),
-                string("baz"),
-                closeParen()
+            // (foo&&(bar)||baz)
+            openParen(),
+            string("foo"),
+            and(),
+            openParen(),
+            string("bar"),
+            closeParen(),
+            or(),
+            string("baz"),
+            closeParen()
         ));
         ASTNode root = Parser.parse(tokens);
         assertEquals(
@@ -263,8 +302,8 @@ class ParserTest {
 
     @Test
     void tripleParenthesis() throws CompilationException {
-        //((foo&&(bar)||(baz)))
         Deque<Token> tokens = new ArrayDeque<>(asList(
+            // ((foo&&(bar)||(baz)))
             openParen(),
             openParen(),
             string("foo"),

@@ -79,7 +79,7 @@ class LexerTest {
     void happyDayFunctionFilter() throws CompilationException  {
         Deque<Token> tokens = Lexer.tokenize("tokens.bar#funcBaz");
         assertArrayEquals(new Token[]{
-                string("tokens.bar"), startFunction(), string("funcBaz")
+                string("tokens.bar"), functionMatcher(), string("funcBaz")
             },
             tokens.toArray()
         );
@@ -89,7 +89,7 @@ class LexerTest {
     void happyDayComplexInput() throws CompilationException  {
         Deque<Token> tokens = Lexer.tokenize("aaa#f1&&bbb#(f1||endsWith(f2))||!(endsWith(tokens.bar)||abc)");
         assertArrayEquals(new Token[]{
-                string("aaa"), startFunction(), string("f1"), and(), string("bbb"), startFunction(),
+                string("aaa"), functionMatcher(), string("f1"), and(), string("bbb"), functionMatcher(),
                 openParen(), string("f1"), or(), function("endsWith"), openParen(), string("f2"),
                 closeParen(), closeParen(), or(), not(),
                 openParen(), function("endsWith"), openParen(), string("tokens.bar"), closeParen(),

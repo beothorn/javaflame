@@ -67,7 +67,7 @@ public class Lexer {
         }
 
         if(currentChar == '#') {
-            tokens.add(startFunction());
+            tokens.add(functionMatcher());
             return cursor + 1;
         }
 
