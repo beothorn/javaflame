@@ -13,8 +13,13 @@ public class AssemblyTest {
     public static class StringAssembler implements Assembler<String> {
 
         @Override
-        public String assemble(final Token token) {
+        public String assembleDefaultMatcher(final Token token) {
             return token.value;
+        }
+
+        @Override
+        public String assembleDeclaredMatcher(final Token functionToken, final String stringArgument) throws CompilationException {
+            return functionToken.value+"("+stringArgument+")";
         }
 
         @Override
@@ -32,17 +37,20 @@ public class AssemblyTest {
     }
 
     @Test
-    void happyDay(){
+    void happyDay() throws CompilationException {
         ASTNode n = n(
             or(),
             n(
                 and(),
                 n(string("foo")),
-                n(string("bar"))
+                n(
+                    function("endsWith"),
+                    n(string("bar"))
+                )
             ),
             n(string("baz"))
         );
         String s = n.apply(new StringAssembler());
-        Assertions.assertEquals("foo AND bar OR baz", s);
+        Assertions.assertEquals("foo AND endsWith(bar) OR baz", s);
     }
 }

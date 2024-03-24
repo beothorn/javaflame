@@ -264,7 +264,6 @@ public class MethodInstrumentationAgent {
                 writeDebufFile(debugIgnoredClasses, "debugIgnoredClasses.txt");
                 writeDebufFile(debugErrorClasses, "debugErrorClasses.txt");
                 writeDebufFile(debugCompletedClasses, "debugCompletedClasses.txt");
-
             }
         } finally {
             fileWriteLock.unlock();
