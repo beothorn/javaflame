@@ -24,10 +24,12 @@ public class ASTNode {
         return new ASTNode(token, children);
     }
 
-    public <T> T apply(Assembler<T> assembler) {
-        Object result = null;
+    public <T> T apply(Assembler<T> assembler) throws CompilationException {
         if (children.length == 0) {
-            return assembler.assemble(token);
+            return assembler.assembleDefaultMatcher(token);
+        }
+        if (TokenType.FUNCTION_CALL.equals(token.type)) {
+            return assembler.assembleDeclaredMatcher(token, children[0].token.value);
         }
         List<Object> results = new ArrayList<>();
         for (ASTNode child : children) {
