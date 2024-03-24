@@ -3,7 +3,8 @@ package com.github.beothorn.agent.parser;
 import java.util.Deque;
 
 import static com.github.beothorn.agent.parser.ASTNode.n;
-import static com.github.beothorn.agent.parser.TokenType.*;
+import static com.github.beothorn.agent.parser.TokenType.FUNCTION_CALL;
+import static com.github.beothorn.agent.parser.TokenType.OPEN_PAREN;
 
 public class Parser {
 
@@ -31,55 +32,102 @@ public class Parser {
         return parseNext(tokens, null);
     }
 
-    private static ASTNode parseNext(final Deque<Token> tokens, ASTNode resultSoFar) throws CompilationException {
+    private static ASTNode parseNext(
+        final Deque<Token> tokens,
+        final ASTNode resultSoFar
+    ) throws CompilationException {
         Token token = tokens.pop();
         Token peek = tokens.peek();
         TokenType type = token.type;
         switch (type) {
             case STRING_VALUE:
-                if (resultSoFar != null) {
-                    throw new CompilationException("Can't have two consecutive strings or strings without logic");
-                }
-                if (peek != null && peek.type.equals(FUNCTION_MATCHER_VALUE)) {
-                    return n(
-                        token,
-                        parseNext(tokens)
-                    );
-                }
-                return n(token);
+                return parseString(resultSoFar, token);
             case FUNCTION_CALL:
-                throw new RuntimeException("NOT IMPLEMENTED");
+                return parseFunctionCall(tokens, peek, token);
             case OPERATOR_AND:
             case OPERATOR_OR:
-                return n(
-                        token,
-                        resultSoFar,
-                        parseNext(tokens)
-                );
-            case OPERATOR_NOT:
-                return n(
-                        token,
-                        parseNext(tokens)
-                );
+                return parseBinaryOperand(tokens, resultSoFar, peek, token);
             case FUNCTION_MATCHER_VALUE:
-                if (peek == null) {
-                    throw new CompilationException("Illegal end of expression #.");
-                }
-                if (peek.type.equals(STRING_VALUE)) {
-                    return n(tokens.pop());
-                }
-                if (peek.type.equals(OPEN_PAREN)) {
-                    return n(token, parseUntilClose(tokens));
-                }
-                if (peek.type.equals(FUNCTION_CALL)) {
-                    throw new RuntimeException("NOT IMPLEMENTED");
-                }
-                throw new CompilationException("Unexpected symbol after #.");
+                return parseFunctionMatcher(tokens, resultSoFar, peek, token);
+            case OPERATOR_NOT:
+                return parseUnaryOperand(tokens, token);
             case OPEN_PAREN:
                 return parseUntilClose(tokens);
             case CLOSE_PAREN:
                 throw new CompilationException("Unexpected close parenthesis.");
         }
         throw new RuntimeException("NOT IMPLEMENTED");
+    }
+
+    private static ASTNode parseFunctionMatcher(
+        final Deque<Token> tokens,
+        final ASTNode resultSoFar,
+        final Token peek,
+        final Token token
+    ) throws CompilationException {
+        Token nextToken;
+        if (peek == null) {
+            throw new CompilationException("No expression after function matcher start "+ token.value);
+        }
+        nextToken = tokens.pop();
+        if (FUNCTION_CALL.equals(nextToken.type)) {
+            return n(
+                    token,
+                    resultSoFar,
+                    parseFunctionCall(tokens, tokens.peek(), nextToken)
+            );
+        }
+        if (OPEN_PAREN.equals(nextToken.type)) {
+            return n(
+                    token,
+                    resultSoFar,
+                    parseUntilClose(tokens)
+            );
+        }
+        return n(
+                token,
+                resultSoFar,
+                n(nextToken)
+        );
+    }
+
+    private static ASTNode parseUnaryOperand(final Deque<Token> tokens, final Token token) throws CompilationException {
+        return n(
+            token,
+            parseNext(tokens)
+        );
+    }
+
+    private static ASTNode parseBinaryOperand(final Deque<Token> tokens, final ASTNode resultSoFar, final Token peek, final Token token) throws CompilationException {
+        if (peek == null) {
+            throw new CompilationException("No expression after operand "+ token.value);
+        }
+        return n(
+            token,
+            resultSoFar,
+            parseNext(tokens)
+        );
+    }
+
+    private static ASTNode parseFunctionCall(final Deque<Token> tokens, final Token peek, final Token token) throws CompilationException {
+        Token nextToken;
+        if (peek == null) {
+            throw new CompilationException("No expression after function start "+ token.value);
+        }
+        nextToken = tokens.pop();
+        if (!OPEN_PAREN.equals(nextToken.type)) {
+            throw new CompilationException("Open parenthesis required after function start "+ token.value+" but found "+nextToken.value);
+        }
+        return n(
+            token,
+            parseUntilClose(tokens)
+        );
+    }
+
+    private static ASTNode parseString(final ASTNode resultSoFar, final Token token) throws CompilationException {
+        if (resultSoFar != null) {
+            throw new CompilationException("Can't have two consecutive strings or strings without logic");
+        }
+        return n(token);
     }
 }

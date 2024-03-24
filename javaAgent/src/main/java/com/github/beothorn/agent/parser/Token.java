@@ -24,7 +24,7 @@ public class Token {
         return new Token(TokenType.OPERATOR_NOT, "!");
     }
 
-    public static Token startFunction() {
+    public static Token functionMatcher() {
         return new Token(TokenType.FUNCTION_MATCHER_VALUE, "#");
     }
 
