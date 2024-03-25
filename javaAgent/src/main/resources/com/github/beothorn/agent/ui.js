@@ -53,7 +53,7 @@ function showNode(id, n) {
             jsonString += `<p> immediate children count: ${n["children"].length}</p>`;
         } else if  (property === "parent") {
             const parentSearchResult = searchId(n["parent"]);
-            const parentName = (parentSearchResult.length > 0) ? parentSearchResult[0].name : 'n/a';
+            const parentName = (parentSearchResult && parentSearchResult.length > 0) ? parentSearchResult[0].name : 'n/a';
             jsonString += `<p> span.parentId: ${n["parent"]}</p>`;
             jsonString += `<p> span.parent: ${parentName}</p>`;
         } else {

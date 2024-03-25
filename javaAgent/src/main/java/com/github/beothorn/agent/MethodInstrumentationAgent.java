@@ -1,8 +1,8 @@
 package com.github.beothorn.agent;
 
+import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
 import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
-import com.github.beothorn.agent.parser.MethodMatcher;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -20,13 +20,13 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.*;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
+import static com.github.beothorn.agent.parser.ElementMatcherFromExpression.forExpression;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class MethodInstrumentationAgent {
@@ -163,15 +163,21 @@ public class MethodInstrumentationAgent {
         maybeStartRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStartTrigger);
         maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
 
-        ElementMatcher.Junction<TypeDescription> argumentsMatcher;
-        try {
-            argumentsMatcher = createMatcher(filter);
-        } catch (CompilationException e) {
-            log(ERROR, e.getMessage());
-            return;
-        }
+        ElementMatcher.Junction<NamedElement> exclusion = not(
+            nameContains("com.github.beothorn.agent").or(nameContains("net.bytebuddy"))
+        );
 
-        Optional<MethodMatcher> methodMatcher = filter.map(MethodMatcher::forExpression);
+        Optional<ElementMatcherFromExpression> elementMatcherFromExpression = filter.map(f -> {
+            try {
+                return forExpression(f);
+            } catch (CompilationException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        ElementMatcher.Junction<NamedElement> argumentsMatcher = elementMatcherFromExpression
+                .map(m -> exclusion.and(m.getClassMatcher()))
+                .orElse(exclusion);
 
         AgentBuilder agentBuilder = new AgentBuilder.Default();
 
@@ -182,17 +188,20 @@ public class MethodInstrumentationAgent {
 
         boolean noConstructorMode = argumentHasNoConstructorMode(argument);
         Advice advice = shouldCaptureValues ? Advice.to(FunctionCallRecorderWithValueCapturing.class) : Advice.to(FunctionCallRecorder.class);
-        AgentBuilder.Identified.Narrowable withoutExtraExcludes = agentBuilder
+        List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcherFromExpression
+                .map(ElementMatcherFromExpression::getClassAndMethodMatchers)
+                .orElse(new ArrayList<>());
+
+        agentBuilder
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
                 .with(new DebugListener())
-                .type(argumentsMatcher);
-        withoutExtraExcludes
+                .type(argumentsMatcher)
             .transform(new IntroduceMethodInterception(
                 noConstructorMode,
                 advice,
-                methodMatcher
+                    classAndMethodMatchers
             ))
             .installOn(instrumentation);
 
@@ -299,24 +308,6 @@ public class MethodInstrumentationAgent {
                 e.printStackTrace();
             }
         }
-    }
-
-    private static ElementMatcher.Junction<TypeDescription> createMatcher(
-        Optional<String> maybeFilter
-    ) throws CompilationException {
-        ElementMatcher.Junction<TypeDescription> exclusions = not(
-            nameContains("com.github.beothorn.agent")
-            .or(nameContains("net.bytebuddy"))
-        );
-
-        if (!maybeFilter.isPresent()) {
-            return exclusions;
-        }
-
-        String filter = maybeFilter.get();
-        ElementMatcher.Junction<NamedElement> filterMatcher = ElementMatcherFromExpression.forExpression(filter);
-        log(DEBUG, filterMatcher.toString());
-        return exclusions.and(filterMatcher);
     }
 
     private static void writeHtmlFiles() {
@@ -511,16 +502,16 @@ public class MethodInstrumentationAgent {
     private static class IntroduceMethodInterception implements AgentBuilder.Transformer {
         private final boolean noConstructorMode;
         private final Advice advice;
-        private final Optional<MethodMatcher> filter;
+        private final List<ClassAndMethodMatcher> filters;
 
         public IntroduceMethodInterception(
             boolean noConstructorMode,
             Advice advice,
-            Optional<MethodMatcher> filter
+            List<ClassAndMethodMatcher> filters
         ) {
             this.noConstructorMode = noConstructorMode;
             this.advice = advice;
-            this.filter = filter;
+            this.filters = filters;
         }
 
         public DynamicType.Builder<?> transform(
@@ -550,17 +541,20 @@ public class MethodInstrumentationAgent {
             String canonicalName = typeDescription.getCanonicalName();
             log(DEBUG, "Transform '"+ canonicalName +"'");
 
-            AtomicReference<ElementMatcher.Junction<MethodDescription>> matcherWrapper = new AtomicReference<>(isMethod());
-
+            ElementMatcher.Junction<MethodDescription> funMatcher = isMethod();
             if(noConstructorMode){
-                matcherWrapper.updateAndGet(m -> m.and(not(isConstructor())));
+                funMatcher = funMatcher.and(not(isConstructor()));
             }
 
-            filter
-                .map(f -> f.matcherForCanonicalName(canonicalName))
-                .ifPresent(xm -> matcherWrapper.updateAndGet(m -> m.and(xm)));
-
-            return builder.visit(advice.on(matcherWrapper.get()));
+            for (final ClassAndMethodMatcher classAndMethodFilter : filters) {
+                if (classAndMethodFilter.classMatcher.matches(typeDescription)) {
+                    funMatcher = funMatcher.and(classAndMethodFilter.methodMatcher);
+                    log(DEBUG, "With match: ["+canonicalName+"]: "+funMatcher);
+                    return builder.visit(advice.on(funMatcher));
+                }
+            }
+            log(DEBUG, "With NO match: ["+canonicalName+"]: "+funMatcher);
+            return builder.visit(advice.on(funMatcher));
         }
     }
 }
