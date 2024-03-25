@@ -18,22 +18,22 @@
 }
 
 .light-theme {
-    --background-theme: #d2f0d0; /* Light green background */
-    --color-theme: #333333; /* Dark text color */
-    --box-background-theme: #ffffff; /* White box background */
-    --tooltip-background-theme: #d2f0d0; /* Light green tooltip background */
-    --tooltip-color-theme: #333333; /* Dark tooltip text color */
-    --tooltip-border-theme: #333333; /* Dark tooltip border color */
-    --input-background-theme: #007bff; /* Blue input background */
-    --input-color-theme: #ffffff; /* White input text color */
-    --input-placeholder-color-theme: #7db8ff; /* Light blue input placeholder color */
-    --notSelectedButton-background-theme: #007bff; /* Blue not selected button background */
-    --selectedButton-background-theme: #254e23; /* Dark green selected button background */
-    --link-color-theme: #007bff; /* Blue link color */
-    --flamegraph-background-theme: #ffffff; /* White flamegraph background */
-    --title-color-theme: #007bff; /* Blue title color */
-    --top-button-color-theme: #ffffff; /* White top button color */
-    --caret-color-theme: black; /* Black caret color */
+    --background-theme: #f4f4f4;
+    --color-theme: #333333;
+    --box-background-theme: #ffffff;
+    --tooltip-background-theme: #f0f0f0;
+    --tooltip-color-theme: #333333;
+    --tooltip-border-theme: #333333;
+    --input-background-theme: #007bff;
+    --input-color-theme: #ffffff;
+    --input-placeholder-color-theme: #7db8ff;
+    --notSelectedButton-background-theme: #007bff;
+    --selectedButton-background-theme: #395068;
+    --link-color-theme: #007bff;
+    --flamegraph-background-theme: #ffffff;
+    --title-color-theme: #007bff;
+    --top-button-color-theme: #ffffff;
+    --caret-color-theme: black;
 }
 
 .dark-theme {
@@ -205,6 +205,12 @@ button {
     margin-top: 10px;
     margin-bottom: 20px;
     overflow: hidden;
+}
+
+
+.threadName {
+    margin-top: 9px;
+    margin-bottom: 4px;
 }
 
 h1,

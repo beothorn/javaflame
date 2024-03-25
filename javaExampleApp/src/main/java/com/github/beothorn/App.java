@@ -7,6 +7,8 @@ import com.github.beothorn.sorts.algorithms.BubbleSort;
 import com.github.beothorn.sorts.algorithms.InplaceQuickSort;
 import com.github.beothorn.sorts.algorithms.InsertionSort;
 import com.github.beothorn.sorts.algorithms.MergeSort;
+import com.github.beothorn.tests.TestFiltersA;
+import com.github.beothorn.tests.TestFiltersB;
 
 import java.util.Arrays;
 import java.util.function.Function;
@@ -14,6 +16,17 @@ import java.util.function.Function;
 public class App {
 
     public static void main(String[] args) throws InterruptedException {
+        // Do some test some calls
+        TestFiltersA testFiltersA = new TestFiltersA();
+        testFiltersA.functionAAA();
+        testFiltersA.functionBBB();
+        testFiltersA.functionCCC();
+        TestFiltersB testFiltersB = new TestFiltersB();
+        testFiltersB.functionXXX();
+        testFiltersB.functionYYY();
+        testFiltersB.functionZZZ();
+
+
         int[] randomUpTo20 = {10,14,7,11,8,5,15,12,1,9,
                      3,4,2,13,6}; // chosen by fair dice roll.
                                    // guaranteed to be random.

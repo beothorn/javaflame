@@ -3,56 +3,74 @@ package com.github.beothorn.agent.parser;
 import net.bytebuddy.description.NamedElement;
 import net.bytebuddy.matcher.ElementMatcher;
 
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
-public class ElementMatcherFromExpression implements Assembler<ElementMatcher.Junction<NamedElement>>{
+public class ElementMatcherFromExpression implements Assembler<ElementMatcherFromExpression>{
 
-    public static ElementMatcher.Junction<NamedElement> forExpression(String input) throws CompilationException {
+    public static ElementMatcherFromExpression forExpression(String input) throws CompilationException {
         Deque<Token> tokens = Lexer.tokenize(input);
         ASTNode root = Parser.parse(tokens);
         return root.apply(new ElementMatcherFromExpression());
     }
 
-    @Override
-    public ElementMatcher.Junction<NamedElement> assembleDefaultMatcher(final Token token) {
-        return nameContains(token.value);
+    private static ElementMatcherFromExpression forMatcher(ElementMatcher.Junction<NamedElement> typeMatcher) throws CompilationException {
+        ElementMatcherFromExpression elementMatcherFromExpression = new ElementMatcherFromExpression();
+        elementMatcherFromExpression.typeMatcher = typeMatcher;
+        return elementMatcherFromExpression;
+    }
+
+    private List<ClassAndMethodMatcher> matchers = new ArrayList<>();
+    private  ElementMatcher.Junction<NamedElement> typeMatcher;
+
+    public ElementMatcher.Junction<NamedElement> getClassMatcher(){
+        return typeMatcher;
+    }
+
+    public List<ClassAndMethodMatcher> getClassAndMethodMatchers(){
+        return matchers;
     }
 
     @Override
-    public ElementMatcher.Junction<NamedElement> assembleDeclaredMatcher(
+    public ElementMatcherFromExpression assembleDefaultMatcher(final Token token) throws CompilationException {
+        return forMatcher(nameContains(token.value));
+    }
+
+    @Override
+    public ElementMatcherFromExpression assembleDeclaredMatcher(
         final Token functionToken,
         final String stringArgument
     ) throws CompilationException {
         String function = functionToken.value;
         if (function.equals("named")) {
-            return named(stringArgument);
+            return forMatcher(named(stringArgument));
         }
         if (function.equals("namedIgnoreCase")) {
-            return namedIgnoreCase(stringArgument);
+            return forMatcher(namedIgnoreCase(stringArgument));
         }
         if (function.equals("nameStartsWith")) {
-            return nameStartsWith(stringArgument);
+            return forMatcher(nameStartsWith(stringArgument));
         }
         if (function.equals("nameStartsWithIgnoreCase")) {
-            return nameStartsWithIgnoreCase(stringArgument);
+            return forMatcher(nameStartsWithIgnoreCase(stringArgument));
         }
         if (function.equals("nameEndsWith")) {
-            return nameEndsWith(stringArgument);
+            return forMatcher(nameEndsWith(stringArgument));
         }
         if (function.equals("nameEndsWithIgnoreCase")) {
-            return nameEndsWithIgnoreCase(stringArgument);
+            return forMatcher(nameEndsWithIgnoreCase(stringArgument));
         }
         if (function.equals("nameContains")) {
-            return nameContains(stringArgument);
+            return forMatcher(nameContains(stringArgument));
         }
         if (function.equals("nameContainsIgnoreCase")) {
-            return nameContainsIgnoreCase(stringArgument);
+            return forMatcher(nameContainsIgnoreCase(stringArgument));
         }
         if (function.equals("nameMatches")) {
-            return nameMatches(stringArgument);
+            return forMatcher(nameMatches(stringArgument));
         }
 
         throw new CompilationException("Unknown function '"+function+
@@ -61,21 +79,32 @@ public class ElementMatcherFromExpression implements Assembler<ElementMatcher.Ju
     }
 
     @Override
-    public ElementMatcher.Junction<NamedElement> assemble(
+    public ElementMatcherFromExpression assemble(
         final Token token,
-        final List<ElementMatcher.Junction<NamedElement>> args
-    ) {
+        final List<ElementMatcherFromExpression> args
+    ) throws CompilationException {
+        ElementMatcherFromExpression elementMatcherFromExpression = new ElementMatcherFromExpression();
         switch (token.type) {
             case OPERATOR_OR:
-                return args.get(0).or(args.get(1));
+                elementMatcherFromExpression.typeMatcher = args.get(0).typeMatcher.or(args.get(1).typeMatcher);
+                elementMatcherFromExpression.matchers.addAll(args.get(0).matchers);
+                elementMatcherFromExpression.matchers.addAll(args.get(1).matchers);
+                return elementMatcherFromExpression;
             case OPERATOR_AND:
-                return args.get(0).and(args.get(1));
+                elementMatcherFromExpression.typeMatcher = args.get(0).typeMatcher.and(args.get(1).typeMatcher);
+                elementMatcherFromExpression.matchers.addAll(args.get(0).matchers);
+                elementMatcherFromExpression.matchers.addAll(args.get(1).matchers);
+                return elementMatcherFromExpression;
             case OPERATOR_NOT:
-                return not(args.get(0));
+                elementMatcherFromExpression.typeMatcher = not(args.get(0).typeMatcher);
+                elementMatcherFromExpression.matchers.addAll(args.get(0).matchers);
+                return elementMatcherFromExpression;
             case FUNCTION_MATCHER_VALUE:
-                return args.get(0); // ignore function matcher, it will be evaluated later
-            case FUNCTION_CALL:
-
+                elementMatcherFromExpression.typeMatcher = args.get(0).typeMatcher;
+                elementMatcherFromExpression.matchers.add(
+                        ClassAndMethodMatcher.matcher(args.get(0).typeMatcher, args.get(1).typeMatcher)
+                );
+                return elementMatcherFromExpression;
         }
         throw new RuntimeException("Can not assemble");
     }
