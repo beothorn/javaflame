@@ -3,8 +3,9 @@ package com.github.beothorn.agent;
 import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
 import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
+import com.github.beothorn.agent.recorder.AdviceConstructorCallRecorder;
+import com.github.beothorn.agent.recorder.AdviceFunctionCallRecorder;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
-import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.NamedElement;
@@ -187,7 +188,17 @@ public class MethodInstrumentationAgent {
         }
 
         boolean noConstructorMode = argumentHasNoConstructorMode(argument);
-        Advice advice = shouldCaptureValues ? Advice.to(FunctionCallRecorderWithValueCapturing.class) : Advice.to(FunctionCallRecorder.class);
+        Advice adviceForFunction;
+        Advice adviceForConstructor;
+        if (shouldCaptureValues){
+            adviceForFunction = Advice.to(AdviceFunctionCallRecorder.class);
+            System.out.println("Advice.to(AdviceConstructorCallRecorder.class);");
+            adviceForConstructor = Advice.to(AdviceConstructorCallRecorder.class);
+        } else {
+            adviceForFunction = Advice.to(FunctionCallRecorder.class);
+            adviceForConstructor = null;
+        }
+
         List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcherFromExpression
                 .map(ElementMatcherFromExpression::getClassAndMethodMatchers)
                 .orElse(new ArrayList<>());
@@ -200,8 +211,9 @@ public class MethodInstrumentationAgent {
                 .type(argumentsMatcher)
             .transform(new IntroduceMethodInterception(
                 noConstructorMode,
-                advice,
-                    classAndMethodMatchers
+                adviceForFunction,
+                adviceForConstructor,
+                classAndMethodMatchers
             ))
             .installOn(instrumentation);
 
@@ -272,18 +284,18 @@ public class MethodInstrumentationAgent {
             });
 
             if (DEBUG.equals(currentLevel)) {
-                writeDebufFile(debugTransformedClasses, "debugTransformedClasses.txt");
-                writeDebufFile(debugDiscoveredClasses, "debugDiscoveredClasses.txt");
-                writeDebufFile(debugIgnoredClasses, "debugIgnoredClasses.txt");
-                writeDebufFile(debugErrorClasses, "debugErrorClasses.txt");
-                writeDebufFile(debugCompletedClasses, "debugCompletedClasses.txt");
+                writeDebugFile(debugTransformedClasses, "debugTransformedClasses.txt");
+                writeDebugFile(debugDiscoveredClasses, "debugDiscoveredClasses.txt");
+                writeDebugFile(debugIgnoredClasses, "debugIgnoredClasses.txt");
+                writeDebugFile(debugErrorClasses, "debugErrorClasses.txt");
+                writeDebugFile(debugCompletedClasses, "debugCompletedClasses.txt");
             }
         } finally {
             fileWriteLock.unlock();
         }
     }
 
-    private static void writeDebufFile(final Set<String> debugClassesToWrite, final String file) {
+    private static void writeDebugFile(final Set<String> debugClassesToWrite, final String file) {
         if (!debugClassesToWrite.isEmpty()){
             try {
                 File debugLogFile = new File(snapshotDirectory.getAbsolutePath(), file);
@@ -482,7 +494,8 @@ public class MethodInstrumentationAgent {
         @Override
         public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {
             debugErrorClasses.add(typeName);
-            log(WARN, "onError(String typeName='"+typeName+"', " +
+            throwable.printStackTrace();
+            log(ERROR, "onError(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"', " +
@@ -501,16 +514,19 @@ public class MethodInstrumentationAgent {
 
     private static class IntroduceMethodInterception implements AgentBuilder.Transformer {
         private final boolean noConstructorMode;
-        private final Advice advice;
+        private final Advice adviceForFunction;
+        private final Advice adviceForConstructor;
         private final List<ClassAndMethodMatcher> filters;
 
         public IntroduceMethodInterception(
             boolean noConstructorMode,
-            Advice advice,
+            Advice adviceForFunction,
+            Advice adviceForConstructor,
             List<ClassAndMethodMatcher> filters
         ) {
             this.noConstructorMode = noConstructorMode;
-            this.advice = advice;
+            this.adviceForFunction = adviceForFunction;
+            this.adviceForConstructor = adviceForConstructor;
             this.filters = filters;
         }
 
@@ -541,20 +557,23 @@ public class MethodInstrumentationAgent {
             String canonicalName = typeDescription.getCanonicalName();
             log(DEBUG, "Transform '"+ canonicalName +"'");
 
-            ElementMatcher.Junction<MethodDescription> funMatcher = isMethod();
-            if(noConstructorMode){
-                funMatcher = funMatcher.and(not(isConstructor()));
-            }
+            ElementMatcher.Junction<MethodDescription> funMatcherMethod = isMethod();
+            ElementMatcher.Junction<MethodDescription> funMatcherConstructor = isConstructor();
 
             for (final ClassAndMethodMatcher classAndMethodFilter : filters) {
                 if (classAndMethodFilter.classMatcher.matches(typeDescription)) {
-                    funMatcher = funMatcher.and(classAndMethodFilter.methodMatcher);
-                    log(DEBUG, "With match: ["+canonicalName+"]: "+funMatcher);
-                    return builder.visit(advice.on(funMatcher));
+                    funMatcherMethod = funMatcherMethod.and(classAndMethodFilter.methodMatcher);
+                    log(DEBUG, "With match: ["+canonicalName+"]: "+funMatcherMethod);
+                    return builder.visit(adviceForFunction.on(funMatcherMethod));
                 }
             }
-            log(DEBUG, "With NO match: ["+canonicalName+"]: "+funMatcher);
-            return builder.visit(advice.on(funMatcher));
+            log(DEBUG, "With NO match: ["+canonicalName+"]: "+funMatcherMethod);
+
+            if(noConstructorMode || adviceForConstructor == null){
+                return builder.visit(adviceForFunction.on(funMatcherMethod));
+            }
+            return builder.visit(adviceForConstructor.on(funMatcherConstructor))
+                    .visit(adviceForFunction.on(funMatcherMethod));
         }
     }
 }

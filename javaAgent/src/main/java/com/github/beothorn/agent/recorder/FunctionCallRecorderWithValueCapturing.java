@@ -1,8 +1,6 @@
 package com.github.beothorn.agent.recorder;
 
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
-
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
@@ -10,68 +8,89 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.beothorn.agent.recorder.FunctionCallRecorder.*;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 
 public class FunctionCallRecorderWithValueCapturing {
 
     public static final Map<String, Boolean> shouldDetailThread = new ConcurrentHashMap<>();
 
-    @Advice.OnMethodEnter
-    public static long enter(
-        @Advice.Origin Method method,
-        @Advice.AllArguments Object[] allArguments
+    public static void enterConstructor(
+            Constructor constructor,
+            Object[] allArguments
     ) {
-        try {
-            StringBuilder prettyCall = new StringBuilder();
-            String methodName = method.getName();
-            String ownerClass = getClassNameFor(method);
-            prettyCall.append(ownerClass)
-                    .append(".")
-                    .append(methodName)
-                    .append("(");
-            Parameter[] parameters = method.getParameters();
-            String[][] arguments = new String[parameters.length][2];
-            final String threadName = Thread.currentThread().getName();
+        String methodName = "new";
+        String ownerClass = getClassNameFor(constructor);
+        Parameter[] parameters = constructor.getParameters();
+        String ownerClassFullName = constructor.getDeclaringClass().getName();
 
-            // We avoid extracting detail when executing a toString for a parameter
-            // or else we risk creating a stack overflow
-            Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
-            if (createDetails) {
-                shouldDetailThread.put(threadName, false);
-                for (int i = 0; i < parameters.length; i++) {
-                    Parameter parameter = parameters[i];
-                    String argToString;
-                    argToString = getValueAsString(allArguments[i]);
-                    String paramType = getTypeAsString(allArguments, i, parameter);
-                    prettyCall.append(paramType)
-                            .append(" = ")
-                            .append(argToString);
-                    arguments[i][0] = paramType;
-                    arguments[i][1] = argToString;
-                    if(i < parameters.length-1){
-                        prettyCall.append(", ");
-                    }
-                }
-                shouldDetailThread.put(threadName, true);
-            } else {
-                prettyCall.append("ARGUMENT_CAPTURING_OFF");
-            }
-            prettyCall.append(")");
-            long entryTime = System.currentTimeMillis();
-            onEnter(
-                threadName,
-                prettyCall.toString(),
-                method.getDeclaringClass().getName(),
+        enterExecution(
+                allArguments,
+                ownerClass,
                 methodName,
-                entryTime,
-                arguments
-            );
-            return entryTime;
-        } catch (Exception e){
-            log(DEBUG, e.getMessage());
-            return 0;
+                parameters,
+                ownerClassFullName
+        );
+    }
+
+    public static void enterFunction(
+        Method method,
+        Object[] allArguments
+    ) {
+        String methodName = method.getName();
+        String ownerClass = getClassNameFor(method);
+        Parameter[] parameters = method.getParameters();
+        String ownerClassFullName = method.getDeclaringClass().getName();
+
+        enterExecution(
+            allArguments,
+            ownerClass,
+            methodName,
+            parameters,
+            ownerClassFullName
+        );
+    }
+
+    private static void enterExecution(final Object[] allArguments, final String ownerClass, final String methodName, final Parameter[] parameters, final String ownerClassFullName) {
+        StringBuilder prettyCall = new StringBuilder();
+        prettyCall.append(ownerClass)
+                .append(".")
+                .append(methodName)
+                .append("(");
+        String[][] arguments = new String[parameters.length][2];
+        final String threadName = Thread.currentThread().getName();
+
+        // We avoid extracting detail when executing a toString for a parameter
+        // or else we risk creating a stack overflow
+        Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
+        if (createDetails) {
+            shouldDetailThread.put(threadName, false);
+            for (int i = 0; i < parameters.length; i++) {
+                Parameter parameter = parameters[i];
+                String argToString;
+                argToString = getValueAsString(allArguments[i]);
+                String paramType = getTypeAsString(allArguments, i, parameter);
+                prettyCall.append(paramType)
+                        .append(" = ")
+                        .append(argToString);
+                arguments[i][0] = paramType;
+                arguments[i][1] = argToString;
+                if(i < parameters.length-1){
+                    prettyCall.append(", ");
+                }
+            }
+            shouldDetailThread.put(threadName, true);
+        } else {
+            prettyCall.append("ARGUMENT_CAPTURING_OFF");
         }
+        prettyCall.append(")");
+        long entryTime = System.currentTimeMillis();
+        onEnter(
+            threadName,
+            prettyCall.toString(),
+                ownerClassFullName,
+                methodName,
+            entryTime,
+            arguments
+        );
     }
 
     public static String getTypeAsString(Object[] allArguments, int i, Parameter parameter) {
@@ -139,45 +158,39 @@ public class FunctionCallRecorderWithValueCapturing {
         }
     }
 
-    @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(
-        @Advice.Enter long start,
-        @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValueFromMethod
+        Object returnValueFromMethod
     ) {
-        try{
-            long exitTime = System.currentTimeMillis();
-            final String threadName = Thread.currentThread().getName();
+        long exitTime = System.currentTimeMillis();
+        final String threadName = Thread.currentThread().getName();
 
-            String returnValue = null;
+        String returnValue = null;
 
-            // We avoid extracting detail when executing a toString for a parameter
-            // or else we risk creating a stack overflow
-            Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
-            if(createDetails){
-                shouldDetailThread.put(threadName, false);
-                try {
-                    returnValue = getValueAsString(returnValueFromMethod);
-                } catch (Exception e) {
-                    returnValue = "RETURN_TOSTRING_EXCEPTION "+e;
-                }
-                shouldDetailThread.put(threadName, true);
-            }
-            String returnType;
+        // We avoid extracting detail when executing a toString for a parameter
+        // or else we risk creating a stack overflow
+        Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
+        if(createDetails){
+            shouldDetailThread.put(threadName, false);
             try {
-                if (shouldPrintQualified) {
-                    returnType = returnValueFromMethod.getClass().getName();
-                } else {
-                    returnType = returnValueFromMethod.getClass().getSimpleName();
-                }
-            } catch (NullPointerException np) {
-                returnType = "void";
-                if ( returnValueFromMethod == null ){
-                    returnValue = "";
-                }
+                returnValue = getValueAsString(returnValueFromMethod);
+            } catch (Exception e) {
+                returnValue = "RETURN_TOSTRING_EXCEPTION "+e;
             }
-            onLeave(threadName, exitTime, new String[]{returnType, returnValue});
-        } catch (Exception e) {
-            log(DEBUG, e.getMessage());
+            shouldDetailThread.put(threadName, true);
         }
+        String returnType;
+        try {
+            if (shouldPrintQualified) {
+                returnType = returnValueFromMethod.getClass().getName();
+            } else {
+                returnType = returnValueFromMethod.getClass().getSimpleName();
+            }
+        } catch (NullPointerException np) {
+            returnType = "void";
+            if ( returnValueFromMethod == null ){
+                returnValue = "";
+            }
+        }
+        onLeave(threadName, exitTime, new String[]{returnType, returnValue});
     }
 }
