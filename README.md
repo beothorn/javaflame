@@ -3,7 +3,7 @@
 Capture all function calls including argument and return values.  
 No servers or open connections, just plug the agent and get the results.   
 See function calls, parameters and return values all at once.  
-[Latest release v17.1.0](https://github.com/beothorn/javaflame/releases/download/v17.1.0/javaAgent.jar)
+[Latest release v18.0.0](https://github.com/beothorn/javaflame/releases/download/v18.0.0/javaAgent.jar)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
@@ -45,7 +45,7 @@ And all calls coming from MergeSort will show up on the graph, including arguent
 
 The nice thing is that this is not restricted to classes on your code. You can filter third party libraries.  
 That means if you know where some network call is done, or a GRPC or whatever else, you can build a graph listing all external calls. For example, to log postgres sql calls yoou could do:  
-`java -javaagent:/PathTo/javaAgent.jar=filter:org.postgresql.jdbc.PgConnection:prepareStatement -jar yourapp.jar`
+`java -javaagent:/PathTo/javaAgent.jar=filter:org.postgresql.jdbc.PgConnection#prepareStatement -jar yourapp.jar`
 
 # Usage
 
@@ -65,18 +65,17 @@ Anything without exclusions will generate lots of data. Either it will not rende
 
 ## Arguments
 
-| Flag | Description | Example |
-| --- | --- | --- |
+| Flag                | Description | Example |
+| ------------------- | ----------- | ------- |
 | no_capturing_values | Record only function call, no parameter value or return value will be recorded. This is faster and measures performance more accurately. | `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar` |
-| no_constructor | Will ignore constructors | `java -javaagent:javaAgent.jar=no_constructor -jar yourApp.jar` |
-| core_classes | Will include Java core classes. More useful in conjunction with filters to check, for example, network calls. | `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar` |
-| no_snapshots | Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that. | `java -javaagent:javaAgent.jar=no_snapshots -jar yourApp.jar` |
+| no_constructor      | Will ignore constructors | `java -javaagent:javaAgent.jar=no_constructor -jar yourApp.jar` |
+| core_classes        | Will include Java core classes. More useful in conjunction with filters to check, for example, network calls. | `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar` |
+| no_snapshots        | Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that. | `java -javaagent:javaAgent.jar=no_snapshots -jar yourApp.jar` |
 | qualified_functions | Print the qualified function name, ownerClass.functionName | `java -javaagent:javaAgent.jar=qualified_functions -jar yourApp.jar` |
-| exclude:qualified.name.part:optionalMethodName | Will exclude classes which contain the qualified name on them. If method name is specified, it will only exclude that method. More than one exclude is supported by repeating the flag. | `java -javaagent:javaAgent.jar=exclude:com.github.myApp,exclude:com.foo.bar -jar yourApp.jar` |
-| filter:qualified.name.part:optionalMethodName | Will instrument only classes that contains this string on their qualified name. If method name is specified, it will only instrument that method. You probably want to set this to you app package to avoid out of memory with huge spans. More than one filter is supported by repeating the flag. | `java -javaagent:javaAgent.jar=filter:com.github.myApp,filter:com.github.other -jar yourApp.jar` |
+| filter:expression   | Will instrument only classes for which the qualified name matches the expression (if qualified name contains the string). You probably want to set this to you app package to avoid huge snapshots. | `java "-javaagent:javaAgent.jar=filter:com.github.myApp||store" -jar yourApp.jar` |
 | startRecordingTriggerFunction:method | Will start recording the stack only when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=startRecordingTriggerFunction:afterSetup -jar yourApp.jar` |
 | stopRecordingTriggerFunction:method | Will stop recording the stack when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=stopRecordingTriggerFunction:afterJobIsDone -jar yourApp.jar` |
-| out:path | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
+| out:path            | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
 
 # Known issues  
 

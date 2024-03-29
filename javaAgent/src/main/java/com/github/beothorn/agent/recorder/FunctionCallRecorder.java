@@ -2,6 +2,7 @@ package com.github.beothorn.agent.recorder;
 
 import net.bytebuddy.asm.Advice;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
@@ -35,10 +36,11 @@ public class FunctionCallRecorder {
 
             final String threadName = Thread.currentThread().getName();
             long entryTime = System.currentTimeMillis();
+            String ownerClassFullName = method.getDeclaringClass().getName();
             onEnter(
                 threadName,
                 finalMethodSignature,
-                method.getDeclaringClass().getName(),
+                ownerClassFullName,
                 methodName,
                 entryTime
             );
@@ -58,14 +60,23 @@ public class FunctionCallRecorder {
     }
 
     public static String getClassNameFor(Method method) {
-        String ownerClass;
         Class<?> declaringClass = method.getDeclaringClass();
+        return getClassNameFor(declaringClass);
+    }
+
+    private static String getClassNameFor(final Class<?> declaringClass) {
+        String ownerClass;
         if ( FunctionCallRecorder.shouldPrintQualified ){
             ownerClass = declaringClass.getName();
         } else {
             ownerClass = declaringClass.getSimpleName();
         }
         return ownerClass;
+    }
+
+    public static String getClassNameFor(Constructor<?> constructor) {
+        Class<?> declaringClass = constructor.getDeclaringClass();
+        return getClassNameFor(declaringClass);
     }
 
     public static void onEnter(

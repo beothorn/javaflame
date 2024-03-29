@@ -7,7 +7,7 @@ import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-import static com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing.enter;
+import static com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing.enterFunction;
 import static com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing.exit;
 import static com.github.beothorn.agent.TestHelper.threadJSON;
 
@@ -20,7 +20,7 @@ public class TestDummyProgram {
 
     public void run(String foo) {
         try {
-            enter(
+            enterFunction(
                     TestDummyProgram.class.getDeclaredMethod("run", String.class),
                     new Object[]{foo}
             );
@@ -31,12 +31,12 @@ public class TestDummyProgram {
         a(1);
         b(1, 2);
 
-        exit(-1, null);
+        exit(null);
     }
 
     private int a(int p1){
         try {
-            enter(
+            enterFunction(
                 TestDummyProgram.class.getDeclaredMethod("a", int.class),
                 new Object[]{p1}
             );
@@ -46,13 +46,13 @@ public class TestDummyProgram {
 
         int result = aa(p1 + 1);
 
-        exit(-1, result);
+        exit(result);
         return result;
     }
 
     private int aa(int p1){
         try {
-            enter(
+            enterFunction(
                 TestDummyProgram.class.getDeclaredMethod("aa", int.class),
                 new Object[]{p1}
             );
@@ -61,13 +61,13 @@ public class TestDummyProgram {
         }
 
         int result = p1 + 1;
-        exit(-1, result);
+        exit(result);
         return result;
     }
 
     private int b(int p1, int p2){
         try {
-            enter(
+            enterFunction(
                 TestDummyProgram.class.getDeclaredMethod(
                     "b", int.class, int.class
                 ),
@@ -79,13 +79,13 @@ public class TestDummyProgram {
 
         int result = bb(p1 + 1, p2 + 1);
 
-        exit(-1, result);
+        exit(result);
         return result;
     }
 
     private int bb(int p1, int p2){
         try {
-            enter(
+            enterFunction(
                 TestDummyProgram.class.getDeclaredMethod(
                     "bb", int.class, int.class
                 ),
@@ -97,7 +97,7 @@ public class TestDummyProgram {
 
         int result = p1 + p2;
 
-        exit(-1, result);
+        exit(result);
         return result;
     }
 
