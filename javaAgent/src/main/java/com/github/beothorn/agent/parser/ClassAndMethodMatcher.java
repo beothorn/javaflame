@@ -23,4 +23,8 @@ public class ClassAndMethodMatcher {
         this.methodMatcher = methodDescription;
     }
 
+    @Override
+    public String toString() {
+        return "matcher(classMatcher: "+this.classMatcher+", methodMatcher: "+this.methodMatcher+")";
+    }
 }
