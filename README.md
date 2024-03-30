@@ -40,7 +40,7 @@ Usually without filtering too much data is generated.
 You may start by finding what class you want to understand and filter its namespace and the namespaces of the classes it calls.  
 So for example lets say I want to see what functions are called from the example [MergeSort](https://github.com/beothorn/javaflame/blob/main/javaExampleApp/src/main/java/com/github/beothorn/sorts/algorithms/MergeSort.java) and the helper Class [Common.java](https://github.com/beothorn/javaflame/blob/main/javaExampleApp/src/main/java/com/github/beothorn/sorts/Common.java).  
 I can use the command:  
-`java -javaagent:/PathTo/javaAgent.jar=filter:com.github.beothorn.sorts.Common,filter:com.github.beothorn.sorts.algorithms.MergeSort -jar ./javaExampleApp/build/libs/javaExampleApp.jar`  
+`java "-javaagent:/PathTo/javaAgent.jar=filter:com.github.beothorn.sorts.Common||com.github.beothorn.sorts.algorithms.MergeSort" -jar ./javaExampleApp/build/libs/javaExampleApp.jar`  
 And all calls coming from MergeSort will show up on the graph, including arguent and return values.  
 
 The nice thing is that this is not restricted to classes on your code. You can filter third party libraries.  
@@ -81,7 +81,7 @@ Anything without exclusions will generate lots of data. Either it will not rende
 The filer expression argument will match the class and the method you want to capture.  
 By default the filter will match any qualified named that contains the string (equivalent to nameContains()) , but you can use different matchers.  
 The method part is optional. A filter with no method will match all methods on your class.  
-Expressions for constructors are not supported yet.  
+Expressions for constructors are not supported yet (but on the work).  
 
 ## Boolean operators, Precedence operators and matching functions
 
@@ -177,18 +177,103 @@ This will not match:
 com.github.test.Foo
 ```
 
+### nameContainsIgnoreCase
+
+Same as nameContains() but ignoring case.  
+
 ### named
 
-Will match the exact name.
+Will match the exact class name containg the string.  
+Example:  
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:named(com.github.test.Bar)" -jar yourapp.jar
+```  
+
+This will match all methods on:  
+```
+com.github.test.Bar
+```  
+This will not match:  
+```
+com.github.test.Foo
+com.github.test.BarBaz
+```
 
 ### namedIgnoreCase
+
+Same as named(), but ignoring case.  
+
 ### nameStartsWith
-### nameStartsWithIgnoreCase
+
+Will match the class name starting with the string (including package name).  
+Example:  
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:nameStartsWith(com.github.test.Test)" -jar yourapp.jar
+```  
+
+This will match all methods on:  
+```
+com.github.test.Test
+com.github.test.TestBar
+com.github.test.TestFoo
+```  
+This will not match:  
+```
+TestBar
+com.github.test.xxx.TestBar
+com.github.test.T
+```
+
+### nameStartsWithIgnoreCase  
+
+Same as nameStartsWith() but ignoring case.  
+
 ### nameEndsWith
+
+Will match the class name ending with the string.  
+Example:  
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:nameEndsWith(Test)" -jar yourapp.jar
+```  
+
+This will match all methods on:  
+```
+com.github.test.FooTest
+com.github.bla.BarTest
+ZZTest
+```  
+This will not match:  
+```
+com.github.test.TestBar
+com.github.test.TestFoo
+```
+
+
 ### nameEndsWithIgnoreCase
 
-### nameContainsIgnoreCase
+same as nameEndsWith() ignoring case.  
+
+
 ### nameMatches
+
+Will match the regex argument.  
+
+Will match the class name ending with the string.  
+Example:  
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:nameMatches(.*Test[AB].*)" -jar yourapp.jar
+```  
+
+This will match all methods on:  
+```
+com.github.test.TestA
+com.github.test.TestB
+ZZTest
+```  
+This will not match:  
+```
+com.github.test.TestC
+```
 
 
 # Known issues  
