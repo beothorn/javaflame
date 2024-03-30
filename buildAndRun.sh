@@ -10,7 +10,7 @@ rm -rf build
 gradle assemble
 popd
 
-java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:DEBUG,out:/tmp,filter:com.github.beothorn.sorts -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,no_capturing_values -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,filter:nameContains(Test) -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java "-javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,filter:named(com.github.beothorn.tests.TestFiltersA)" -jar ./javaExampleApp/build/libs/javaExampleApp.jar

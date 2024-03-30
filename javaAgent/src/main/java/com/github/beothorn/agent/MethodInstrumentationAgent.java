@@ -301,27 +301,29 @@ public class MethodInstrumentationAgent {
 
     private static void writeDebugFile(final Set<String> debugClassesToWrite, final String file) {
         if (!debugClassesToWrite.isEmpty()){
-            try {
-                File debugLogFile = new File(snapshotDirectory.getAbsolutePath(), file);
-                if (debugLogFile.exists()) {
-                    RandomAccessFile raf = new RandomAccessFile(debugLogFile, "rw");
-                    for (String className: debugClassesToWrite) {
-                        raf.writeBytes(className + "\n");
-                    }
-                    raf.close();
-                } else {
-                    try (FileWriter fw = new FileWriter(debugLogFile)) {
-                        for (String className: debugClassesToWrite) {
-                            fw.write(className + "\n");
+            synchronized (debugClassesToWrite) {
+                try {
+                    File debugLogFile = new File(snapshotDirectory.getAbsolutePath(), file);
+                    if (debugLogFile.exists()) {
+                        RandomAccessFile raf = new RandomAccessFile(debugLogFile, "rw");
+                        for (String className : debugClassesToWrite) {
+                            raf.writeBytes(className + "\n");
                         }
-                        fw.flush();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        raf.close();
+                    } else {
+                        try (FileWriter fw = new FileWriter(debugLogFile)) {
+                            for (String className : debugClassesToWrite) {
+                                fw.write(className + "\n");
+                            }
+                            fw.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
+                    debugClassesToWrite.clear();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                debugClassesToWrite.clear();
-            } catch (Exception e){
-                e.printStackTrace();
             }
         }
     }
@@ -469,46 +471,56 @@ public class MethodInstrumentationAgent {
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
-            debugDiscoveredClasses.add(typeName);
+            synchronized (debugDiscoveredClasses) {
+                debugDiscoveredClasses.add(typeName);
+            }
         }
 
         @Override
         public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded, DynamicType dynamicType) {
-            debugTransformedClasses.add(typeDescription.getCanonicalName());
             log(DEBUG, "onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"', " +
                     "DynamicType dynamicType='"+dynamicType+"')");
+            synchronized (debugTransformedClasses) {
+                debugTransformedClasses.add(typeDescription.getCanonicalName());
+            }
         }
 
         @Override
         public void onIgnored(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded) {
-            debugIgnoredClasses.add(typeDescription.getCanonicalName());
             log(TRACE, "onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
+            synchronized (debugIgnoredClasses) {
+                debugIgnoredClasses.add(typeDescription.getCanonicalName());
+            }
         }
 
         @Override
         public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {
-            debugErrorClasses.add(typeName);
             throwable.printStackTrace();
             log(ERROR, "onError(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"', " +
                     "Throwable throwable='"+throwable+"')");
+            synchronized (debugErrorClasses) {
+                debugErrorClasses.add(typeName);
+            }
         }
 
         @Override
         public void onComplete(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded) {
-            debugCompletedClasses.add(typeName);
             log(TRACE, "onComplete(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
+            synchronized (debugCompletedClasses) {
+                debugCompletedClasses.add(typeName);
+            }
         }
     }
 
