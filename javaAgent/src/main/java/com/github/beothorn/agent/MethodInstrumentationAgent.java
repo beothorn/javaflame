@@ -50,7 +50,6 @@ public class MethodInstrumentationAgent {
 
         NO_CAPTURING_VALUES("no_capturing_values"),
         CORE_CLASSES("core_classes"),
-        NO_CONSTRUCTOR("no_constructor"),
         NO_SNAPSHOTS("no_snapshots"),
         QUALIFIED_FUNCTIONS("qualified_functions");
 
@@ -189,7 +188,6 @@ public class MethodInstrumentationAgent {
             agentBuilder = agentBuilder.ignore(none());
         }
 
-        boolean noConstructorMode = argumentHasNoConstructorMode(argument);
         Advice adviceForFunction;
         Advice adviceForConstructor;
         if (shouldCaptureValues){
@@ -211,7 +209,6 @@ public class MethodInstrumentationAgent {
                 .with(new DebugListener())
                 .type(argumentsMatcher)
             .transform(new IntroduceMethodInterception(
-                noConstructorMode,
                 adviceForFunction,
                 adviceForConstructor,
                 classAndMethodMatchers
@@ -346,10 +343,6 @@ public class MethodInstrumentationAgent {
 
     public static boolean argumentHasIncludeCoreClasses(String argument){
         return CORE_CLASSES.isOnArguments(argument);
-    }
-
-    public static boolean argumentHasNoConstructorMode(String argument){
-        return NO_CONSTRUCTOR.isOnArguments(argument);
     }
 
     public static boolean argumentHasNoSnapshotsMode(String argument){
@@ -514,18 +507,15 @@ public class MethodInstrumentationAgent {
     }
 
     private static class IntroduceMethodInterception implements AgentBuilder.Transformer {
-        private final boolean noConstructorMode;
         private final Advice adviceForFunction;
         private final Advice adviceForConstructor;
         private final List<ClassAndMethodMatcher> filters;
 
         public IntroduceMethodInterception(
-            boolean noConstructorMode,
             Advice adviceForFunction,
             Advice adviceForConstructor,
             List<ClassAndMethodMatcher> filters
         ) {
-            this.noConstructorMode = noConstructorMode;
             this.adviceForFunction = adviceForFunction;
             this.adviceForConstructor = adviceForConstructor;
             this.filters = filters;
@@ -559,7 +549,6 @@ public class MethodInstrumentationAgent {
             log(DEBUG, "Transform '"+ canonicalName +"'");
 
             ElementMatcher.Junction<MethodDescription> funMatcherMethod = isMethod();
-            ElementMatcher.Junction<MethodDescription> funMatcherConstructor = isConstructor();
 
             for (final ClassAndMethodMatcher classAndMethodFilter : filters) {
                 if (classAndMethodFilter.classMatcher.matches(typeDescription)) {
@@ -570,10 +559,7 @@ public class MethodInstrumentationAgent {
             }
             log(DEBUG, "With NO match: ["+canonicalName+"]: "+funMatcherMethod);
 
-            if(noConstructorMode || adviceForConstructor == null){
-                return builder.visit(adviceForFunction.on(funMatcherMethod));
-            }
-            return builder.visit(adviceForConstructor.on(funMatcherConstructor))
+            return builder.visit(adviceForConstructor.on(isConstructor()))
                     .visit(adviceForFunction.on(funMatcherMethod));
         }
     }

@@ -14,10 +14,10 @@ class MethodInstrumentationAgentTest {
 
     @Test
     void listFlags(){
-        assertArrayEquals(new String[]{"no_constructor"},
-                allFlagsOnArgument("dtailed,no_constructor,foobar"));
-        assertArrayEquals(new String[]{"no_capturing_values", "no_constructor"},
-                allFlagsOnArgument("dtailed,no_constructor,no_capturing_values,foobar"));
+        assertArrayEquals(new String[]{"core_classes"},
+                allFlagsOnArgument("dtailed,core_classes,foobar"));
+        assertArrayEquals(new String[]{"no_capturing_values", "core_classes"},
+                allFlagsOnArgument("dtailed,core_classes,no_capturing_values,foobar"));
     }
 
     void whenItHasCommand(Function<String, Boolean> test, String command){
@@ -50,14 +50,6 @@ class MethodInstrumentationAgentTest {
         whenItHasCommand(
             MethodInstrumentationAgent::argumentHasIncludeCoreClasses,
             "core_classes"
-        );
-    }
-
-    @Test
-    void whenItHasNoConstructor(){
-        whenItHasCommand(
-            MethodInstrumentationAgent::argumentHasNoConstructorMode,
-            "no_constructor"
         );
     }
 
