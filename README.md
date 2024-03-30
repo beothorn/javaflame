@@ -68,20 +68,130 @@ Anything without exclusions will generate lots of data. Either it will not rende
 | Flag                | Description | Example |
 | ------------------- | ----------- | ------- |
 | no_capturing_values | Record only function call, no parameter value or return value will be recorded. This is faster and measures performance more accurately. | `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar` |
-| no_constructor      | Will ignore constructors | `java -javaagent:javaAgent.jar=no_constructor -jar yourApp.jar` |
 | core_classes        | Will include Java core classes. More useful in conjunction with filters to check, for example, network calls. | `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar` |
 | no_snapshots        | Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that. | `java -javaagent:javaAgent.jar=no_snapshots -jar yourApp.jar` |
 | qualified_functions | Print the qualified function name, ownerClass.functionName | `java -javaagent:javaAgent.jar=qualified_functions -jar yourApp.jar` |
-| filter:expression   | Will instrument only classes for which the qualified name matches the expression (if qualified name contains the string). You probably want to set this to you app package to avoid huge snapshots. | `java "-javaagent:javaAgent.jar=filter:com.github.myApp||store" -jar yourApp.jar` |
+| filter:expression   | Will instrument only classes for which the qualified name matches the expression, see more below. You probably want to set this to you app package to avoid huge snapshots. | `java "-javaagent:javaAgent.jar=filter:com.github.myApp||store" -jar yourApp.jar` |
 | startRecordingTriggerFunction:method | Will start recording the stack only when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=startRecordingTriggerFunction:afterSetup -jar yourApp.jar` |
 | stopRecordingTriggerFunction:method | Will stop recording the stack when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=stopRecordingTriggerFunction:afterJobIsDone -jar yourApp.jar` |
 | out:path            | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
+
+# Filter Expression
+
+The filer expression argument will match the class and the method you want to capture.  
+By default the filter will match any qualified named that contains the string (equivalent to nameContains()) , but you can use different matchers.  
+The method part is optional. A filter with no method will match all methods on your class.  
+Expressions for constructors are not supported yet.  
+
+## Boolean operators, Precedence operators and matching functions
+
+You can use boolean operators on your exprssions. Currently supported are || && and !.  
+You can also use parenthesis for precedence.  
+For matching a function, use a function matcher (see explanation on section Function matcher):  
+Examples:  
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:\!Bar" -jar yourapp.jar # Escaping the not operator with a slash to make bash happy
+```  
+This will match all methods on:  
+```
+com.github.test.Foo
+```  
+This will not match:  
+```
+com.github.test.Bar
+com.github.test.FooBarBaz
+com.github.Bar.Foo
+```
+
+
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:Foo||Bar" -jar yourapp.jar
+```  
+This will match all methods on:  
+```
+com.github.test.Foo
+com.github.test.Bar
+com.github.test.FooBarBaz
+com.github.Bar.Foo
+```  
+This will not match:  
+```
+com.github.Baz.Qux
+```
+
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:Foo&&Bar" -jar yourapp.jar
+```  
+This will match all methods on:  
+```
+com.github.Bar.Foo
+com.github.test.FooBarBaz
+```  
+This will not match:  
+```
+com.github.test.Foo
+com.github.test.Bar
+```
+
+## Function matcher
+
+You can match an specific function on your class using the operator #. It applies to the whole previous condition, so it may require parenthesis.  
+For example, `Foo||Bar#myFun` matches myFun on `Foo||Bar`, but `Foo||(Bar#myFun)` matches any method on class Foo and only myFun on Bar.  
+
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:Bar#myFunction" -jar yourapp.jar
+Equivalent to
+java "-javaagent:/PathTo/javaAgent.jar=filter:nameContains(Bar)#nameContains(myFunction)" -jar yourapp.jar
+```  
+This will match:  
+```
+com.github.test.Bar#zzzmyFunction
+```  
+This will not match:  
+```
+com.github.test.Bar#init
+```
+
+## Match functions
+
+You can use match functions on your expressions. Match functions can only receive a single string argument.  
+
+### nameContains (Default matcher)
+
+The default matcher. Will match all calls to a class containg the string.  
+Example:  
+```
+java -javaagent:/PathTo/javaAgent.jar=filter:Bar -jar yourapp.jar
+Equivalent to
+java "-javaagent:/PathTo/javaAgent.jar=filter:nameContains(Bar)" -jar yourapp.jar
+```  
+
+This will match all methods on:  
+```
+com.github.test.Bar
+com.github.test.FooBarBaz
+com.github.Bar.Foo
+```  
+This will not match:  
+```
+com.github.test.Foo
+```
+
+### named
+
+Will match the exact name.
+
+### namedIgnoreCase
+### nameStartsWith
+### nameStartsWithIgnoreCase
+### nameEndsWith
+### nameEndsWithIgnoreCase
+
+### nameContainsIgnoreCase
+### nameMatches
+
 
 # Known issues  
 
 - May conflict with libraries that do bytecode manipulation (For example: Guice)  
 - Debugging will not match the source code for methods that match the filter, so turn it off when debugging on IDE.  
-
-# Libraries
-
-[ByteBuddy](https://bytebuddy.net)  
