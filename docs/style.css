@@ -67,6 +67,8 @@ body {
     background-color: var(--box-background-theme);
     border-radius: 8px;
     padding: 20px;
+    padding-top: 5px;
+    padding-bottom: 5px;
     margin: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
@@ -201,7 +203,14 @@ button {
 .flamegraph {
     background-color: var(--flamegraph-background-theme);
     margin-top: 10px;
+    margin-bottom: 20px;
     overflow: hidden;
+}
+
+
+.threadName {
+    margin-top: 9px;
+    margin-bottom: 4px;
 }
 
 h1,
