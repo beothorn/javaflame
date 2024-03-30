@@ -14,8 +14,8 @@ public class FunctionCallRecorderWithValueCapturing {
     public static final Map<String, Boolean> shouldDetailThread = new ConcurrentHashMap<>();
 
     public static void enterConstructor(
-            Constructor constructor,
-            Object[] allArguments
+        Constructor<?> constructor,
+        Object[] allArguments
     ) {
         String methodName = "new";
         String ownerClass = getClassNameFor(constructor);
@@ -23,11 +23,11 @@ public class FunctionCallRecorderWithValueCapturing {
         String ownerClassFullName = constructor.getDeclaringClass().getName();
 
         enterExecution(
-                allArguments,
-                ownerClass,
-                methodName,
-                parameters,
-                ownerClassFullName
+            allArguments,
+            ownerClass,
+            methodName,
+            parameters,
+            ownerClassFullName
         );
     }
 
