@@ -1,4 +1,4 @@
-package com.github.beothorn.agent.parser.advice;
+package com.github.beothorn.agent.advice;
 
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import net.bytebuddy.asm.Advice.AllArguments;

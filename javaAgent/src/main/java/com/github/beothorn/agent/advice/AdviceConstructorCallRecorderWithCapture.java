@@ -1,9 +1,7 @@
-package com.github.beothorn.agent.parser.advice;
+package com.github.beothorn.agent.advice;
 
-import com.github.beothorn.agent.recorder.FunctionCallRecorder;
-import net.bytebuddy.asm.Advice.OnMethodEnter;
-import net.bytebuddy.asm.Advice.OnMethodExit;
-import net.bytebuddy.asm.Advice.Origin;
+import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
+import net.bytebuddy.asm.Advice.*;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
@@ -12,23 +10,26 @@ import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBU
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.ERROR;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 
-public class AdviceConstructorCallRecorder {
+public class AdviceConstructorCallRecorderWithCapture {
 
     @OnMethodEnter
     public static void enter(
-        @Origin Constructor<?> constructor
+        @Origin Constructor<?> constructor,
+        @AllArguments Object[] allArguments
     ) {
         try {
-            FunctionCallRecorder.enterConstructor(constructor);
+            FunctionCallRecorderWithValueCapturing.enterConstructor(constructor, allArguments);
         } catch (Exception e){
             log(ERROR, "On enter constructor "+e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
     @OnMethodExit
-    public static void exit() {
+    public static void exit(
+        @This Object self
+    ) {
         try{
-            FunctionCallRecorder.exit();
+            FunctionCallRecorderWithValueCapturing.exit(self);
         } catch (Exception e){
             log(ERROR, "On exit constructor "+e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
