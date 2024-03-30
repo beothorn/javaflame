@@ -8,8 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.ERROR;
+import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 import static com.github.beothorn.agent.recorder.Span.span;
 
@@ -136,11 +135,11 @@ public class FunctionCallRecorder {
         }
 
         if(!isRecording){
-            log(DEBUG, "Skip @"+threadName+": "+name);
+            log(TRACE, "Skip @"+threadName+": "+name);
             return;
         }
 
-        log(DEBUG, "Enter @"+threadName+": "+name);
+        log(TRACE, "Enter @"+threadName+": "+name);
 
         Span stack = getCurrentRunning(threadName);
         if(stack == null){
@@ -186,12 +185,12 @@ public class FunctionCallRecorder {
         final Span stack = getCurrentRunning(threadName);
         Span leave = stack.leave(exitTime, returnValue);
         if(leave == null){ // Valid state, this could mean we started recording in a child function call
-            log(DEBUG, "Leaving root loop on "+threadName+" last stack: "+stack.description());
+            log(TRACE, "Leaving root loop on "+threadName+" last stack: "+stack.description());
             stack.exitTime = exitTime;
             return;
         }
         stackPerThread.put(threadName, leave);
-        log(DEBUG, "Leave @"+threadName+": "+stack.description());
+        log(TRACE, "Leave @"+threadName+": "+stack.description());
     }
 
     public static Optional<String> getOldCallStack() {

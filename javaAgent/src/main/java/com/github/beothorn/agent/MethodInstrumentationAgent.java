@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,7 +78,8 @@ public class MethodInstrumentationAgent {
         ERROR(2),
         INFO(3),
         WARN(4),
-        DEBUG(5);
+        DEBUG(5),
+        TRACE(6);
 
         private final Integer level;
 
@@ -93,11 +95,15 @@ public class MethodInstrumentationAgent {
     public static LogLevel currentLevel = ERROR;
 
     public static void log(LogLevel level, String log){
+        log(level, () -> log);
+    }
+
+    public static void log(LogLevel level, Supplier<String> log){
         if(currentLevel.shouldPrint(level)){
             if(level.equals(ERROR)){
-                System.err.println("[JAVA_AGENT] "+level.name()+" "+log);
+                System.err.println("[JAVA_AGENT] "+level.name()+" "+log.get());
             }else{
-                System.out.println("[JAVA_AGENT] "+level.name()+" "+log);
+                System.out.println("[JAVA_AGENT] "+level.name()+" "+log.get());
             }
         }
     }
@@ -166,7 +172,7 @@ public class MethodInstrumentationAgent {
         maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
 
         ElementMatcher.Junction<NamedElement> exclusion = not(
-            nameContains("com.github.beothorn.agent").or(nameContains("net.bytebuddy"))
+            nameStartsWith("com.github.beothorn.agent").or(nameStartsWith("net.bytebuddy"))
         );
 
         Optional<ElementMatcherFromExpression> elementMatcherFromExpression = filter.map(f -> {
@@ -459,7 +465,7 @@ public class MethodInstrumentationAgent {
                 JavaModule module,
                 boolean loaded
         ) {
-            log(DEBUG, "onDiscovery(String typeName='"+typeName+"', " +
+            log(TRACE, "onDiscovery(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
@@ -479,7 +485,7 @@ public class MethodInstrumentationAgent {
         @Override
         public void onIgnored(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded) {
             debugIgnoredClasses.add(typeDescription.getCanonicalName());
-            log(DEBUG, "onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
+            log(TRACE, "onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
@@ -499,7 +505,7 @@ public class MethodInstrumentationAgent {
         @Override
         public void onComplete(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded) {
             debugCompletedClasses.add(typeName);
-            log(DEBUG, "onComplete(String typeName='"+typeName+"', " +
+            log(TRACE, "onComplete(String typeName='"+typeName+"', " +
                     "ClassLoader classLoader='"+classLoader+"', " +
                     "JavaModule module='"+module+"', " +
                     "boolean loaded='"+loaded+"')");
@@ -519,6 +525,7 @@ public class MethodInstrumentationAgent {
             this.adviceForFunction = adviceForFunction;
             this.adviceForConstructor = adviceForConstructor;
             this.filters = filters;
+            log(DEBUG, () -> "Filters "+ Arrays.toString(this.filters.toArray()));
         }
 
         public DynamicType.Builder<?> transform(
@@ -553,12 +560,12 @@ public class MethodInstrumentationAgent {
             for (final ClassAndMethodMatcher classAndMethodFilter : filters) {
                 if (classAndMethodFilter.classMatcher.matches(typeDescription)) {
                     funMatcherMethod = funMatcherMethod.and(classAndMethodFilter.methodMatcher);
-                    log(DEBUG, "With match: ["+canonicalName+"]: "+funMatcherMethod);
+                    log(DEBUG, "Match function in ["+canonicalName+"]: "+classAndMethodFilter.methodMatcher);
                     return builder.visit(adviceForFunction.on(funMatcherMethod));
                 }
             }
-            log(DEBUG, "With NO match: ["+canonicalName+"]: "+funMatcherMethod);
 
+            log(DEBUG, "Match all functions in "+canonicalName);
             return builder.visit(adviceForConstructor.on(isConstructor()))
                     .visit(adviceForFunction.on(funMatcherMethod));
         }
