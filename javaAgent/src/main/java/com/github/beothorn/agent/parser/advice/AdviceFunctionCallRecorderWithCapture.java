@@ -1,10 +1,7 @@
-package com.github.beothorn.agent.recorder;
+package com.github.beothorn.agent.parser.advice;
 
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.asm.Advice.AllArguments;
-import net.bytebuddy.asm.Advice.OnMethodExit;
-import net.bytebuddy.asm.Advice.Origin;
-import net.bytebuddy.asm.Advice.Return;
+import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
+import net.bytebuddy.asm.Advice.*;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Method;
@@ -14,11 +11,11 @@ import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBU
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.ERROR;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 
-public class AdviceFunctionCallRecorder {
-    @Advice.OnMethodEnter
+public class AdviceFunctionCallRecorderWithCapture {
+    @OnMethodEnter
     public static void enter(
-            @Origin Method method,
-            @AllArguments Object[] allArguments
+        @Origin Method method,
+        @AllArguments Object[] allArguments
     ) {
         try {
             FunctionCallRecorderWithValueCapturing.enterFunction(method, allArguments);
@@ -29,7 +26,7 @@ public class AdviceFunctionCallRecorder {
     }
     @OnMethodExit(onThrowable = Throwable.class)
     public static void exit(
-            @Return(typing = Assigner.Typing.DYNAMIC) Object returnValueFromMethod
+        @Return(typing = Assigner.Typing.DYNAMIC) Object returnValueFromMethod
     ) {
         try {
             FunctionCallRecorderWithValueCapturing.exit(returnValueFromMethod);

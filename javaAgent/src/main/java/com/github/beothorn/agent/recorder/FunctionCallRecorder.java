@@ -1,15 +1,15 @@
 package com.github.beothorn.agent.recorder;
 
-import net.bytebuddy.asm.Advice;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
+import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.ERROR;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 import static com.github.beothorn.agent.recorder.Span.span;
 
@@ -26,27 +26,49 @@ public class FunctionCallRecorder {
     public static String startTrigger;
     public static String stopTrigger;
 
-    @Advice.OnMethodEnter
-    public static void enter(@Advice.Origin Method method) {
-        try {
-            String methodName = method.getName();
-            String ownerClass = getClassNameFor(method);
+    public static void enterFunction(Method method) {
+        String methodName = method.getName();
+        String ownerClass = getClassNameFor(method);
 
-            String finalMethodSignature = ownerClass + "." + methodName;
+        String finalMethodSignature = ownerClass + "." + methodName;
 
-            final String threadName = Thread.currentThread().getName();
-            long entryTime = System.currentTimeMillis();
-            String ownerClassFullName = method.getDeclaringClass().getName();
-            onEnter(
+        final String threadName = Thread.currentThread().getName();
+        long entryTime = System.currentTimeMillis();
+        String ownerClassFullName = method.getDeclaringClass().getName();
+        onEnter(
+            threadName,
+            finalMethodSignature,
+            ownerClassFullName,
+            methodName,
+            entryTime
+        );
+    }
+    public static void enterConstructor(Constructor<?> constructor) {
+        String methodName = "new";
+        String ownerClass = getClassNameFor(constructor);
+
+        String finalMethodSignature = ownerClass + "." + methodName;
+
+        final String threadName = Thread.currentThread().getName();
+        long entryTime = System.currentTimeMillis();
+        String ownerClassFullName = constructor.getDeclaringClass().getName();
+        onEnter(
                 threadName,
                 finalMethodSignature,
                 ownerClassFullName,
                 methodName,
                 entryTime
-            );
+        );
+    }
+
+    public static void exit() {
+        try {
+            long currentTimeMillis = System.currentTimeMillis();
+            final String threadName = Thread.currentThread().getName();
+            onLeave(threadName, currentTimeMillis);
         } catch (Exception e){
-            // Should never get here, but if it does, execution needs to go on
-            log(DEBUG, e.getMessage());
+            log(ERROR, "On exit function " + e.getMessage());
+            log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -147,17 +169,6 @@ public class FunctionCallRecorder {
 
     private static Span getCurrentRunning(String threadName) {
         return stackPerThread.get(threadName);
-    }
-
-    @Advice.OnMethodExit(onThrowable = Throwable.class)
-    public static void exit() {
-        try {
-            long currentTimeMillis = System.currentTimeMillis();
-            final String threadName = Thread.currentThread().getName();
-            onLeave(threadName, currentTimeMillis);
-        } catch (Exception e){
-            log(DEBUG, e.getMessage());
-        }
     }
 
     public static void onLeave(

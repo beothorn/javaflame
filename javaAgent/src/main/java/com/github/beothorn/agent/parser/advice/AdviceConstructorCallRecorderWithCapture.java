@@ -1,9 +1,7 @@
-package com.github.beothorn.agent.recorder;
+package com.github.beothorn.agent.parser.advice;
 
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.asm.Advice.AllArguments;
-import net.bytebuddy.asm.Advice.Origin;
-import net.bytebuddy.asm.Advice.This;
+import com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing;
+import net.bytebuddy.asm.Advice.*;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
@@ -12,12 +10,12 @@ import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBU
 import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.ERROR;
 import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
 
-public class AdviceConstructorCallRecorder {
+public class AdviceConstructorCallRecorderWithCapture {
 
-    @Advice.OnMethodEnter
+    @OnMethodEnter
     public static void enter(
-            @Origin Constructor<?> constructor,
-            @AllArguments Object[] allArguments
+        @Origin Constructor<?> constructor,
+        @AllArguments Object[] allArguments
     ) {
         try {
             FunctionCallRecorderWithValueCapturing.enterConstructor(constructor, allArguments);
@@ -26,9 +24,9 @@ public class AdviceConstructorCallRecorder {
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
-    @Advice.OnMethodExit
+    @OnMethodExit
     public static void exit(
-            @This Object self
+        @This Object self
     ) {
         try{
             FunctionCallRecorderWithValueCapturing.exit(self);
