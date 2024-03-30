@@ -3,8 +3,10 @@ package com.github.beothorn.agent;
 import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
 import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
-import com.github.beothorn.agent.recorder.AdviceConstructorCallRecorder;
-import com.github.beothorn.agent.recorder.AdviceFunctionCallRecorder;
+import com.github.beothorn.agent.parser.advice.AdviceConstructorCallRecorder;
+import com.github.beothorn.agent.parser.advice.AdviceConstructorCallRecorderWithCapture;
+import com.github.beothorn.agent.parser.advice.AdviceFunctionCallRecorder;
+import com.github.beothorn.agent.parser.advice.AdviceFunctionCallRecorderWithCapture;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
@@ -191,12 +193,11 @@ public class MethodInstrumentationAgent {
         Advice adviceForFunction;
         Advice adviceForConstructor;
         if (shouldCaptureValues){
-            adviceForFunction = Advice.to(AdviceFunctionCallRecorder.class);
-            System.out.println("Advice.to(AdviceConstructorCallRecorder.class);");
-            adviceForConstructor = Advice.to(AdviceConstructorCallRecorder.class);
+            adviceForFunction = Advice.to(AdviceFunctionCallRecorderWithCapture.class);
+            adviceForConstructor = Advice.to(AdviceConstructorCallRecorderWithCapture.class);
         } else {
-            adviceForFunction = Advice.to(FunctionCallRecorder.class);
-            adviceForConstructor = null;
+            adviceForFunction = Advice.to(AdviceFunctionCallRecorder.class);
+            adviceForConstructor = Advice.to(AdviceConstructorCallRecorder.class);
         }
 
         List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcherFromExpression
@@ -456,7 +457,7 @@ public class MethodInstrumentationAgent {
         }
     }
 
-    private static class DebugListener implements AgentBuilder.Listener {
+    public static class DebugListener implements AgentBuilder.Listener {
 
         @Override
         public void onDiscovery(
