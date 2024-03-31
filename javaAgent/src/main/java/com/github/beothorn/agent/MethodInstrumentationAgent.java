@@ -52,7 +52,8 @@ public class MethodInstrumentationAgent {
         NO_CAPTURING_VALUES("no_capturing_values"),
         CORE_CLASSES("core_classes"),
         NO_SNAPSHOTS("no_snapshots"),
-        QUALIFIED_FUNCTIONS("qualified_functions");
+        QUALIFIED_FUNCTIONS("qualified_functions"),
+        CAPTURE_STACKTRACE("capture_stacktrace"),;
 
         public final String flagAsString;
 
@@ -117,6 +118,7 @@ public class MethodInstrumentationAgent {
         currentLevel = argumentLogLevel(argument);
         log(INFO, "Agent loaded");
         boolean shouldCaptureValues = !argumentHasNoCaptureValuesMode(argument);
+        FunctionCallRecorder.setShouldCaptureStacktrace(argumentHasShouldCaptureStackTraces(argument));
         Optional<String> maybeFilePath = outputFileOnArgument(argument);
 
         Optional<File> file = maybeFilePath
@@ -347,6 +349,10 @@ public class MethodInstrumentationAgent {
 
     public static boolean argumentHasNoCaptureValuesMode(String argument){
         return NO_CAPTURING_VALUES.isOnArguments(argument);
+    }
+
+    public static boolean argumentHasShouldCaptureStackTraces(String argument){
+        return CAPTURE_STACKTRACE.isOnArguments(argument);
     }
 
     public static boolean argumentHasIncludeCoreClasses(String argument){
