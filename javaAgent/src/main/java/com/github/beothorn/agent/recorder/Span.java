@@ -10,6 +10,7 @@ public class Span{
     private final String name;
     private final String method;
     private final String className;
+    private final String stackTrace;
     private Span parent;
     private List<Span> children;
     public final long entryTime;
@@ -19,11 +20,11 @@ public class Span{
     public final String[][] arguments;
 
     public static Span span(
-        final String name,
-        final String className,
-        final String method,
-        final long entryTime,
-        final String[][] arguments
+            final String name,
+            final String className,
+            final String method,
+            final long entryTime,
+            final String[][] arguments
     ){
         return new Span(
             // Although all calls are contingent on this id gen, at least they are unique and can be ordered
@@ -36,7 +37,8 @@ public class Span{
             arguments,
             -1,
             null,
-            new ArrayList<>()
+            new ArrayList<>(),
+            null
         );
     }
 
@@ -46,7 +48,32 @@ public class Span{
         final String method,
         final long entryTime,
         final String[][] arguments,
-        final Span parent
+        final String stackTrace
+    ){
+        return new Span(
+            // Although all calls are contingent on this id gen, at least they are unique and can be ordered
+            // Performance is not the point of this agent anyway (and this is not so bad)
+            Long.toString(counter.getAndIncrement()),
+            name,
+            className,
+            method,
+            entryTime,
+            arguments,
+            -1,
+            null,
+            new ArrayList<>(),
+            stackTrace
+        );
+    }
+
+    public static Span span(
+        final String name,
+        final String className,
+        final String method,
+        final long entryTime,
+        final String[][] arguments,
+        final Span parent,
+        final String stackTrace
     ){
         return new Span(
             // Although all calls are contingent on this id gen, at least they are unique and can be ordered
@@ -59,7 +86,8 @@ public class Span{
             arguments,
             -1,
             parent,
-            new ArrayList<>()
+            new ArrayList<>(),
+            stackTrace
         );
     }
 
@@ -72,7 +100,8 @@ public class Span{
         final String[][] arguments,
         final long exitTime,
         final Span parent,
-        final List<Span> children
+        final List<Span> children,
+        final String stackTrace
     ){
         this.name = name;
         this.id = id;
@@ -84,6 +113,7 @@ public class Span{
         this.parent = parent;
         this.children = new ArrayList<>(children);
         this.children.forEach(c -> c.parent = this);
+        this.stackTrace = stackTrace;
     }
 
     public Span enter(
@@ -97,16 +127,18 @@ public class Span{
             className,
             method,
             entryTime,
+            null,
             null
         );
     }
 
     public Span enter(
-            final String name,
-            final String className,
-            final String method,
-            final long entryTime,
-            final String[][] arguments
+        final String name,
+        final String className,
+        final String method,
+        final long entryTime,
+        final String[][] arguments,
+        String stacktrace
     ){
         Span child = span(
             name,
@@ -114,7 +146,8 @@ public class Span{
             method,
             entryTime,
             arguments,
-            this
+            this,
+            stacktrace
         );
         children.add(child);
         return child;
@@ -149,7 +182,7 @@ public class Span{
 
     private long duration(){
         if(exitTime == -1){
-            // If has not exited yet, 
+            // If it has not exited yet,
             return 0;
         }
         return exitTime - entryTime;
@@ -171,6 +204,7 @@ public class Span{
             "\"name\":\""+ nameEscaped +"\"," +
             "\"className\":\""+ className +"\"," +
             "\"method\":\""+ method +"\"," +
+            ((stackTrace == null) ? "" : "\"stackTrace\":\""+ stackTrace +"\",") +
             "\"entryTime\":"+ entryTime +"," +
             "\"exitTime\":"+ exitTime +"," +
             "\"value\":"+ duration()
@@ -269,7 +303,7 @@ public class Span{
      * Remove old spans and keep only the current active span.
      * This is the last child branch.
      *
-     * @return the non active branch
+     * @return the non-active branch
      */
     public Optional<Span> removeFinishedFunction(){
         if(children.isEmpty()){
@@ -295,7 +329,8 @@ public class Span{
                 arguments,
                 exitTime,
                 parent,
-                oldChildren
+                oldChildren,
+                null
             ));
         }
 
@@ -326,7 +361,8 @@ public class Span{
             arguments,
             exitTime,
             null,
-            oldChildren
+            oldChildren,
+            null
         ));
     }
 }

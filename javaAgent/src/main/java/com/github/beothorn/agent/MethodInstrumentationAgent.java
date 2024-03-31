@@ -286,16 +286,16 @@ public class MethodInstrumentationAgent {
                     e.printStackTrace();
                 }
             });
-
-            if (DEBUG.equals(currentLevel)) {
-                writeDebugFile(debugTransformedClasses, "debugTransformedClasses.txt");
-                writeDebugFile(debugDiscoveredClasses, "debugDiscoveredClasses.txt");
-                writeDebugFile(debugIgnoredClasses, "debugIgnoredClasses.txt");
-                writeDebugFile(debugErrorClasses, "debugErrorClasses.txt");
-                writeDebugFile(debugCompletedClasses, "debugCompletedClasses.txt");
-            }
         } finally {
             fileWriteLock.unlock();
+        }
+
+        if (currentLevel.shouldPrint(DEBUG)) {
+            writeDebugFile(debugTransformedClasses, "debugTransformedClasses.txt");
+            writeDebugFile(debugDiscoveredClasses, "debugDiscoveredClasses.txt");
+            writeDebugFile(debugIgnoredClasses, "debugIgnoredClasses.txt");
+            writeDebugFile(debugErrorClasses, "debugErrorClasses.txt");
+            writeDebugFile(debugCompletedClasses, "debugCompletedClasses.txt");
         }
     }
 

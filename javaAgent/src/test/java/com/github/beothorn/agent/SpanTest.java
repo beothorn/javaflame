@@ -50,17 +50,17 @@ class SpanTest {
         String name = "x.funAcceptsNull";
         String method = "funAcceptsNull";
         Span subject = span(name,"Class."+name, method, 0, new String[][]{
-                {
-                    "Object", null
-                }
+            {
+                "Object", null
+            }
         });
         subject.returnValue = new String[]{
             "Object", null
         };
         JSONObject expected = TestHelper.spanJSON(name + " => Object null", "Class."+name, method,0,-1,0,new String[][]{
-                {
-                    "Object", null
-                }
+            {
+                "Object", null
+            }
         });
         expected.put("return", TestHelper.argumentJSON(new String[]{"Object", "null"}));
         JSONObject actual = new JSONObject(subject.toJson());
@@ -174,7 +174,7 @@ class SpanTest {
         Span expected = TestHelper.spanTest("root", "root", 0, of(
             TestHelper.spanTest("x.A", "A", 0)
         ));
-        assertTrue(!subject.removeFinishedFunction().isPresent());
+        assertFalse(subject.removeFinishedFunction().isPresent());
         assertEquals(expected, subject);
     }
 
@@ -256,7 +256,7 @@ class SpanTest {
 
         Optional<Span> actualOld = subject.removeFinishedFunction();
 
-        assertTrue(!actualOld.isPresent());
+        assertFalse(actualOld.isPresent());
         assertEquals(expected, subject);
     }
 
