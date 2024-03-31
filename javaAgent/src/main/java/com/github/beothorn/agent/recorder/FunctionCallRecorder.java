@@ -21,6 +21,7 @@ import static com.github.beothorn.agent.recorder.Span.span;
 public class FunctionCallRecorder {
     public static final Map<String, Span> stackPerThread = new ConcurrentHashMap<>();
     public static boolean shouldPrintQualified = false;
+    public static boolean shouldCaptureStacktrace = false;
     public static boolean isRecording = true;
     public static String startTrigger;
     public static String stopTrigger;
@@ -74,6 +75,10 @@ public class FunctionCallRecorder {
     public static void setStartTrigger(String startTriggerFunctionNam) {
         startTrigger = startTriggerFunctionNam;
         isRecording = false;
+    }
+
+    public static void setShouldCaptureStacktrace(boolean captureStacktrace) {
+        shouldCaptureStacktrace = captureStacktrace;
     }
 
     public static void setStopTrigger(String stopTriggerFunctionNam) {
@@ -139,6 +144,11 @@ public class FunctionCallRecorder {
             return;
         }
 
+        String stacktrace = null;
+        if (shouldCaptureStacktrace) {
+            stacktrace = Arrays.toString(Thread.currentThread().getStackTrace());
+        }
+
         log(TRACE, "Enter @"+threadName+": "+name);
 
         Span stack = getCurrentRunning(threadName);
@@ -150,7 +160,8 @@ public class FunctionCallRecorder {
                     threadName + "Root",
                     threadName + "Root",
                     entryTime,
-                    arguments
+                    arguments,
+                    stacktrace
                 )
             );
         }
@@ -161,7 +172,8 @@ public class FunctionCallRecorder {
             className,
             method,
             entryTime,
-            arguments
+            arguments,
+            stacktrace
         );
         stackPerThread.put(threadName, newCurrentRunning);
     }

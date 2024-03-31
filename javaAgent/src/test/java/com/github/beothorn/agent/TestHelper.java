@@ -6,6 +6,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TestHelper {
@@ -108,7 +109,8 @@ public class TestHelper {
             null,
             -1,
             null,
-            new ArrayList<>()
+            new ArrayList<>(),
+            null
         );
     }
 
@@ -127,7 +129,8 @@ public class TestHelper {
             null,
             exitTime,
             null,
-            new ArrayList<>()
+            new ArrayList<>(),
+            null
         );
     }
 
@@ -148,7 +151,8 @@ public class TestHelper {
             null,
             exitTime,
             null,
-            new ArrayList<>()
+            new ArrayList<>(),
+            null
         );
     }
 
@@ -169,7 +173,8 @@ public class TestHelper {
             null,
             exitTime,
             null,
-            new ArrayList<>()
+            new ArrayList<>(),
+            null
         );
     }
 
@@ -189,7 +194,8 @@ public class TestHelper {
             null,
             exitTime,
             null,
-            children
+            children,
+            null
         );
     }
 
@@ -210,7 +216,8 @@ public class TestHelper {
             arguments,
             exitTime,
             null,
-            children
+            children,
+            null
         );
     }
 
@@ -233,7 +240,8 @@ public class TestHelper {
                 arguments,
                 exitTime,
                 null,
-                children
+                children,
+                null
         );
     }
 
@@ -252,15 +260,13 @@ public class TestHelper {
             null,
             -1,
             null,
-            children
+            children,
+            null
         );
     }
 
+    @SafeVarargs
     public static <T> List<T> of(T... elements){
-        List<T> result = new ArrayList<>();
-        for (int i = 0; i < elements.length; i++) {
-            result.add(elements[i]);
-        }
-        return result;
+        return new ArrayList<>(Arrays.asList(elements));
     }
 }

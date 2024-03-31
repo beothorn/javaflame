@@ -3,6 +3,7 @@ package com.github.beothorn.agent.parser;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 
 import static com.github.beothorn.agent.parser.ASTNode.n;
@@ -14,8 +15,8 @@ class ParserTest {
 
     @Test
     void simpleParse() throws CompilationException {
-        Deque<Token> tokens = new ArrayDeque<>(asList(
-            string("foo")
+        Deque<Token> tokens = new ArrayDeque<>(Collections.singletonList(
+                string("foo")
         ));
         ASTNode root = Parser.parse(tokens);
         assertEquals(

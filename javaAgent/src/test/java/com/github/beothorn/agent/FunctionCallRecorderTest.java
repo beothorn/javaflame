@@ -12,7 +12,7 @@ import static com.github.beothorn.agent.recorder.FunctionCallRecorder.onEnter;
 import static com.github.beothorn.agent.recorder.FunctionCallRecorder.onLeave;
 import static com.github.beothorn.agent.TestHelper.spanJSON;
 import static com.github.beothorn.agent.TestHelper.threadJSON;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class FunctionCallRecorderTest {
 
@@ -21,6 +21,7 @@ class FunctionCallRecorderTest {
         MethodInstrumentationAgent.currentLevel = MethodInstrumentationAgent.LogLevel.DEBUG;
         FunctionCallRecorder.stackPerThread.clear();
         FunctionCallRecorder.shouldPrintQualified = false;
+        FunctionCallRecorder.shouldCaptureStacktrace = false;
         FunctionCallRecorder.isRecording = true;
         FunctionCallRecorder.startTrigger = null;
         FunctionCallRecorder.stopTrigger = null;
@@ -66,6 +67,17 @@ class FunctionCallRecorderTest {
         JSONArray expected = new JSONArray().put(threadT).put(threadMain);
         JSONArray actual = getFinalStack();
         JSONAssert.assertEquals(expected, actual, false);
+        assertFalse(actual.getJSONObject(0).getJSONObject("span").has("stackTrace"));
+    }
+
+    @Test
+    void happyDayWithStack() throws JSONException {
+        FunctionCallRecorder.setShouldCaptureStacktrace(true);
+        e("main", "a", "a",  0); // main: enter a
+        onLeave("main", 1); // main: leave a -> no root
+
+        JSONArray actual = getFinalStack();
+        assertNotNull(actual.getJSONObject(0).getJSONObject("span").getString("stackTrace"));
     }
 
     @Test
@@ -96,7 +108,7 @@ class FunctionCallRecorderTest {
         JSONObject otherThread = threadJSON("other",0,
             // exit time 0 when leaving is unknown and it goes above the synthetic root
             // I am still not sure what is best here, to trap execution on synthetic root
-            // or just let i leave the stack null.
+            // or just let it leave the stack null.
             // It leaves the stack null for now.
             spanJSON("otherRoot", "otherRoot", "otherRoot", 0, 0, 0,
                 spanJSON("OtherFun", "OtherFunClass", "OtherFun", 0, 0, 0,
@@ -140,8 +152,8 @@ class FunctionCallRecorderTest {
     @Test
     void shouldNotPrintEmptyCallStack(){
         assertTrue(FunctionCallRecorder.stackPerThread.isEmpty());
-        assertTrue(!FunctionCallRecorder.getOldCallStack().isPresent());
-        assertTrue(!FunctionCallRecorder.getFinalCallStack().isPresent());
+        assertFalse(FunctionCallRecorder.getOldCallStack().isPresent());
+        assertFalse(FunctionCallRecorder.getFinalCallStack().isPresent());
     }
 
     private static void e(

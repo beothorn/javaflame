@@ -47,7 +47,10 @@ The nice thing is that this is not restricted to classes on your code. You can f
 That means if you know where some network call is done, or a GRPC or whatever else, you can build a graph listing all external calls. For example, to log postgres sql calls yoou could do:  
 `java -javaagent:/PathTo/javaAgent.jar=filter:org.postgresql.jdbc.PgConnection#prepareStatement -jar yourapp.jar`
 
-# Usage
+# Quick start
+
+Download the jar from the link above (Latest release).  
+Start your application with the agent.  
 
 `java -javaagent:javaAgent.jar -jar yourApp.jar` 
 
