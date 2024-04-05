@@ -1,17 +1,18 @@
 package com.github.beothorn.agent;
 
-import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
-import com.github.beothorn.agent.parser.CompilationException;
-import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.advice.AdviceConstructorCallRecorder;
 import com.github.beothorn.agent.advice.AdviceConstructorCallRecorderWithCapture;
 import com.github.beothorn.agent.advice.AdviceFunctionCallRecorder;
 import com.github.beothorn.agent.advice.AdviceFunctionCallRecorderWithCapture;
+import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
+import com.github.beothorn.agent.parser.CompilationException;
+import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
+import com.github.beothorn.agent.transformer.ConstructorInterceptor;
+import com.github.beothorn.agent.transformer.MethodAndConstructorInterception;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.NamedElement;
-import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
@@ -21,7 +22,6 @@ import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
@@ -177,7 +177,10 @@ public class MethodInstrumentationAgent {
             nameStartsWith("com.github.beothorn.agent").or(nameStartsWith("net.bytebuddy"))
         );
 
-        Optional<ElementMatcherFromExpression> elementMatcherFromExpression = filter.map(f -> {
+        Optional<String> interceptConstructorFilter = argumentInterceptConstructorFilter(argument);
+
+
+        Optional<ElementMatcherFromExpression> elementMatcherFromFilterExpression = filter.map(f -> {
             try {
                 return forExpression(f);
             } catch (CompilationException e) {
@@ -185,9 +188,23 @@ public class MethodInstrumentationAgent {
             }
         });
 
-        ElementMatcher.Junction<NamedElement> argumentsMatcher = elementMatcherFromExpression
+
+        Optional<ElementMatcherFromExpression> elementMatcherFromInterceptConstructorFilterExpression = interceptConstructorFilter.map(f -> {
+            try {
+                return forExpression(f);
+            } catch (CompilationException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+
+        ElementMatcher.Junction<NamedElement> filterMatcher = elementMatcherFromFilterExpression
                 .map(m -> exclusion.and(m.getClassMatcher()))
                 .orElse(exclusion);
+
+        ElementMatcher.Junction<NamedElement> constructorInterceptMatcher = elementMatcherFromInterceptConstructorFilterExpression
+                .map(m -> exclusion.and(m.getClassMatcher()))
+                .orElse(none());
 
         AgentBuilder agentBuilder = new AgentBuilder.Default();
 
@@ -206,21 +223,32 @@ public class MethodInstrumentationAgent {
             adviceForConstructor = Advice.to(AdviceConstructorCallRecorder.class);
         }
 
-        List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcherFromExpression
+        List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcherFromFilterExpression
                 .map(ElementMatcherFromExpression::getClassAndMethodMatchers)
                 .orElse(new ArrayList<>());
 
-        agentBuilder
+        Optional<String> constructorInterceptorToCall = argumentConstructorInterceptor(argument);
+
+        AgentBuilder builder = agentBuilder
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                .with(new DebugListener())
-                .type(argumentsMatcher)
-            .transform(new IntroduceMethodInterception(
-                adviceForFunction,
-                adviceForConstructor,
-                classAndMethodMatchers
-            ))
+                .with(new DebugListener());
+
+        if (constructorInterceptorToCall.isPresent()) {
+            builder = builder.type(constructorInterceptMatcher)
+                    .transform(new ConstructorInterceptor(constructorInterceptorToCall.get()));
+        }
+
+        MethodAndConstructorInterception methodAndConstructorInterception = new MethodAndConstructorInterception(
+            adviceForFunction,
+            adviceForConstructor,
+            classAndMethodMatchers
+        );
+
+        builder
+            .type(filterMatcher)
+            .transform(methodAndConstructorInterception)
             .installOn(instrumentation);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -367,6 +395,20 @@ public class MethodInstrumentationAgent {
         return matchCommand(
             argument,
             "filter"
+        );
+    }
+
+    public static Optional<String> argumentInterceptConstructorFilter(String argument){
+        return matchCommand(
+                argument,
+                "interceptConstructorFor"
+        );
+    }
+
+    public static Optional<String> argumentConstructorInterceptor(String argument){
+        return matchCommand(
+                argument,
+                "interceptConstructorWith"
         );
     }
 
@@ -530,62 +572,5 @@ public class MethodInstrumentationAgent {
         }
     }
 
-    private static class IntroduceMethodInterception implements AgentBuilder.Transformer {
-        private final Advice adviceForFunction;
-        private final Advice adviceForConstructor;
-        private final List<ClassAndMethodMatcher> filters;
 
-        public IntroduceMethodInterception(
-            Advice adviceForFunction,
-            Advice adviceForConstructor,
-            List<ClassAndMethodMatcher> filters
-        ) {
-            this.adviceForFunction = adviceForFunction;
-            this.adviceForConstructor = adviceForConstructor;
-            this.filters = filters;
-            log(DEBUG, () -> "Filters "+ Arrays.toString(this.filters.toArray()));
-        }
-
-        public DynamicType.Builder<?> transform(
-                DynamicType.Builder<?> builder,
-                TypeDescription typeDescription,
-                ClassLoader ignoredClassLoader,
-                JavaModule ignoredModule
-        ) {
-            return getBuilder(builder, typeDescription);
-        }
-
-        @Override
-        public DynamicType.Builder<?> transform(
-            DynamicType.Builder<?> builder,
-            TypeDescription typeDescription,
-            ClassLoader classLoader,
-            JavaModule module,
-            ProtectionDomain protectionDomain
-        ) {
-            return getBuilder(builder, typeDescription);
-        }
-
-        private DynamicType.Builder<?> getBuilder(
-            DynamicType.Builder<?> builder,
-            TypeDescription typeDescription
-        ) {
-            String canonicalName = typeDescription.getCanonicalName();
-            log(DEBUG, "Transform '"+ canonicalName +"'");
-
-            ElementMatcher.Junction<MethodDescription> funMatcherMethod = isMethod();
-
-            for (final ClassAndMethodMatcher classAndMethodFilter : filters) {
-                if (classAndMethodFilter.classMatcher.matches(typeDescription)) {
-                    funMatcherMethod = funMatcherMethod.and(classAndMethodFilter.methodMatcher);
-                    log(DEBUG, "Match function in ["+canonicalName+"]: "+classAndMethodFilter.methodMatcher);
-                    return builder.visit(adviceForFunction.on(funMatcherMethod));
-                }
-            }
-
-            log(DEBUG, "Match all functions in "+canonicalName);
-            return builder.visit(adviceForConstructor.on(isConstructor()))
-                    .visit(adviceForFunction.on(funMatcherMethod));
-        }
-    }
 }
