@@ -25,3 +25,4 @@ java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:DEBUG,out:/tmp,filter:c
 #java "-javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,filter:nameMatche(A)" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java "-javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,filter:nameMatches(.*TestFilters[AB].*)" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:DEBUG,out:/tmp,filter:com.github.beothorn.sorts,capture_stacktrace -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+#java "-javaagent:./javaAgent/build/libs/javaAgent.jar=filter:NO_FILTER,interceptConstructorFor:Test,interceptConstructorWith:com.github.beothorn.tests.Interceptor#interceptConstructor" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
