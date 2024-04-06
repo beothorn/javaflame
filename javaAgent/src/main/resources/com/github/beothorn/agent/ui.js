@@ -205,7 +205,7 @@ function createHierarchicalView(treeData, visualizationDiv) {
 }
 
 function buildGraph(dataToPlot){
-    const colorPalette = ["#900C3F","#C70039","#F94C10","#F8DE22"];
+    const colorPalette = ["#900C3F","#C70039","#F94C10","#F8DE22"]; // TODO: light mode palette, change with theme
     for(let i = 0; i < dataToPlot.length; i++){
         const box = document.createElement("div");
         box.id = "chartBox"+i;

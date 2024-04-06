@@ -5,22 +5,20 @@ function addEntry(
     x, 
     length, 
     name, 
-    node,
-    colorPalette
+    node
 ){
-    const colorPaletteToUse = colorPalette || ["#FF6F3C", "#FF9A3C", "#FFC93C"]
     const line = lines[lineNumber] || [];
     const children = [];
-    
-    const color = colorPaletteToUse[name.charCodeAt(0) % colorPaletteToUse.length];
+
     const newEntry = {
         parent,
-        x, 
-        length, 
+        x,
+        length,
         name,
         node,
-        color,
-        children
+        children,
+        highlighted: false,
+        disabled: false
     };
     line.push(newEntry);
     lines[lineNumber] = line;
@@ -28,13 +26,13 @@ function addEntry(
 }
 
 function drawBar(
-    ctx, 
-    x, 
-    y, 
-    width, 
-    height, 
-    clearWidth, 
-    color, 
+    ctx,
+    x,
+    y,
+    width,
+    height,
+    clearWidth,
+    color,
     text
 ) {
     if (width === 0) return;
@@ -64,26 +62,37 @@ function resizeLines(lines, previousCanvasWidth, canvasWidth){
 }
 
 function renderLines(
-    ctx, 
-    canvasWidth, 
+    ctx,
+    canvasWidth,
     canvasHeight,
     linesToDraw,
-    lineDrawHeight
+    lineDrawHeight,
+    colorPalette
 ){
+    const colorPaletteToUse = colorPalette || ["#FF6F3C", "#FF9A3C", "#FFC93C"];
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     for (let currentLine = 0; currentLine < linesToDraw.length; currentLine++) {
         const line = linesToDraw[currentLine];
         const lineY = canvasHeight - (lineDrawHeight * (currentLine + 1));
         for (let i = 0; i < line.length; i++) {
             const entry = line[i];
+            let color;
+            if (entry.highlighted) {
+                color = "gray";
+            } else if (entry.disabled) {
+                color = "#ccc";
+            } else {
+                color = colorPaletteToUse[entry.name.charCodeAt(0) % colorPaletteToUse.length];
+            }
+
             drawBar(
-                ctx, 
-                entry.x, 
-                lineY, 
-                entry.length, 
-                lineDrawHeight, 
+                ctx,
+                entry.x,
+                lineY,
+                entry.length,
+                lineDrawHeight,
                 canvasWidth,
-                entry.color, 
+                color,
                 entry.name
             );
         }
@@ -94,10 +103,9 @@ function renderChildrenByChildrenCount(
     startX,
     spanWidth,
     parent,
-    children, 
+    children,
     currentLine,
-    lines,
-    colorPalette
+    lines
 ){
     if(!children || children.length === 0) return;
 
@@ -121,21 +129,19 @@ function renderChildrenByChildrenCount(
             parent,
             lines,
             currentLine,
-            x, 
-            length, 
-            child.name, 
-            child,
-            colorPalette
+            x,
+            length,
+            child.name,
+            child
         );
 
         renderChildrenByChildrenCount(
-            x, 
+            x,
             length,
             newEntry,
-            child.children, 
+            child.children,
             currentLine + 1,
-            lines,
-            colorPalette
+            lines
         );
     }
 }
@@ -156,20 +162,18 @@ function addChildCount(root) {
 }
 
 function renderByChildrenCount(
-    canvas, 
-    data, 
-    lines,
-    colorPalette
+    canvas,
+    data,
+    lines
 ) {
     addChildCount(data);
     renderChildrenByChildrenCount(
         0,
         canvas.offsetWidth,
         null,
-        [data], 
-        0, 
-        lines,
-        colorPalette
+        [data],
+        0,
+        lines
     );
 }
 
@@ -179,10 +183,9 @@ function renderChildrenByTimestamp(
     startX,
     spanWidth,
     parent,
-    children, 
+    children,
     currentLine,
-    lines,
-    colorPalette
+    lines
 ){
     if(!children || children.length === 0) return;
 
@@ -201,32 +204,29 @@ function renderChildrenByTimestamp(
             parent,
             lines,
             currentLine,
-            x, 
-            length, 
-            child.name, 
-            child,
-            colorPalette
+            x,
+            length,
+            child.name,
+            child
         );
 
         renderChildrenByTimestamp(
             childEntryTime,
             childExecutionTime,
-            x, 
+            x,
             length,
             newEntry,
-            child.children, 
+            child.children,
             currentLine + 1,
-            lines,
-            colorPalette
+            lines
         );
     }
 }
 
 function renderByTimestamp(
-    canvas, 
+    canvas,
     data,
-    lines,
-    colorPalette
+    lines
 ) {
     var canvasWidth = canvas.offsetWidth;
     var canvasHeight = canvas.offsetHeight;
@@ -236,15 +236,14 @@ function renderByTimestamp(
     const endTimestamp = data.exitTime;
     const executionTime = endTimestamp - startTimestamp;
     renderChildrenByTimestamp(
-        startTimestamp, 
-        executionTime, 
+        startTimestamp,
+        executionTime,
         0,
-        canvasWidth, 
+        canvasWidth,
         null,
-        [data], 
+        [data],
         0,
-        lines,
-        colorPalette
+        lines
     );
 }
 
@@ -261,7 +260,7 @@ function bisectSpan(line, posX){
     let end = line.length;
 
     let middle = start + Math.floor((end - start) / 2);
-    
+
     while(start != middle) {
         const candidate = line[middle];
         if (posX >= candidate.x && posX <= candidate.x + candidate.length) {
@@ -279,7 +278,7 @@ function bisectSpan(line, posX){
     if (candidate && posX >= candidate.x && posX <= candidate.x + candidate.length) {
         return candidate;
     }
-    
+
     return null;
 }
 
@@ -287,34 +286,36 @@ function loadData(config){
     const canvasHolderId = config.elementId;
     const stackData = config.data;
     const parentDiv = document.getElementById(canvasHolderId);
-    
+
     // Create a canvas element
     const canvas = document.createElement('canvas');
     canvas.id = canvasHolderId+"Canvas";
-    
+
     // Set canvas size to match the parent
     canvas.width = parentDiv.clientWidth;
     canvas.height = parentDiv.clientHeight;
-    
-    
+
+
+
     // Append the canvas to the parent div
     parentDiv.appendChild(canvas);
     canvas.style.width='100%';
     canvas.style.height='100%';
     canvas.width  = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;    
+    canvas.height = canvas.offsetHeight;
     const canvasWidth = canvas.offsetWidth;
     const canvasHeight = canvas.offsetHeight;
 
 
     const lineHeight = config.lineHeight || 24;
     let lines = [];
-    
+
     const ctx = canvas.getContext("2d");
 
     let graphFunction;
-    
-    
+    let palette = config.colorPalette;
+
+
     if(!config.graphType || config.graphType === "ChildrenCallCount"){
         graphFunction = renderByChildrenCount;
     }
@@ -323,56 +324,57 @@ function loadData(config){
     }
 
     graphFunction(
-        canvas, 
-        stackData, 
-        lines,
-        config.colorPalette
+        canvas,
+        stackData,
+        lines
     )
 
     const totalHeight = lines.length * lineHeight;
     parentDiv.style.height = totalHeight + "px";
 
     let previousCanvasWidth = canvasWidth;
-    
+
     canvas.width = parentDiv.clientWidth;
     canvas.height = parentDiv.clientHeight;
     resizeLines(
-        lines, 
-        previousCanvasWidth, 
+        lines,
+        previousCanvasWidth,
         canvas.width
     );
     renderLines(
-        ctx, 
-        canvas.offsetWidth, 
+        ctx,
+        canvas.offsetWidth,
         canvas.offsetHeight,
         lines,
-        lineHeight
+        lineHeight,
+        palette
     );
     previousCanvasWidth = canvas.width;
-    
+
     window.addEventListener('resize', function() {
         // TODO: debouncer
         canvas.width = parentDiv.clientWidth;
         canvas.height = parentDiv.clientHeight;
         const newCtx = canvas.getContext("2d");
         resizeLines(
-            lines, 
-            previousCanvasWidth, 
+            lines,
+            previousCanvasWidth,
             canvas.width
         );
         renderLines(
-            newCtx, 
-            canvas.offsetWidth, 
+            newCtx,
+            canvas.offsetWidth,
             canvas.offsetHeight,
             lines,
-            lineHeight
+            lineHeight,
+            palette
         );
         previousCanvasWidth = canvas.width;
     });
-    
+
     if (config.tooltip) {
         const tooltip = document.createElement('div');
-        tooltip.id = canvasHolderId+"Tooltip"; 
+        tooltip.id = canvasHolderId+"Tooltip";
         tooltip.style.position = 'absolute';
         tooltip.style.padding = '0';
         tooltip.style.margin = '0';
@@ -389,7 +391,7 @@ function loadData(config){
             const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
             if(line >= 0 && line < lines.length){
                 let hoverOver = currentNode;
-                const isSameNode = pos.x >= currentX && pos.x <= currentX2 && line === currentLine; 
+                const isSameNode = pos.x >= currentX && pos.x <= currentX2 && line === currentLine;
                 if( !isSameNode ) {
                     hoverOver = bisectSpan(lines[line], pos.x);
                     if(hoverOver){
@@ -424,6 +426,7 @@ function loadData(config){
 
     if (config.onClick || config.zoomOnClick) {
         window.addEventListener('mousedown', function printCoords(e) {
+            if (e.button != 0) return;
             const pos = getMousePos(canvas, e);
             var canvasHeight = canvas.offsetHeight;
             const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
@@ -441,39 +444,57 @@ function loadData(config){
                         parentLines = [[parent]].concat(parentLines);
                         parent = parent.parent;
                     }
-                    
+
                     let tempLines = [];
                     graphFunction(
-                        canvas, 
-                        clickedOn.node, 
-                        tempLines,
-                        config.colorPalette
+                        canvas,
+                        clickedOn.node,
+                        tempLines
                     )
 
                     for (let parentLine of parentLines) {
                         for (let p of parentLine) {
                             p.x = 0;
                             p.length = canvasWidth;
-                            p.color = "gray";
+                            p.highlighted = true;
                         }
                     }
-                    
+
                     if (parentLines[parentLines.length - 1]) {
                         tempLines[0][0].parent = parentLines[parentLines.length - 1][0];
                     }
 
-                    tempLines[0][0].color = "#ccc";
+                    tempLines[0][0].disabled = true;
                     lines = parentLines.concat(tempLines);
                     renderLines(
-                        ctx, 
-                        canvasWidth, 
+                        ctx,
+                        canvasWidth,
                         canvasHeight,
                         lines,
-                        lineHeight
+                        lineHeight,
+                        palette
                     )
-                    
+
                 }
             }
-        }, false);    
+        }, false);
     }
+
+    return {
+        changeColorPalette: (newPalette) => {
+            // TODO: debouncer
+            palette = newPalette;
+            canvas.width = parentDiv.clientWidth;
+            canvas.height = parentDiv.clientHeight;
+            const newCtx = canvas.getContext("2d");
+            renderLines(
+                newCtx,
+                canvas.offsetWidth,
+                canvas.offsetHeight,
+                lines,
+                lineHeight,
+                newPalette
+            );
+        }
+    };
 }
