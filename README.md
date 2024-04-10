@@ -25,7 +25,7 @@ That means Javaflame impacts performance (because of the time it takes to proces
 You still can use it to have some idea about the performance, if you assume the time it takes to execute the toString and the size of the stack is negligible. This is not guaranteed to be true. If what you need is to be as precise as possible, consider other tools like [async-profiler](https://github.com/async-profiler/async-profiler)
 
 # Features
-
+- See argument values on function calls, not only the function signature. 
 - One Flamegraph per thread.
 - Value capturing, all parameters and return are captured as string.
 - Filtering on instrumentation, bytecode transformation is only done on classes that match the filter.
