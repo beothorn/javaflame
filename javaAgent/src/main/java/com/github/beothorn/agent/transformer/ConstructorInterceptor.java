@@ -16,10 +16,12 @@ public class ConstructorInterceptor implements AgentBuilder.Transformer{
     public static String classFullName;
     public static String method;
 
-    public ConstructorInterceptor(final String constructorInterceptorToCall) {
-        String[] split = constructorInterceptorToCall.split("#");
-        classFullName = split[0];
-        method = split[1];
+    public ConstructorInterceptor(
+        final String classFullName,
+        final String method
+    ) {
+        this.classFullName = classFullName;
+        this.method = method;
     }
 
     public DynamicType.Builder<?> transform(
