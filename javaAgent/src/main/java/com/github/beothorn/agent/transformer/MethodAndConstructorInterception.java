@@ -13,8 +13,8 @@ import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
+import static com.github.beothorn.agent.logging.Log.LogLevel.DEBUG;
+import static com.github.beothorn.agent.logging.Log.log;
 import static net.bytebuddy.matcher.ElementMatchers.isConstructor;
 import static net.bytebuddy.matcher.ElementMatchers.isMethod;
 

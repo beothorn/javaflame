@@ -6,11 +6,11 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.allFlagsOnArgument;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
+import static com.github.beothorn.agent.CommandLine.Flag.allFlagsOnArgument;
+import static com.github.beothorn.agent.logging.Log.LogLevel.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class MethodInstrumentationAgentTest {
+class CommandLineTest {
 
     @Test
     void listFlags(){
@@ -32,7 +32,7 @@ class MethodInstrumentationAgentTest {
     @Test
     void whenItHasCommandNoCapturingValue(){
         whenItHasCommand(
-            MethodInstrumentationAgent::argumentHasNoCaptureValuesMode,
+            CommandLine::argumentHasNoCaptureValuesMode,
             "no_capturing_values"
         );
     }
@@ -40,7 +40,7 @@ class MethodInstrumentationAgentTest {
     @Test
     void whenItHasCommandQualifiedFunctionsValue(){
         whenItHasCommand(
-            MethodInstrumentationAgent::argumentHasQualifiedFunctions,
+            CommandLine::argumentHasQualifiedFunctions,
             "qualified_functions"
         );
     }
@@ -48,7 +48,7 @@ class MethodInstrumentationAgentTest {
     @Test
     void whenItHasIncludeCoreClasses(){
         whenItHasCommand(
-            MethodInstrumentationAgent::argumentHasIncludeCoreClasses,
+            CommandLine::argumentHasIncludeCoreClasses,
             "core_classes"
         );
     }
@@ -56,17 +56,17 @@ class MethodInstrumentationAgentTest {
     @Test
     void whenItHasNoSnapshots(){
         whenItHasCommand(
-                MethodInstrumentationAgent::argumentHasNoSnapshotsMode,
+                CommandLine::argumentHasNoSnapshotsMode,
                 "no_snapshots"
         );
     }
 
     @Test
     void argumentLogLevel(){
-        assertEquals(INFO,MethodInstrumentationAgent.argumentLogLevel("asdasd"));
-        assertEquals(NONE,MethodInstrumentationAgent.argumentLogLevel("asdasd,log:NONE"));
-        assertEquals(DEBUG,MethodInstrumentationAgent.argumentLogLevel("log:DEBUG,dsf"));
-        assertEquals(DEBUG,MethodInstrumentationAgent.argumentLogLevel("safas,log:DEBUG,dsf"));
+        assertEquals(INFO, CommandLine.argumentLogLevel("asdasd"));
+        assertEquals(NONE, CommandLine.argumentLogLevel("asdasd,log:NONE"));
+        assertEquals(DEBUG, CommandLine.argumentLogLevel("log:DEBUG,dsf"));
+        assertEquals(DEBUG, CommandLine.argumentLogLevel("safas,log:DEBUG,dsf"));
     }
 
     @Test
@@ -102,19 +102,23 @@ class MethodInstrumentationAgentTest {
     void commandFile(){
         assertEquals(
             "C:/foo/bar",
-            MethodInstrumentationAgent.outputFileOnArgument("out:C:/foo/bar").orElseThrow(RuntimeException::new)
+            CommandLine.outputFileOnArgument("out:C:/foo/bar").orElseThrow(RuntimeException::new)
+        );
+        assertEquals(
+                "\\tmp\\foo",
+                CommandLine.outputFileOnArgument("out:\\tmp\\foo").orElseThrow(RuntimeException::new)
         );
         assertEquals(
                 "C:/foo/bar",
-                MethodInstrumentationAgent.outputFileOnArgument("mode:xyz,out:C:/foo/bar").orElseThrow(RuntimeException::new)
+                CommandLine.outputFileOnArgument("mode:xyz,out:C:/foo/bar").orElseThrow(RuntimeException::new)
         );
         assertEquals(
                 "C:/foo/bar",
-                MethodInstrumentationAgent.outputFileOnArgument("out:C:/foo/bar,mode:xyz").orElseThrow(RuntimeException::new)
+                CommandLine.outputFileOnArgument("out:C:/foo/bar,mode:xyz").orElseThrow(RuntimeException::new)
         );
         assertEquals(
                 "C:/foo/bar",
-                MethodInstrumentationAgent.outputFileOnArgument("mode:abc,out:C:/foo/bar,mode:xyz").orElseThrow(RuntimeException::new)
+                CommandLine.outputFileOnArgument("mode:abc,out:C:/foo/bar,mode:xyz").orElseThrow(RuntimeException::new)
         );
     }
 
@@ -128,13 +132,13 @@ class MethodInstrumentationAgentTest {
     }
 
     private static void testArgumentsForFilter(String stringArgument, Optional<String> expectation) {
-        Optional<String> actual = MethodInstrumentationAgent.argumentFilter(stringArgument);
+        Optional<String> actual = CommandLine.argumentFilter(stringArgument);
         assertEquals(expectation, actual);
     }
 
     @Test
     void whenItHasStartRecordingFunction(){
-        Optional<String> maybeStartRecordingTrigger =  MethodInstrumentationAgent
+        Optional<String> maybeStartRecordingTrigger =  CommandLine
             .argumentStartRecordingTriggerFunction(
                 "startRecordingTriggerFunction:Foo.onStart,stopRecordingTriggerFunction:Foo.onEnd"
             );
@@ -144,7 +148,7 @@ class MethodInstrumentationAgentTest {
 
     @Test
     void whenItHasStopRecordingFunction(){
-        Optional<String> maybeStopRecordingTrigger =  MethodInstrumentationAgent
+        Optional<String> maybeStopRecordingTrigger =  CommandLine
             .argumentStopRecordingTriggerFunction(
                 "startRecordingTriggerFunction:Foo.onStart,stopRecordingTriggerFunction:Foo.onEnd"
             );
@@ -167,9 +171,9 @@ class MethodInstrumentationAgentTest {
          * too many classes, nor I want to return some dynamic structure with the data.
          * I already did it with types and values, it felt wrooonnng.
          */
-        Optional<String> filter = MethodInstrumentationAgent.argumentFilter(argument);
-        Optional<String> maybeStartRecordingTriggerFunction = MethodInstrumentationAgent.argumentStartRecordingTriggerFunction(argument);
-        Optional<String> maybeStopRecordingTriggerFunction = MethodInstrumentationAgent.argumentStopRecordingTriggerFunction(argument);
+        Optional<String> filter = CommandLine.argumentFilter(argument);
+        Optional<String> maybeStartRecordingTriggerFunction = CommandLine.argumentStartRecordingTriggerFunction(argument);
+        Optional<String> maybeStopRecordingTriggerFunction = CommandLine.argumentStopRecordingTriggerFunction(argument);
 
         String[] allFlags = allFlagsOnArgument(argument);
         String allFlagsAsString = Arrays.toString(allFlags);
@@ -178,7 +182,7 @@ class MethodInstrumentationAgentTest {
         String actual = MethodInstrumentationAgent.getExecutionMetadataAsHtml(
             allFlagsAsString,
             outputDirectory,
-            filter,
+            filter.orElse("No filter parameter"),
             maybeStartRecordingTriggerFunction,
             maybeStopRecordingTriggerFunction
         );

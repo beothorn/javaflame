@@ -8,8 +8,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
+import static com.github.beothorn.agent.logging.Log.LogLevel.*;
+import static com.github.beothorn.agent.logging.Log.log;
 import static com.github.beothorn.agent.recorder.Span.span;
 
 /**

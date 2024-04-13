@@ -1,5 +1,6 @@
 package com.github.beothorn.agent;
 
+import com.github.beothorn.agent.logging.Log;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,7 +19,7 @@ class FunctionCallRecorderTest {
 
     @BeforeEach
     void setUp() {
-        MethodInstrumentationAgent.currentLevel = MethodInstrumentationAgent.LogLevel.DEBUG;
+        MethodInstrumentationAgent.currentLevel = Log.LogLevel.DEBUG;
         FunctionCallRecorder.stackPerThread.clear();
         FunctionCallRecorder.shouldPrintQualified = false;
         FunctionCallRecorder.shouldCaptureStacktrace = false;

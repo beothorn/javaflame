@@ -8,9 +8,9 @@ import net.bytebuddy.asm.Advice.Origin;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.DEBUG;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.ERROR;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
+import static com.github.beothorn.agent.logging.Log.LogLevel.DEBUG;
+import static com.github.beothorn.agent.logging.Log.LogLevel.ERROR;
+import static com.github.beothorn.agent.logging.Log.log;
 
 public class AdviceConstructorCallRecorder {
 
