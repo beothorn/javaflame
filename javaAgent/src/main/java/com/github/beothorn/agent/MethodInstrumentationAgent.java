@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.github.beothorn.agent.CommandLine.Flag.*;
 import static com.github.beothorn.agent.logging.Log.LogLevel.*;
 import static com.github.beothorn.agent.parser.ElementMatcherFromExpression.forExpression;
 import static net.bytebuddy.matcher.ElementMatchers.*;
@@ -47,6 +46,7 @@ public class MethodInstrumentationAgent {
         Instrumentation instrumentation
     ) {
         String argument = argumentParameter == null ? "" : argumentParameter;
+        CommandLine.validateArguments(argument);
 
         currentLevel = CommandLine.argumentLogLevel(argument);
         Log.log(INFO, "Agent loaded");
@@ -83,12 +83,13 @@ public class MethodInstrumentationAgent {
         Optional<String> maybeStartRecordingTriggerFunction = CommandLine.argumentStartRecordingTriggerFunction(argument);
         Optional<String> maybeStopRecordingTriggerFunction = CommandLine.argumentStopRecordingTriggerFunction(argument);
 
-        String[] allFlags = allFlagsOnArgument(argument);
+        String[] allFlags = CommandLine.allFlagsOnArgument(argument);
         String allFlagsAsString = Arrays.toString(allFlags);
         String outputDirectory = snapshotDirectory.getAbsolutePath();
 
         String filterString = filter.orElse("No filter parameter");
         String executionMetadata = "logLevel :" + currentLevel.name()
+                + " arguments:" + argument
                 + " flags:" + allFlagsAsString
                 + " output to '" + outputDirectory + "'"
                 + " filters:" + filterString
@@ -97,6 +98,7 @@ public class MethodInstrumentationAgent {
         Log.log(DEBUG, executionMetadata);
 
         String executionMetadataFormatted = getExecutionMetadataAsHtml(
+            argument,
             allFlagsAsString,
             outputDirectory,
             filterString,
@@ -112,7 +114,7 @@ public class MethodInstrumentationAgent {
         );
 
         Optional<String> interceptConstructorFilter = CommandLine.argumentInterceptConstructorFilter(argument);
-
+        Optional<String[]> expressionForConstructorAndMethodToCall = interceptConstructorFilter.map(icf -> icf.split(">"));
 
         Optional<ElementMatcherFromExpression> elementMatcherFromFilterExpression = filter.map(f -> {
             try {
@@ -122,15 +124,25 @@ public class MethodInstrumentationAgent {
             }
         });
 
-
-        Optional<ElementMatcherFromExpression> elementMatcherFromInterceptConstructorFilterExpression = interceptConstructorFilter.map(f -> {
+        Optional<ElementMatcherFromExpression> elementMatcherFromInterceptConstructorFilterExpression = expressionForConstructorAndMethodToCall.map(f -> {
+            if (f.length != 2) {
+                throw new RuntimeException( "interceptConstructor expected to contain the character '>'");
+            }
             try {
-                return forExpression(f);
+                return forExpression(f[0]);
             } catch (CompilationException e) {
                 throw new RuntimeException(e);
             }
         });
 
+        Optional<String> constructorInterceptorToCall = expressionForConstructorAndMethodToCall.map(f -> f[1]);
+        Optional<String[]> classAndMethodNameToCallOnConstructor = constructorInterceptorToCall.map(c -> {
+            String[] split = constructorInterceptorToCall.get().split("#");
+            if (split.length != 2) {
+                throw new RuntimeException("interceptConstructor expected to contain a full method reference with the character '#'");
+            }
+            return split;
+        });
 
         ElementMatcher.Junction<NamedElement> filterMatcher = elementMatcherFromFilterExpression
                 .map(m -> exclusion.and(m.getClassMatcher()))
@@ -161,8 +173,6 @@ public class MethodInstrumentationAgent {
                 .map(ElementMatcherFromExpression::getClassAndMethodMatchers)
                 .orElse(new ArrayList<>());
 
-        Optional<String> constructorInterceptorToCall = CommandLine.argumentConstructorInterceptor(argument);
-
         DebugListener debugListener = new DebugListener();
         AgentBuilder builder = agentBuilder
             .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
@@ -170,9 +180,10 @@ public class MethodInstrumentationAgent {
             .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
             .with(debugListener);
 
-        if (constructorInterceptorToCall.isPresent()) {
+        if (classAndMethodNameToCallOnConstructor.isPresent()) {
+            String[] split = classAndMethodNameToCallOnConstructor.get();
             builder = builder.type(constructorInterceptMatcher)
-                    .transform(new ConstructorInterceptor(constructorInterceptorToCall.get()));
+                    .transform(new ConstructorInterceptor(split[0], split[1]));
         }
 
         MethodAndConstructorInterception methodAndConstructorInterception = new MethodAndConstructorInterception(
@@ -194,9 +205,10 @@ public class MethodInstrumentationAgent {
             while (true) {
                 writeSnapshotToFile(executionMetadataFormatted, debugListener);
                 try {
+                    //noinspection BusyWait
                     Thread.sleep(SAVE_SNAPSHOT_INTERVAL_MILLIS);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
         });
@@ -208,13 +220,15 @@ public class MethodInstrumentationAgent {
     }
 
     public static String getExecutionMetadataAsHtml(
+        String arguments,
         String allFlagsAsString,
         String outputDirectory,
         String filter,
         Optional<String> maybeStartRecordingTriggerFunction,
         Optional<String> maybeStopRecordingTriggerFunction
     ) {
-        return "<p>Flags: " + allFlagsAsString + "</p>"
+        return "<p>Arguments: " + arguments + "</p>"
+                + "<p>Flags: " + allFlagsAsString + "</p>"
                 + "<p>Output: '" + outputDirectory + "'</p>"
                 + "<p>Filters: " + filter + "</p>"
                 + maybeStartRecordingTriggerFunction.map(s -> "<p>Start recording trigger function: '" + s + "'</p>").orElse("")

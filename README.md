@@ -78,7 +78,7 @@ Anything without exclusions will generate lots of data. Either it will not rende
 | capture_stacktrace  | Capture stacktraces for calls. Very expensive, use it when analizyng a single method.| `java -javaagent:javaAgent.jar=capture_stacktrace -jar yourApp.jar` |
 | filter:expression   | Will instrument only classes for which the qualified name matches the expression, see more below. You probably want to set this to you app package to avoid huge snapshots. | `java "-javaagent:javaAgent.jar=filter:com.github.myApp||store" -jar yourApp.jar` |
 | interceptConstructorFor:expression | Will call the function defined at `interceptConstructorWith` every time a class matches the filter. See details below on Intercepting| `java "-javaagent:javaAgent.jar=interceptConstructorFor:Test||App,interceptConstructorWith:com.github.myApp.Interceptor#intercept" -jar .yourApp.jar` |
-| interceptConstructorWith:method reference | The function called for classes matching the `interceptConstructorFor` expression. See details below on Intercepting| `java "-javaagent:javaAgent.jar=interceptConstructorFor:Test||App,interceptConstructorWith:com.github.myApp.Interceptor#intercept" -jar .yourApp.jar` |
+| interceptConstructor:expression>methodReference | For classes matching the expression will call the methodReference. See details below on Intercepting | `java "-javaagent:javaAgent.jar=interceptConstructor:Test||App>com.github.myApp.Interceptor#intercept" -jar .yourApp.jar` |
 | startRecordingTriggerFunction:method | Will start recording the stack only when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=startRecordingTriggerFunction:afterSetup -jar yourApp.jar` |
 | stopRecordingTriggerFunction:method | Will stop recording the stack when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=stopRecordingTriggerFunction:afterJobIsDone -jar yourApp.jar` |
 | out:path            | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
@@ -285,12 +285,11 @@ com.github.test.TestC
 # Intercepting
 
 You may want to intercept functions or constructors using your own implementation. For this you can pass to the agent the qualified name of your function and it will be callled whenever the intercept filter matches.  
-For now, only the constructor can be intercepted.
 
 ## Intercept constructors  
 
 With the constructor interceptor, you can get every new instance of a class matching a filter.  
-Set the argument `interceptConstructorFor` with the expression to match the class and `interceptConstructorWith` with the reference for the static method to be called.  
+Set the argument `interceptConstructor` with the expression to match the class and  the reference for the static method to be called.  
 The method should be static and receive an object as argument. For example:
 ```java
 package com.github.foo;
@@ -302,7 +301,7 @@ public class Interceptor {
 }
 ```
 Here the class is `com.github.foo.Interceptor` and the method is `interceptConstructor` so your command should look like:  
-`java "-javaagent:javaAgent.jar=filter:NO_FILTER,interceptConstructorFor:Test,interceptConstructorWith:com.github.foo.Interceptor#intercept" -jar myApp.jar`  
+`java "-javaagent:javaAgent.jar=filter:NO_FILTER,interceptConstructor:Test>com.github.foo.Interceptor#intercept" -jar myApp.jar`  
 Where `filter:NO_FILTER` matches nothing, so to have no output on the flamegraph (and run it faster).  
 
 The `Interceptor` class should be on the classpath, it is not injected by the agent.  
