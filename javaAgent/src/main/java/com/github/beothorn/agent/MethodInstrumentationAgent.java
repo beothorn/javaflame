@@ -9,20 +9,21 @@ import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.transformer.ConstructorInterceptor;
+import com.github.beothorn.agent.transformer.DebugListener;
 import com.github.beothorn.agent.transformer.MethodAndConstructorInterception;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.NamedElement;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.utility.JavaModule;
 
 import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -40,12 +41,6 @@ public class MethodInstrumentationAgent {
     private static final long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
 
     private static final ReentrantLock fileWriteLock = new ReentrantLock();
-
-    private static final Set<String> debugTransformedClasses = new HashSet<>();
-    private static final Set<String> debugDiscoveredClasses = new HashSet<>();
-    private static final Set<String> debugIgnoredClasses = new HashSet<>();
-    private static final Set<String> debugErrorClasses = new HashSet<>();
-    private static final Set<String> debugCompletedClasses = new HashSet<>();
 
     public enum Flag{
 
@@ -229,11 +224,12 @@ public class MethodInstrumentationAgent {
 
         Optional<String> constructorInterceptorToCall = argumentConstructorInterceptor(argument);
 
+        DebugListener debugListener = new DebugListener();
         AgentBuilder builder = agentBuilder
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                .with(new DebugListener());
+                .with(debugListener);
 
         if (constructorInterceptorToCall.isPresent()) {
             builder = builder.type(constructorInterceptMatcher)
@@ -252,12 +248,12 @@ public class MethodInstrumentationAgent {
             .installOn(instrumentation);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            writeSnapshotToFile(executionMetadataFormatted);
+            writeSnapshotToFile(executionMetadataFormatted, debugListener);
         }));
 
         Thread snapshotThread = new Thread(() -> {
             while (true) {
-                writeSnapshotToFile(executionMetadataFormatted);
+                writeSnapshotToFile(executionMetadataFormatted, debugListener);
                 try {
                     Thread.sleep(SAVE_SNAPSHOT_INTERVAL_MILLIS);
                 } catch (InterruptedException e) {
@@ -286,12 +282,13 @@ public class MethodInstrumentationAgent {
                 + maybeStopRecordingTriggerFunction.map(s -> "<p>Stop recording trigger function: '" + s + "'</p>").orElse("");
     }
 
-    private static void writeSnapshotToFile(String executionMetadataFormatted) {
+    private static void writeSnapshotToFile(String executionMetadataFormatted, DebugListener debugListener) {
         fileWriteLock.lock();
+        String snapshotDirectoryAbsolutePath = snapshotDirectory.getAbsolutePath();
         try {
             FunctionCallRecorder.getOldCallStack().ifPresent(oldCallStack -> {
                 try {
-                    File dataFile = new File(snapshotDirectory.getAbsolutePath(), "data.js");
+                    File dataFile = new File(snapshotDirectoryAbsolutePath, "data.js");
                     if (dataFile.exists()) {
                         RandomAccessFile raf = new RandomAccessFile(dataFile, "rw");
                         long length = raf.length();
@@ -321,40 +318,7 @@ public class MethodInstrumentationAgent {
         }
 
         if (currentLevel.shouldPrint(DEBUG)) {
-            writeDebugFile(debugTransformedClasses, "debugTransformedClasses.txt");
-            writeDebugFile(debugDiscoveredClasses, "debugDiscoveredClasses.txt");
-            writeDebugFile(debugIgnoredClasses, "debugIgnoredClasses.txt");
-            writeDebugFile(debugErrorClasses, "debugErrorClasses.txt");
-            writeDebugFile(debugCompletedClasses, "debugCompletedClasses.txt");
-        }
-    }
-
-    private static void writeDebugFile(final Set<String> debugClassesToWrite, final String file) {
-        if (!debugClassesToWrite.isEmpty()){
-            synchronized (debugClassesToWrite) {
-                try {
-                    File debugLogFile = new File(snapshotDirectory.getAbsolutePath(), file);
-                    if (debugLogFile.exists()) {
-                        RandomAccessFile raf = new RandomAccessFile(debugLogFile, "rw");
-                        for (String className : debugClassesToWrite) {
-                            raf.writeBytes(className + "\n");
-                        }
-                        raf.close();
-                    } else {
-                        try (FileWriter fw = new FileWriter(debugLogFile)) {
-                            for (String className : debugClassesToWrite) {
-                                fw.write(className + "\n");
-                            }
-                            fw.flush();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    debugClassesToWrite.clear();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+            debugListener.writeDebugFiles(snapshotDirectoryAbsolutePath);
         }
     }
 
@@ -447,14 +411,6 @@ public class MethodInstrumentationAgent {
         return INFO;
     }
 
-    private static ArrayList<String> getAllStringsForMatcher(Matcher matcher) {
-        ArrayList<String> result = new ArrayList<>();
-        while (matcher.find()) {
-            result.add(matcher.group(1));
-        }
-        return result;
-    }
-
     public static Optional<String> outputFileOnArgument(String argument){
         if(!argument.contains("out:")){
             return Optional.empty();
@@ -505,72 +461,4 @@ public class MethodInstrumentationAgent {
             }
         }
     }
-
-    public static class DebugListener implements AgentBuilder.Listener {
-
-        @Override
-        public void onDiscovery(
-                String typeName,
-                ClassLoader classLoader,
-                JavaModule module,
-                boolean loaded
-        ) {
-            log(TRACE, "onDiscovery(String typeName='"+typeName+"', " +
-                    "ClassLoader classLoader='"+classLoader+"', " +
-                    "JavaModule module='"+module+"', " +
-                    "boolean loaded='"+loaded+"')");
-            synchronized (debugDiscoveredClasses) {
-                debugDiscoveredClasses.add(typeName);
-            }
-        }
-
-        @Override
-        public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded, DynamicType dynamicType) {
-            log(DEBUG, "onTransformation(TypeDescription typeDescription='"+typeDescription+"', " +
-                    "ClassLoader classLoader='"+classLoader+"', " +
-                    "JavaModule module='"+module+"', " +
-                    "boolean loaded='"+loaded+"', " +
-                    "DynamicType dynamicType='"+dynamicType+"')");
-            synchronized (debugTransformedClasses) {
-                debugTransformedClasses.add(typeDescription.getCanonicalName());
-            }
-        }
-
-        @Override
-        public void onIgnored(TypeDescription typeDescription, ClassLoader classLoader, JavaModule module, boolean loaded) {
-            log(TRACE, "onIgnored(TypeDescription typeDescription='"+typeDescription+"', " +
-                    "ClassLoader classLoader='"+classLoader+"', " +
-                    "JavaModule module='"+module+"', " +
-                    "boolean loaded='"+loaded+"')");
-            synchronized (debugIgnoredClasses) {
-                debugIgnoredClasses.add(typeDescription.getCanonicalName());
-            }
-        }
-
-        @Override
-        public void onError(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded, Throwable throwable) {
-            throwable.printStackTrace();
-            log(ERROR, "onError(String typeName='"+typeName+"', " +
-                    "ClassLoader classLoader='"+classLoader+"', " +
-                    "JavaModule module='"+module+"', " +
-                    "boolean loaded='"+loaded+"', " +
-                    "Throwable throwable='"+throwable+"')");
-            synchronized (debugErrorClasses) {
-                debugErrorClasses.add(typeName);
-            }
-        }
-
-        @Override
-        public void onComplete(String typeName, ClassLoader classLoader, JavaModule module, boolean loaded) {
-            log(TRACE, "onComplete(String typeName='"+typeName+"', " +
-                    "ClassLoader classLoader='"+classLoader+"', " +
-                    "JavaModule module='"+module+"', " +
-                    "boolean loaded='"+loaded+"')");
-            synchronized (debugCompletedClasses) {
-                debugCompletedClasses.add(typeName);
-            }
-        }
-    }
-
-
 }

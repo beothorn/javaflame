@@ -70,6 +70,7 @@ Anything without exclusions will generate lots of data. Either it will not rende
 
 | Flag                | Description | Example |
 | ------------------- | ----------- | ------- |
+| log:LEVEL           | Outputs log on the stdout. Levels are: NONE, ERROR, INFO, WARN, DEBUG, TRACE | `java -javaagent:javaAgent.jar=log:DEBUG -jar yourApp.jar` |
 | no_capturing_values | Record only function call, no parameter value or return value will be recorded. This is faster and measures performance more accurately. | `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar` |
 | core_classes        | Will include Java core classes. More useful in conjunction with filters to check, for example, network calls. | `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar` |
 | no_snapshots        | Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that. | `java -javaagent:javaAgent.jar=no_snapshots -jar yourApp.jar` |
