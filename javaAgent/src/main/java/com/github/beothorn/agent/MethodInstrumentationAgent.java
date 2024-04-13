@@ -42,8 +42,15 @@ public class MethodInstrumentationAgent {
 
     private static final ReentrantLock fileWriteLock = new ReentrantLock();
 
-    public enum Flag{
+    private static final String ARGUMENT_FILTER = "filter";
+    private static final String ARGUMENT_INTERCEPT_CONSTRUCTOR_FOR = "interceptConstructorFor";
+    private static final String ARGUMENT_INTERCEPT_CONSTRUCTOR_WITH = "interceptConstructorWith";
+    private static final String ARGUMENT_START_RECORDING_FUNCTION = "startRecordingTriggerFunction";
+    private static final String ARGUMENT_STOP_RECORDING_FUNCTION = "stopRecordingTriggerFunction";
+    private static final String ARGUMENT_LOG_LEVEL = "log";
+    private static final String ARGUMENT_OUTPUT_FOLDER = "out";
 
+    public enum Flag{
         NO_CAPTURING_VALUES("no_capturing_values"),
         CORE_CLASSES("core_classes"),
         NO_SNAPSHOTS("no_snapshots"),
@@ -226,10 +233,10 @@ public class MethodInstrumentationAgent {
 
         DebugListener debugListener = new DebugListener();
         AgentBuilder builder = agentBuilder
-                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-                .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
-                .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-                .with(debugListener);
+            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+            .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+            .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+            .with(debugListener);
 
         if (constructorInterceptorToCall.isPresent()) {
             builder = builder.type(constructorInterceptMatcher)
@@ -358,21 +365,21 @@ public class MethodInstrumentationAgent {
     public static Optional<String> argumentFilter(String argument){
         return matchCommand(
             argument,
-            "filter"
+            ARGUMENT_FILTER
         );
     }
 
     public static Optional<String> argumentInterceptConstructorFilter(String argument){
         return matchCommand(
                 argument,
-                "interceptConstructorFor"
+                ARGUMENT_INTERCEPT_CONSTRUCTOR_FOR
         );
     }
 
     public static Optional<String> argumentConstructorInterceptor(String argument){
         return matchCommand(
-                argument,
-                "interceptConstructorWith"
+            argument,
+            ARGUMENT_INTERCEPT_CONSTRUCTOR_WITH
         );
     }
 
@@ -387,21 +394,21 @@ public class MethodInstrumentationAgent {
     }
 
     public static Optional<String> argumentStartRecordingTriggerFunction(String argument){
-        Matcher matcher = Pattern.compile("startRecordingTriggerFunction:([^,]+)")
+        Matcher matcher = Pattern.compile(ARGUMENT_START_RECORDING_FUNCTION + ":([^,]+)")
                 .matcher(argument);
         if(!matcher.find()) return Optional.empty();
         return Optional.of(matcher.group(1));
     }
 
     public static Optional<String> argumentStopRecordingTriggerFunction(String argument){
-        Matcher matcher = Pattern.compile("stopRecordingTriggerFunction:([^,]+)")
+        Matcher matcher = Pattern.compile(ARGUMENT_STOP_RECORDING_FUNCTION+":([^,]+)")
                 .matcher(argument);
         if(!matcher.find()) return Optional.empty();
         return Optional.of(matcher.group(1));
     }
 
     public static LogLevel argumentLogLevel(String argument){
-        Matcher matcher = Pattern.compile("log:([^,]+)")
+        Matcher matcher = Pattern.compile(ARGUMENT_LOG_LEVEL+":([^,]+)")
                 .matcher(argument);
 
         if(matcher.find()) {
@@ -412,10 +419,10 @@ public class MethodInstrumentationAgent {
     }
 
     public static Optional<String> outputFileOnArgument(String argument){
-        if(!argument.contains("out:")){
+        if(!argument.contains(ARGUMENT_OUTPUT_FOLDER+":")){
             return Optional.empty();
         }
-        String afterOut = argument.split("out:")[1];
+        String afterOut = argument.split(ARGUMENT_OUTPUT_FOLDER+":")[1];
         int separator = afterOut.indexOf(',');
         if(separator == -1){
            return Optional.of(afterOut);
