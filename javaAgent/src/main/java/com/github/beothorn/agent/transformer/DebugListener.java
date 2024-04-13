@@ -12,8 +12,8 @@ import java.io.RandomAccessFile;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.log;
+import static com.github.beothorn.agent.logging.Log.LogLevel.*;
+import static com.github.beothorn.agent.logging.Log.log;
 
 public class DebugListener implements AgentBuilder.Listener {
 

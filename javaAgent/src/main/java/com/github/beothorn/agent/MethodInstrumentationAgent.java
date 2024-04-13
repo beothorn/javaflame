@@ -4,6 +4,7 @@ import com.github.beothorn.agent.advice.AdviceConstructorCallRecorder;
 import com.github.beothorn.agent.advice.AdviceConstructorCallRecorderWithCapture;
 import com.github.beothorn.agent.advice.AdviceFunctionCallRecorder;
 import com.github.beothorn.agent.advice.AdviceFunctionCallRecorderWithCapture;
+import com.github.beothorn.agent.logging.Log;
 import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
 import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
@@ -25,12 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static com.github.beothorn.agent.MethodInstrumentationAgent.Flag.*;
-import static com.github.beothorn.agent.MethodInstrumentationAgent.LogLevel.*;
+import static com.github.beothorn.agent.CommandLine.Flag.*;
+import static com.github.beothorn.agent.logging.Log.LogLevel.*;
 import static com.github.beothorn.agent.parser.ElementMatcherFromExpression.forExpression;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
@@ -42,74 +40,7 @@ public class MethodInstrumentationAgent {
 
     private static final ReentrantLock fileWriteLock = new ReentrantLock();
 
-    private static final String ARGUMENT_FILTER = "filter";
-    private static final String ARGUMENT_INTERCEPT_CONSTRUCTOR_FOR = "interceptConstructorFor";
-    private static final String ARGUMENT_INTERCEPT_CONSTRUCTOR_WITH = "interceptConstructorWith";
-    private static final String ARGUMENT_START_RECORDING_FUNCTION = "startRecordingTriggerFunction";
-    private static final String ARGUMENT_STOP_RECORDING_FUNCTION = "stopRecordingTriggerFunction";
-    private static final String ARGUMENT_LOG_LEVEL = "log";
-    private static final String ARGUMENT_OUTPUT_FOLDER = "out";
-
-    public enum Flag{
-        NO_CAPTURING_VALUES("no_capturing_values"),
-        CORE_CLASSES("core_classes"),
-        NO_SNAPSHOTS("no_snapshots"),
-        QUALIFIED_FUNCTIONS("qualified_functions"),
-        CAPTURE_STACKTRACE("capture_stacktrace"),;
-
-        public final String flagAsString;
-
-        Flag(String flagAsString) {
-            this.flagAsString = flagAsString;
-        }
-
-        public boolean isOnArguments(String arguments){
-            return Pattern.compile("(^|,)" + this.flagAsString + "(,|$)")
-                    .matcher(arguments).find();
-        }
-
-        public static String[] allFlagsOnArgument(String arguments){
-            return Arrays.stream(Flag.values())
-                    .filter(f -> f.isOnArguments(arguments))
-                    .map(f -> f.flagAsString)
-                    .toArray(String[]::new);
-        }
-    }
-
-    public enum LogLevel{
-        NONE(1),
-        ERROR(2),
-        INFO(3),
-        WARN(4),
-        DEBUG(5),
-        TRACE(6);
-
-        private final Integer level;
-
-        LogLevel(int level) {
-            this.level = level;
-        }
-
-        public boolean shouldPrint(LogLevel level) {
-            return level.level <= this.level ;
-        }
-    }
-
-    public static LogLevel currentLevel = ERROR;
-
-    public static void log(LogLevel level, String log){
-        log(level, () -> log);
-    }
-
-    public static void log(LogLevel level, Supplier<String> log){
-        if(currentLevel.shouldPrint(level)){
-            if(level.equals(ERROR)){
-                System.err.println("[JAVA_AGENT] "+level.name()+" "+log.get());
-            }else{
-                System.out.println("[JAVA_AGENT] "+level.name()+" "+log.get());
-            }
-        }
-    }
+    public static Log.LogLevel currentLevel = ERROR;
 
     public static void premain(
         String argumentParameter,
@@ -117,20 +48,20 @@ public class MethodInstrumentationAgent {
     ) {
         String argument = argumentParameter == null ? "" : argumentParameter;
 
-        currentLevel = argumentLogLevel(argument);
-        log(INFO, "Agent loaded");
-        boolean shouldCaptureValues = !argumentHasNoCaptureValuesMode(argument);
-        FunctionCallRecorder.setShouldCaptureStacktrace(argumentHasShouldCaptureStackTraces(argument));
-        Optional<String> maybeFilePath = outputFileOnArgument(argument);
+        currentLevel = CommandLine.argumentLogLevel(argument);
+        Log.log(INFO, "Agent loaded");
+        boolean shouldCaptureValues = !CommandLine.argumentHasNoCaptureValuesMode(argument);
+        FunctionCallRecorder.setShouldCaptureStacktrace(CommandLine.argumentHasShouldCaptureStackTraces(argument));
+        Optional<String> maybeFilePath = CommandLine.outputFileOnArgument(argument);
 
         Optional<File> file = maybeFilePath
                 .map(File::new)
                 .filter(f -> f.exists() || f.isDirectory());
 
         if(maybeFilePath.isPresent() && !file.isPresent()){
-            log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
-            log(ERROR, "Directory needs to exist!");
-            log(ERROR, "Will use temporary instead");
+            Log.log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
+            Log.log(ERROR, "Directory needs to exist!");
+            Log.log(ERROR, "Will use temporary instead");
         }
 
         File javaFlameDirectory;
@@ -141,33 +72,34 @@ public class MethodInstrumentationAgent {
         }
 
         snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
-        log(INFO, "Output at "+snapshotDirectory.getAbsolutePath());
+        Log.log(INFO, "Output at "+snapshotDirectory.getAbsolutePath());
         if(!snapshotDirectory.mkdir()){
-            log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
+            Log.log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
         }
 
         writeHtmlFiles();
 
-        Optional<String> filter = argumentFilter(argument);
-        Optional<String> maybeStartRecordingTriggerFunction = argumentStartRecordingTriggerFunction(argument);
-        Optional<String> maybeStopRecordingTriggerFunction = argumentStopRecordingTriggerFunction(argument);
+        Optional<String> filter = CommandLine.argumentFilter(argument);
+        Optional<String> maybeStartRecordingTriggerFunction = CommandLine.argumentStartRecordingTriggerFunction(argument);
+        Optional<String> maybeStopRecordingTriggerFunction = CommandLine.argumentStopRecordingTriggerFunction(argument);
 
         String[] allFlags = allFlagsOnArgument(argument);
         String allFlagsAsString = Arrays.toString(allFlags);
         String outputDirectory = snapshotDirectory.getAbsolutePath();
 
+        String filterString = filter.orElse("No filter parameter");
         String executionMetadata = "logLevel :" + currentLevel.name()
                 + " flags:" + allFlagsAsString
                 + " output to '" + outputDirectory + "'"
-                + " filters:" + filter.orElse("No filter parameter")
+                + " filters:" + filterString
                 + maybeStartRecordingTriggerFunction.map(s -> "Start recording trigger function" + s).orElse("")
                 + maybeStopRecordingTriggerFunction.map(s -> "Stop recording trigger function" + s).orElse("");
-        log(DEBUG, executionMetadata);
+        Log.log(DEBUG, executionMetadata);
 
         String executionMetadataFormatted = getExecutionMetadataAsHtml(
             allFlagsAsString,
             outputDirectory,
-            filter,
+            filterString,
             maybeStartRecordingTriggerFunction,
             maybeStopRecordingTriggerFunction
         );
@@ -179,7 +111,7 @@ public class MethodInstrumentationAgent {
             nameStartsWith("com.github.beothorn.agent").or(nameStartsWith("net.bytebuddy"))
         );
 
-        Optional<String> interceptConstructorFilter = argumentInterceptConstructorFilter(argument);
+        Optional<String> interceptConstructorFilter = CommandLine.argumentInterceptConstructorFilter(argument);
 
 
         Optional<ElementMatcherFromExpression> elementMatcherFromFilterExpression = filter.map(f -> {
@@ -210,7 +142,7 @@ public class MethodInstrumentationAgent {
 
         AgentBuilder agentBuilder = new AgentBuilder.Default();
 
-        boolean coreClassesMode = argumentHasIncludeCoreClasses(argument);
+        boolean coreClassesMode = CommandLine.argumentHasIncludeCoreClasses(argument);
         if(coreClassesMode){
             agentBuilder = agentBuilder.ignore(none());
         }
@@ -229,7 +161,7 @@ public class MethodInstrumentationAgent {
                 .map(ElementMatcherFromExpression::getClassAndMethodMatchers)
                 .orElse(new ArrayList<>());
 
-        Optional<String> constructorInterceptorToCall = argumentConstructorInterceptor(argument);
+        Optional<String> constructorInterceptorToCall = CommandLine.argumentConstructorInterceptor(argument);
 
         DebugListener debugListener = new DebugListener();
         AgentBuilder builder = agentBuilder
@@ -269,7 +201,7 @@ public class MethodInstrumentationAgent {
             }
         });
 
-        if(!argumentHasNoSnapshotsMode(argument)){
+        if(!CommandLine.argumentHasNoSnapshotsMode(argument)){
             snapshotThread.setDaemon(true);
             snapshotThread.start();
         }
@@ -278,13 +210,13 @@ public class MethodInstrumentationAgent {
     public static String getExecutionMetadataAsHtml(
         String allFlagsAsString,
         String outputDirectory,
-        Optional<String> filter,
+        String filter,
         Optional<String> maybeStartRecordingTriggerFunction,
         Optional<String> maybeStopRecordingTriggerFunction
     ) {
         return "<p>Flags: " + allFlagsAsString + "</p>"
                 + "<p>Output: '" + outputDirectory + "'</p>"
-                + "<p>Filters: " + filter.orElse("No filter parameter") + "</p>"
+                + "<p>Filters: " + filter + "</p>"
                 + maybeStartRecordingTriggerFunction.map(s -> "<p>Start recording trigger function: '" + s + "'</p>").orElse("")
                 + maybeStopRecordingTriggerFunction.map(s -> "<p>Stop recording trigger function: '" + s + "'</p>").orElse("");
     }
@@ -313,8 +245,8 @@ public class MethodInstrumentationAgent {
                             throw new RuntimeException(e);
                         }
                     }
-                    log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
-                    log(INFO, "Graph at '" + dataFile.getParentFile().getAbsolutePath()
+                    Log.log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
+                    Log.log(INFO, "Graph at '" + dataFile.getParentFile().getAbsolutePath()
                             + FileSystems.getDefault().getSeparator() + "index.html'");
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -340,95 +272,6 @@ public class MethodInstrumentationAgent {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static boolean argumentHasQualifiedFunctions(String argument){
-        return QUALIFIED_FUNCTIONS.isOnArguments(argument);
-    }
-
-    public static boolean argumentHasNoCaptureValuesMode(String argument){
-        return NO_CAPTURING_VALUES.isOnArguments(argument);
-    }
-
-    public static boolean argumentHasShouldCaptureStackTraces(String argument){
-        return CAPTURE_STACKTRACE.isOnArguments(argument);
-    }
-
-    public static boolean argumentHasIncludeCoreClasses(String argument){
-        return CORE_CLASSES.isOnArguments(argument);
-    }
-
-    public static boolean argumentHasNoSnapshotsMode(String argument){
-        return NO_SNAPSHOTS.isOnArguments(argument);
-    }
-
-    public static Optional<String> argumentFilter(String argument){
-        return matchCommand(
-            argument,
-            ARGUMENT_FILTER
-        );
-    }
-
-    public static Optional<String> argumentInterceptConstructorFilter(String argument){
-        return matchCommand(
-                argument,
-                ARGUMENT_INTERCEPT_CONSTRUCTOR_FOR
-        );
-    }
-
-    public static Optional<String> argumentConstructorInterceptor(String argument){
-        return matchCommand(
-            argument,
-            ARGUMENT_INTERCEPT_CONSTRUCTOR_WITH
-        );
-    }
-
-    private static Optional<String> matchCommand(
-        String argument,
-        String command
-    ) {
-        Matcher matcher = Pattern.compile(command + ":([^,]+)")
-                .matcher(argument);
-        if(!matcher.find()) return Optional.empty();
-        return Optional.of(matcher.group(1));
-    }
-
-    public static Optional<String> argumentStartRecordingTriggerFunction(String argument){
-        Matcher matcher = Pattern.compile(ARGUMENT_START_RECORDING_FUNCTION + ":([^,]+)")
-                .matcher(argument);
-        if(!matcher.find()) return Optional.empty();
-        return Optional.of(matcher.group(1));
-    }
-
-    public static Optional<String> argumentStopRecordingTriggerFunction(String argument){
-        Matcher matcher = Pattern.compile(ARGUMENT_STOP_RECORDING_FUNCTION+":([^,]+)")
-                .matcher(argument);
-        if(!matcher.find()) return Optional.empty();
-        return Optional.of(matcher.group(1));
-    }
-
-    public static LogLevel argumentLogLevel(String argument){
-        Matcher matcher = Pattern.compile(ARGUMENT_LOG_LEVEL+":([^,]+)")
-                .matcher(argument);
-
-        if(matcher.find()) {
-            return LogLevel.valueOf(matcher.group(1));
-        }
-
-        return INFO;
-    }
-
-    public static Optional<String> outputFileOnArgument(String argument){
-        if(!argument.contains(ARGUMENT_OUTPUT_FOLDER+":")){
-            return Optional.empty();
-        }
-        String afterOut = argument.split(ARGUMENT_OUTPUT_FOLDER+":")[1];
-        int separator = afterOut.indexOf(',');
-        if(separator == -1){
-           return Optional.of(afterOut);
-        }
-        String filePath = afterOut.substring(0, separator);
-        return Optional.of(filePath);
     }
 
     public static byte[] readAllBytes(InputStream inputStream) throws IOException {
