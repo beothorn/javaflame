@@ -1,7 +1,9 @@
 package com.github.beothorn.agent.advice;
 
-import net.bytebuddy.asm.Advice.*;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
+import net.bytebuddy.asm.Advice;
+import net.bytebuddy.asm.Advice.AllArguments;
+import net.bytebuddy.asm.Advice.OnMethodExit;
+import net.bytebuddy.asm.Advice.This;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
@@ -12,7 +14,7 @@ import static com.github.beothorn.agent.logging.Log.LogLevel.DEBUG;
 import static com.github.beothorn.agent.logging.Log.LogLevel.ERROR;
 import static com.github.beothorn.agent.logging.Log.log;
 
-public class AdviceInterceptMethod {
+public class AdviceInterceptConstructorMethod {
 
     public static String classFullName;
     public static String method;
@@ -20,17 +22,16 @@ public class AdviceInterceptMethod {
 
     public static boolean isRecording = true;
 
-    @OnMethodExit(onThrowable = Throwable.class)
+    @OnMethodExit
     public static void exit(
-        @Origin Executable methodCalled,
         @This Object self,
-        @AllArguments Object[] allArguments,
-        @Return(typing = Assigner.Typing.DYNAMIC) Object returnValueFromMethod
+        @Advice.Origin Executable methodCalled,
+        @AllArguments Object[] allArguments
     ) {
         try {
             if (!isRecording) return;
             if (methodToCall != null) {
-                invoke(methodCalled, self, allArguments, returnValueFromMethod);
+                invoke(methodCalled, self, allArguments, self);
                 return;
             }
             Class<?> clazz = Class.forName(classFullName);
@@ -42,7 +43,7 @@ public class AdviceInterceptMethod {
                 Object.class
             );
 
-            invoke(methodCalled, self, allArguments, returnValueFromMethod);
+            invoke(methodCalled, self, allArguments, self);
         } catch (Exception e) {
             log(ERROR, "On intercept exit function Exception " + e);
             log(ERROR, "On intercept exit function " + e.getMessage());
@@ -52,16 +53,16 @@ public class AdviceInterceptMethod {
     }
 
     synchronized public static void invoke(
-        final Executable methodCalled,
-        final Object self,
-        final Object[] allArguments,
-        final Object returnValueFromMethod
+            final Executable methodCalled,
+            final Object self,
+            final Object[] allArguments,
+            final Object returnValueFromMethod
     ) throws IllegalAccessException, InvocationTargetException {
         // TODO: multithread
         isRecording = false;
         try {
             methodToCall.invoke(
-            null,
+                null,
                 self,
                 methodCalled,
                 allArguments,

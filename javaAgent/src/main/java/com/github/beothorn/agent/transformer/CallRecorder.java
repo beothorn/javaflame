@@ -18,12 +18,12 @@ import static com.github.beothorn.agent.logging.Log.log;
 import static net.bytebuddy.matcher.ElementMatchers.isConstructor;
 import static net.bytebuddy.matcher.ElementMatchers.isMethod;
 
-public class CallRecorderTransformer implements Transformer {
+public class CallRecorder implements Transformer {
         private final Advice adviceForFunction;
         private final Advice adviceForConstructor;
         private final List<ClassAndMethodMatcher> filters;
 
-        public CallRecorderTransformer(
+        public CallRecorder(
             Advice adviceForFunction,
             Advice adviceForConstructor,
             List<ClassAndMethodMatcher> filters
@@ -72,6 +72,12 @@ public class CallRecorderTransformer implements Transformer {
             }
 
             log(DEBUG, "Match all functions in "+canonicalName);
+            if (adviceForConstructor == null) {
+                return builder.visit(adviceForFunction.on(funMatcherMethod));
+            }
+            if (adviceForFunction == null) {
+                return builder.visit(adviceForConstructor.on(funMatcherMethod));
+            }
             return builder.visit(adviceForConstructor.on(isConstructor()))
                     .visit(adviceForFunction.on(funMatcherMethod));
         }

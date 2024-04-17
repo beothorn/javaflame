@@ -1,5 +1,7 @@
 package com.github.beothorn.tests;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,7 +21,7 @@ public class Interceptor {
 
     public static void interceptMethod(
         Object self,
-        Method method,
+        Executable method,
         Object[] allArguments,
         Object returnValueFromMethod
     ){
