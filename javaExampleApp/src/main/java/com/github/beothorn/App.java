@@ -16,17 +16,6 @@ import java.util.function.Function;
 public class App {
 
     public static void main(String[] args) throws InterruptedException {
-        // Do some test some calls
-        TestFiltersA testFiltersA = new TestFiltersA();
-        testFiltersA.functionAAA();
-        testFiltersA.functionBBB();
-        testFiltersA.functionCCC();
-        TestFiltersB testFiltersB = new TestFiltersB();
-        testFiltersB.functionXXX();
-        testFiltersB.functionYYY();
-        testFiltersB.functionZZZ();
-
-
         int[] randomUpTo20 = {10,14,7,11,8,5,15,12,1,9,
                      3,4,2,13,6}; // chosen by fair dice roll.
                                    // guaranteed to be random.
@@ -59,6 +48,26 @@ public class App {
         inPlaceQuickSort.join();
         mergeSort.join();
         insertionSort.join();
+        //--------------
+        // Do some test some calls
+        startRecording();
+        TestFiltersA testFiltersA = new TestFiltersA();
+        testFiltersA.functionAAA();
+        stopRecording();
+        testFiltersA.functionBBB();
+        testFiltersA.functionCCC();
+        TestFiltersB testFiltersB = new TestFiltersB();
+        testFiltersB.functionXXX();
+        testFiltersB.functionYYY();
+        testFiltersB.functionZZZ();
+    }
+
+    private static void stopRecording() {
+        // does nothing, arguments on agent will use this method to start
+    }
+
+    private static void startRecording() {
+        // does nothing, arguments on agent will use this method to start
     }
 
     private static Thread runSortInThread(int[] arrayToSort, Function<int[], int[]> sort, String sortName) {

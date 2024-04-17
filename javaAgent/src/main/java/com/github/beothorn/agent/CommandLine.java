@@ -27,6 +27,7 @@ public class CommandLine {
     private static final String[] VALID_ARGS = new String[]{
         ARGUMENT_FILTER,
         ARGUMENT_INTERCEPT_CONSTRUCTOR,
+        ARGUMENT_INTERCEPT_METHOD_ENTRY,
         ARGUMENT_START_RECORDING_FUNCTION,
         ARGUMENT_STOP_RECORDING_FUNCTION,
         ARGUMENT_LOG_LEVEL,
@@ -35,11 +36,11 @@ public class CommandLine {
     };
 
     private static final String[] VALID_FLAGS = new String[]{
-            FLAG_NO_CAPTURING_VALUES,
-            FLAG_CORE_CLASSES,
-            FLAG_NO_SNAPSHOTS,
-            FLAG_QUALIFIED_FUNCTIONS,
-            FLAG_CAPTURE_STACKTRACE
+        FLAG_NO_CAPTURING_VALUES,
+        FLAG_CORE_CLASSES,
+        FLAG_NO_SNAPSHOTS,
+        FLAG_QUALIFIED_FUNCTIONS,
+        FLAG_CAPTURE_STACKTRACE
     };
 
     public static void validateArguments(String argument){
@@ -100,10 +101,17 @@ public class CommandLine {
         );
     }
 
-    public static Optional<String> argumentInterceptConstructorFilter(String argument){
+    public static Optional<String> argumentInterceptConstructor(String argument){
         return matchCommand(
                 argument,
                 ARGUMENT_INTERCEPT_CONSTRUCTOR
+        );
+    }
+
+    public static Optional<String> argumentInterceptMethodEntry(String argument){
+        return matchCommand(
+                argument,
+                ARGUMENT_INTERCEPT_METHOD_ENTRY
         );
     }
 

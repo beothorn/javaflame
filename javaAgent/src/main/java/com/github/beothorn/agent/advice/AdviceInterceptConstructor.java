@@ -1,6 +1,5 @@
 package com.github.beothorn.agent.advice;
 
-import com.github.beothorn.agent.transformer.ConstructorInterceptor;
 import net.bytebuddy.asm.Advice.OnMethodExit;
 import net.bytebuddy.asm.Advice.This;
 
@@ -13,14 +12,22 @@ import static com.github.beothorn.agent.logging.Log.log;
 
 public class AdviceInterceptConstructor {
 
+    public static String classFullName;
+    public static String method;
+    public static Method methodToCall;
+
     @OnMethodExit
     public static void exit(
-            @This Object self
+        @This Object self
     ) {
         try{
-            Class<?> clazz = Class.forName(ConstructorInterceptor.classFullName);
-            Method method = clazz.getMethod(ConstructorInterceptor.method, Object.class);
-            method.invoke(null, self);
+            if (methodToCall != null) {
+                methodToCall.invoke(null, self);
+                return;
+            }
+            Class<?> clazz = Class.forName(classFullName);
+            methodToCall = clazz.getMethod(method, Object.class);
+            methodToCall.invoke(null, self);
         } catch (Exception e){
             log(ERROR, "On exit constructor interceptor "+e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
