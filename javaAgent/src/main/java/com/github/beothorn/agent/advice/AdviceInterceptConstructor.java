@@ -15,6 +15,7 @@ public class AdviceInterceptConstructor {
     public static String classFullName;
     public static String method;
     public static Method methodToCall;
+    public static boolean isRecording = true;
 
     @OnMethodExit
     public static void exit(
@@ -27,9 +28,18 @@ public class AdviceInterceptConstructor {
             }
             Class<?> clazz = Class.forName(classFullName);
             methodToCall = clazz.getMethod(method, Object.class);
-            methodToCall.invoke(null, self);
+
+            // TODO: multithreading
+            isRecording = false;
+            try {
+                methodToCall.invoke(null, self);
+            } finally {
+                isRecording = true;
+            }
         } catch (Exception e){
+            log(ERROR, "On intercept exit constructor Exception " + e);
             log(ERROR, "On exit constructor interceptor "+e.getMessage());
+            log(ERROR, "On intercept calling '" +classFullName+"#"+method+"'");
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }

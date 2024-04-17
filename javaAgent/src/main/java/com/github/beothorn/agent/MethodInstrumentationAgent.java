@@ -6,7 +6,7 @@ import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
 import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
-import com.github.beothorn.agent.transformer.CallRecorderTransformer;
+import com.github.beothorn.agent.transformer.CallRecorder;
 import com.github.beothorn.agent.transformer.ConstructorInterceptor;
 import com.github.beothorn.agent.transformer.DebugListener;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -43,13 +43,13 @@ public class MethodInstrumentationAgent {
 
     public static Log.LogLevel currentLevel = ERROR;
 
-    private static class MatchAndCall<T> {
+    private static class MatchAndCall {
 
-        public final Junction<T> matcher;
+        public final ElementMatcherFromExpression matcher;
         public final String className;
         public final String methodName;
 
-        private MatchAndCall(Junction<T> matcher, final String className, final String methodName){
+        private MatchAndCall(ElementMatcherFromExpression matcher, final String className, final String methodName){
             this.matcher = matcher;
             this.className = className;
             this.methodName = methodName;
@@ -121,9 +121,14 @@ public class MethodInstrumentationAgent {
             initialBuilder
         );
 
-        final AgentBuilder finalAgentBuilder = maybeAddFilter(
+        final AgentBuilder builderMaybeWithMethodInterceptor = maybeAddMethodInterceptor(
             argument,
             builderMaybeWithConstructorInterceptor
+        );
+
+        final AgentBuilder finalAgentBuilder = maybeAddFilter(
+            argument,
+            builderMaybeWithMethodInterceptor
         );
 
         // Install agent with all options from arguments
@@ -175,7 +180,7 @@ public class MethodInstrumentationAgent {
                 throw new RuntimeException(e);
             }
             List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcher.getClassAndMethodMatchers();
-            CallRecorderTransformer transformer = createCallRecorderForJavaFlame(
+            CallRecorder transformer = createCallRecorderForJavaFlame(
                 shouldCaptureValues,
                 classAndMethodMatchers
             );
@@ -189,13 +194,35 @@ public class MethodInstrumentationAgent {
         final AgentBuilder builder
     ) {
         Optional<String> interceptConstructorFilter = CommandLine.argumentInterceptConstructor(argument);
-        Optional<MatchAndCall<NamedElement>> forConstructorInterception = interceptConstructorFilter
-                .map(MethodInstrumentationAgent::matchAndCallForConstructorInterceptor);
+        Optional<MatchAndCall> forConstructorInterception = interceptConstructorFilter
+                .map(MethodInstrumentationAgent::matchAndCallForFilter);
         return forConstructorInterception.map(fci -> {
             AdviceInterceptConstructor.classFullName = fci.className;
             AdviceInterceptConstructor.method = fci.methodName;
-            Junction<NamedElement> matchType = fci.matcher;
+            Junction<NamedElement> matchType = fci.matcher.getClassMatcher();
             ConstructorInterceptor transformer = new ConstructorInterceptor();
+            return extendBuilder(builder, matchType, transformer);
+        }).orElse(builder);
+    }
+
+    private static AgentBuilder maybeAddMethodInterceptor(
+        final String argument,
+        final AgentBuilder builder
+    ) {
+        Optional<String> interceptConstructorFilter = CommandLine.argumentInterceptMethodEntry(argument);
+        Optional<MatchAndCall> forConstructorInterception = interceptConstructorFilter
+                .map(MethodInstrumentationAgent::matchAndCallForFilter);
+        return forConstructorInterception.map(fci -> {
+            AdviceInterceptMethod.classFullName = fci.className;
+            AdviceInterceptMethod.method = fci.methodName;
+            AdviceInterceptConstructorMethod.classFullName = fci.className;
+            AdviceInterceptConstructorMethod.method = fci.methodName;
+            Junction<NamedElement> matchType = fci.matcher.getClassMatcher();
+            CallRecorder transformer = new CallRecorder(
+                Advice.to(AdviceInterceptMethod.class),
+                Advice.to(AdviceInterceptConstructorMethod.class),
+                fci.matcher.getClassAndMethodMatchers()
+            );
             return extendBuilder(builder, matchType, transformer);
         }).orElse(builder);
     }
@@ -214,24 +241,24 @@ public class MethodInstrumentationAgent {
         ).and(m);
     }
 
-    private static MatchAndCall<NamedElement> matchAndCallForConstructorInterceptor(
-        final String interceptConstructorFilter
+    private static MatchAndCall matchAndCallForFilter(
+        final String filter
     ) {
-        String[] expressionAndMethodCall = interceptConstructorFilter.split(">");
+        String[] expressionAndMethodCall = filter.split(">");
         if (expressionAndMethodCall.length != 2) {
-            throw new RuntimeException( "interceptConstructor expected to contain the character '>'");
+            throw new RuntimeException( "intercept expression expected to contain the character '>'");
         }
         String interceptConstructorExpression = expressionAndMethodCall[0];
         String interceptConstructorMethodCall = expressionAndMethodCall[1];
         String[] classAndMethodNameToCallOnConstructor = interceptConstructorMethodCall.split("#");
         if (classAndMethodNameToCallOnConstructor.length != 2) {
             throw new RuntimeException(
-                    "interceptConstructor expected to contain a full method reference with the character '#'"
+                    "intercept expression expected to contain a full method reference with the character '#'"
             );
         }
-        Junction<NamedElement> constructorInterceptMatcher;
+        ElementMatcherFromExpression elementMatcherFromExpression;
         try {
-            constructorInterceptMatcher = forExpression(interceptConstructorExpression).getClassMatcher();
+            elementMatcherFromExpression = forExpression(interceptConstructorExpression);
         } catch (CompilationException e) {
             throw new RuntimeException(e);
         }
@@ -239,16 +266,20 @@ public class MethodInstrumentationAgent {
         String interceptConstructorClassToCall = classAndMethodNameToCallOnConstructor[0];
         String interceptConstructorMethodToCall = classAndMethodNameToCallOnConstructor[1];
 
-        return new MatchAndCall<>(constructorInterceptMatcher, interceptConstructorClassToCall, interceptConstructorMethodToCall);
+        return new MatchAndCall(
+            elementMatcherFromExpression,
+            interceptConstructorClassToCall,
+            interceptConstructorMethodToCall
+        );
     }
 
-    private static CallRecorderTransformer createCallRecorderForJavaFlame(
+    private static CallRecorder createCallRecorderForJavaFlame(
             final boolean shouldCaptureValues
     ) {
         return createCallRecorderForJavaFlame(shouldCaptureValues, new ArrayList<>());
     }
 
-    private static CallRecorderTransformer createCallRecorderForJavaFlame(
+    private static CallRecorder createCallRecorderForJavaFlame(
         final boolean shouldCaptureValues,
         final List<ClassAndMethodMatcher> classAndMethodMatchers
     ) {
@@ -261,7 +292,7 @@ public class MethodInstrumentationAgent {
             adviceForFunction = Advice.to(AdviceFunctionCallRecorder.class);
             adviceForConstructor = Advice.to(AdviceConstructorCallRecorder.class);
         }
-        return new CallRecorderTransformer(
+        return new CallRecorder(
             adviceForFunction,
             adviceForConstructor,
             classAndMethodMatchers
