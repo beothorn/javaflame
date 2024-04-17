@@ -1,21 +1,20 @@
 package com.github.beothorn.agent;
 
-import com.github.beothorn.agent.advice.AdviceConstructorCallRecorder;
-import com.github.beothorn.agent.advice.AdviceConstructorCallRecorderWithCapture;
-import com.github.beothorn.agent.advice.AdviceFunctionCallRecorder;
-import com.github.beothorn.agent.advice.AdviceFunctionCallRecorderWithCapture;
+import com.github.beothorn.agent.advice.*;
 import com.github.beothorn.agent.logging.Log;
 import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
 import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
+import com.github.beothorn.agent.transformer.CallRecorderTransformer;
 import com.github.beothorn.agent.transformer.ConstructorInterceptor;
 import com.github.beothorn.agent.transformer.DebugListener;
-import com.github.beothorn.agent.transformer.MethodAndConstructorInterception;
 import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.NamedElement;
 import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.matcher.ElementMatcher.Junction;
 
 import java.io.*;
 import java.lang.instrument.Instrumentation;
@@ -28,11 +27,14 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.github.beothorn.agent.logging.Log.LogLevel.*;
+import static com.github.beothorn.agent.logging.Log.log;
 import static com.github.beothorn.agent.parser.ElementMatcherFromExpression.forExpression;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class MethodInstrumentationAgent {
 
+    public static final String AGENT_PACKAGE = "com.github.beothorn.agent";
+    public static final String BYTEBUDDY_PACKAGE = "net.bytebuddy";
     private static File snapshotDirectory;
 
     private static final long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
@@ -40,6 +42,20 @@ public class MethodInstrumentationAgent {
     private static final ReentrantLock fileWriteLock = new ReentrantLock();
 
     public static Log.LogLevel currentLevel = ERROR;
+
+    private static class MatchAndCall<T> {
+
+        public final Junction<T> matcher;
+        public final String className;
+        public final String methodName;
+
+        private MatchAndCall(Junction<T> matcher, final String className, final String methodName){
+            this.matcher = matcher;
+            this.className = className;
+            this.methodName = methodName;
+        }
+
+    }
 
     public static void premain(
         String argumentParameter,
@@ -49,37 +65,19 @@ public class MethodInstrumentationAgent {
         CommandLine.validateArguments(argument);
 
         currentLevel = CommandLine.argumentLogLevel(argument);
-        Log.log(INFO, "Agent loaded");
-        boolean shouldCaptureValues = !CommandLine.argumentHasNoCaptureValuesMode(argument);
+        log(INFO, "Agent loaded");
         FunctionCallRecorder.setShouldCaptureStacktrace(CommandLine.argumentHasShouldCaptureStackTraces(argument));
-        Optional<String> maybeFilePath = CommandLine.outputFileOnArgument(argument);
 
-        Optional<File> file = maybeFilePath
-                .map(File::new)
-                .filter(f -> f.exists() || f.isDirectory());
-
-        if(maybeFilePath.isPresent() && !file.isPresent()){
-            Log.log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
-            Log.log(ERROR, "Directory needs to exist!");
-            Log.log(ERROR, "Will use temporary instead");
-        }
-
-        File javaFlameDirectory;
-        try {
-            javaFlameDirectory = file.orElse(Files.createTempDirectory("javaflame").toFile());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        File javaFlameDirectory = getOrCreateOutputDirectory(argument);
 
         snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
-        Log.log(INFO, "Output at "+snapshotDirectory.getAbsolutePath());
+        log(INFO, "Output at "+snapshotDirectory.getAbsolutePath());
         if(!snapshotDirectory.mkdir()){
-            Log.log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
+            log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
         }
 
         writeHtmlFiles();
 
-        Optional<String> filter = CommandLine.argumentFilter(argument);
         Optional<String> maybeStartRecordingTriggerFunction = CommandLine.argumentStartRecordingTriggerFunction(argument);
         Optional<String> maybeStopRecordingTriggerFunction = CommandLine.argumentStopRecordingTriggerFunction(argument);
 
@@ -87,7 +85,7 @@ public class MethodInstrumentationAgent {
         String allFlagsAsString = Arrays.toString(allFlags);
         String outputDirectory = snapshotDirectory.getAbsolutePath();
 
-        String filterString = filter.orElse("No filter parameter");
+        String filterString = CommandLine.argumentFilter(argument).orElse("No filter parameter");
         String executionMetadata = "logLevel :" + currentLevel.name()
                 + " arguments:" + argument
                 + " flags:" + allFlagsAsString
@@ -95,7 +93,7 @@ public class MethodInstrumentationAgent {
                 + " filters:" + filterString
                 + maybeStartRecordingTriggerFunction.map(s -> "Start recording trigger function" + s).orElse("")
                 + maybeStopRecordingTriggerFunction.map(s -> "Stop recording trigger function" + s).orElse("");
-        Log.log(DEBUG, executionMetadata);
+        log(DEBUG, executionMetadata);
 
         String executionMetadataFormatted = getExecutionMetadataAsHtml(
             argument,
@@ -109,101 +107,35 @@ public class MethodInstrumentationAgent {
         maybeStartRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStartTrigger);
         maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
 
-        ElementMatcher.Junction<NamedElement> exclusion = not(
-            nameStartsWith("com.github.beothorn.agent").or(nameStartsWith("net.bytebuddy"))
-        );
-
-        Optional<String> interceptConstructorFilter = CommandLine.argumentInterceptConstructorFilter(argument);
-        Optional<String[]> expressionForConstructorAndMethodToCall = interceptConstructorFilter.map(icf -> icf.split(">"));
-
-        Optional<ElementMatcherFromExpression> elementMatcherFromFilterExpression = filter.map(f -> {
-            try {
-                return forExpression(f);
-            } catch (CompilationException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        Optional<ElementMatcherFromExpression> elementMatcherFromInterceptConstructorFilterExpression = expressionForConstructorAndMethodToCall.map(f -> {
-            if (f.length != 2) {
-                throw new RuntimeException( "interceptConstructor expected to contain the character '>'");
-            }
-            try {
-                return forExpression(f[0]);
-            } catch (CompilationException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        Optional<String> constructorInterceptorToCall = expressionForConstructorAndMethodToCall.map(f -> f[1]);
-        Optional<String[]> classAndMethodNameToCallOnConstructor = constructorInterceptorToCall.map(c -> {
-            String[] split = constructorInterceptorToCall.get().split("#");
-            if (split.length != 2) {
-                throw new RuntimeException("interceptConstructor expected to contain a full method reference with the character '#'");
-            }
-            return split;
-        });
-
-        ElementMatcher.Junction<NamedElement> filterMatcher = elementMatcherFromFilterExpression
-                .map(m -> exclusion.and(m.getClassMatcher()))
-                .orElse(exclusion);
-
-        ElementMatcher.Junction<NamedElement> constructorInterceptMatcher = elementMatcherFromInterceptConstructorFilterExpression
-                .map(m -> exclusion.and(m.getClassMatcher()))
-                .orElse(none());
-
+        // Agent builder creation starts here
         AgentBuilder agentBuilder = new AgentBuilder.Default();
-
         boolean coreClassesMode = CommandLine.argumentHasIncludeCoreClasses(argument);
         if(coreClassesMode){
             agentBuilder = agentBuilder.ignore(none());
         }
 
-        Advice adviceForFunction;
-        Advice adviceForConstructor;
-        if (shouldCaptureValues){
-            adviceForFunction = Advice.to(AdviceFunctionCallRecorderWithCapture.class);
-            adviceForConstructor = Advice.to(AdviceConstructorCallRecorderWithCapture.class);
-        } else {
-            adviceForFunction = Advice.to(AdviceFunctionCallRecorder.class);
-            adviceForConstructor = Advice.to(AdviceConstructorCallRecorder.class);
-        }
+        final AgentBuilder initialBuilder = createDefaultAgentBuilder(agentBuilder);
 
-        List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcherFromFilterExpression
-                .map(ElementMatcherFromExpression::getClassAndMethodMatchers)
-                .orElse(new ArrayList<>());
-
-        DebugListener debugListener = new DebugListener();
-        AgentBuilder builder = agentBuilder
-            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-            .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
-            .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
-            .with(debugListener);
-
-        if (classAndMethodNameToCallOnConstructor.isPresent()) {
-            String[] split = classAndMethodNameToCallOnConstructor.get();
-            builder = builder.type(constructorInterceptMatcher)
-                    .transform(new ConstructorInterceptor(split[0], split[1]));
-        }
-
-        MethodAndConstructorInterception methodAndConstructorInterception = new MethodAndConstructorInterception(
-            adviceForFunction,
-            adviceForConstructor,
-            classAndMethodMatchers
+        final AgentBuilder builderMaybeWithConstructorInterceptor = maybeAddConstructorInterceptor(
+            argument,
+            initialBuilder
         );
 
-        builder
-            .type(filterMatcher)
-            .transform(methodAndConstructorInterception)
-            .installOn(instrumentation);
+        final AgentBuilder finalAgentBuilder = maybeAddFilter(
+            argument,
+            builderMaybeWithConstructorInterceptor
+        );
+
+        // Install agent with all options from arguments
+        finalAgentBuilder.installOn(instrumentation);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            writeSnapshotToFile(executionMetadataFormatted, debugListener);
+            writeSnapshotToFile(executionMetadataFormatted, new DebugListener());
         }));
 
         Thread snapshotThread = new Thread(() -> {
             while (true) {
-                writeSnapshotToFile(executionMetadataFormatted, debugListener);
+                writeSnapshotToFile(executionMetadataFormatted, new DebugListener());
                 try {
                     //noinspection BusyWait
                     Thread.sleep(SAVE_SNAPSHOT_INTERVAL_MILLIS);
@@ -217,6 +149,148 @@ public class MethodInstrumentationAgent {
             snapshotThread.setDaemon(true);
             snapshotThread.start();
         }
+    }
+
+    private static AgentBuilder extendBuilder(
+            final AgentBuilder builder,
+            final Junction<NamedElement> matchType,
+            final Transformer transformer
+    ) {
+        return builder
+                .type(excludeAgentClassesToAvoidRecursiveLoop(matchType))
+                .transform(transformer);
+    }
+
+    private static AgentBuilder maybeAddFilter(
+        final String argument,
+        final AgentBuilder builder
+    ) {
+        Optional<String> maybeFilter = CommandLine.argumentFilter(argument);
+        boolean shouldCaptureValues = !CommandLine.argumentHasNoCaptureValuesMode(argument);
+        return maybeFilter.map(f -> {
+            ElementMatcherFromExpression elementMatcher;
+            try {
+                elementMatcher = forExpression(f);
+            } catch (CompilationException e) {
+                throw new RuntimeException(e);
+            }
+            List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcher.getClassAndMethodMatchers();
+            CallRecorderTransformer transformer = createCallRecorderForJavaFlame(
+                shouldCaptureValues,
+                classAndMethodMatchers
+            );
+            Junction<NamedElement> matchType = elementMatcher.getClassMatcher();
+            return extendBuilder(builder, matchType, transformer);
+        }).orElse(extendBuilder(builder, any(), createCallRecorderForJavaFlame(shouldCaptureValues))); // No filter captures all
+    }
+
+    private static AgentBuilder maybeAddConstructorInterceptor(
+        final String argument,
+        final AgentBuilder builder
+    ) {
+        Optional<String> interceptConstructorFilter = CommandLine.argumentInterceptConstructor(argument);
+        Optional<MatchAndCall<NamedElement>> forConstructorInterception = interceptConstructorFilter
+                .map(MethodInstrumentationAgent::matchAndCallForConstructorInterceptor);
+        return forConstructorInterception.map(fci -> {
+            AdviceInterceptConstructor.classFullName = fci.className;
+            AdviceInterceptConstructor.method = fci.methodName;
+            Junction<NamedElement> matchType = fci.matcher;
+            ConstructorInterceptor transformer = new ConstructorInterceptor();
+            return extendBuilder(builder, matchType, transformer);
+        }).orElse(builder);
+    }
+
+    private static AgentBuilder createDefaultAgentBuilder(final AgentBuilder agentBuilder) {
+        return agentBuilder
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+                .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+                .with(new DebugListener());
+    }
+
+    private static Junction<NamedElement> excludeAgentClassesToAvoidRecursiveLoop(ElementMatcher<NamedElement> m) {
+        return not(
+            nameStartsWith(AGENT_PACKAGE).or(nameStartsWith(BYTEBUDDY_PACKAGE))
+        ).and(m);
+    }
+
+    private static MatchAndCall<NamedElement> matchAndCallForConstructorInterceptor(
+        final String interceptConstructorFilter
+    ) {
+        String[] expressionAndMethodCall = interceptConstructorFilter.split(">");
+        if (expressionAndMethodCall.length != 2) {
+            throw new RuntimeException( "interceptConstructor expected to contain the character '>'");
+        }
+        String interceptConstructorExpression = expressionAndMethodCall[0];
+        String interceptConstructorMethodCall = expressionAndMethodCall[1];
+        String[] classAndMethodNameToCallOnConstructor = interceptConstructorMethodCall.split("#");
+        if (classAndMethodNameToCallOnConstructor.length != 2) {
+            throw new RuntimeException(
+                    "interceptConstructor expected to contain a full method reference with the character '#'"
+            );
+        }
+        Junction<NamedElement> constructorInterceptMatcher;
+        try {
+            constructorInterceptMatcher = forExpression(interceptConstructorExpression).getClassMatcher();
+        } catch (CompilationException e) {
+            throw new RuntimeException(e);
+        }
+
+        String interceptConstructorClassToCall = classAndMethodNameToCallOnConstructor[0];
+        String interceptConstructorMethodToCall = classAndMethodNameToCallOnConstructor[1];
+
+        return new MatchAndCall<>(constructorInterceptMatcher, interceptConstructorClassToCall, interceptConstructorMethodToCall);
+    }
+
+    private static CallRecorderTransformer createCallRecorderForJavaFlame(
+            final boolean shouldCaptureValues
+    ) {
+        return createCallRecorderForJavaFlame(shouldCaptureValues, new ArrayList<>());
+    }
+
+    private static CallRecorderTransformer createCallRecorderForJavaFlame(
+        final boolean shouldCaptureValues,
+        final List<ClassAndMethodMatcher> classAndMethodMatchers
+    ) {
+        Advice adviceForFunction;
+        Advice adviceForConstructor;
+        if (shouldCaptureValues){
+            adviceForFunction = Advice.to(AdviceFunctionCallRecorderWithCapture.class);
+            adviceForConstructor = Advice.to(AdviceConstructorCallRecorderWithCapture.class);
+        } else {
+            adviceForFunction = Advice.to(AdviceFunctionCallRecorder.class);
+            adviceForConstructor = Advice.to(AdviceConstructorCallRecorder.class);
+        }
+        return new CallRecorderTransformer(
+            adviceForFunction,
+            adviceForConstructor,
+            classAndMethodMatchers
+        );
+    }
+
+    private static File getOrCreateOutputDirectory(final String argument) {
+        Optional<File> file = getOutputDirectory(argument);
+
+        File javaFlameDirectory;
+        try {
+            javaFlameDirectory = file.orElse(Files.createTempDirectory("javaflame").toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return javaFlameDirectory;
+    }
+
+    private static Optional<File> getOutputDirectory(final String argument) {
+        Optional<String> maybeFilePath = CommandLine.outputFileOnArgument(argument);
+        Optional<File> file = maybeFilePath
+                .map(File::new)
+                .filter(f -> f.exists() || f.isDirectory());
+        if(maybeFilePath.isPresent() && !file.isPresent()){
+            log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
+            log(ERROR, "Directory needs to exist!");
+            log(ERROR, "Will use temporary instead");
+        }
+        return file;
     }
 
     public static String getExecutionMetadataAsHtml(
@@ -259,8 +333,8 @@ public class MethodInstrumentationAgent {
                             throw new RuntimeException(e);
                         }
                     }
-                    Log.log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
-                    Log.log(INFO, "Graph at '" + dataFile.getParentFile().getAbsolutePath()
+                    log(INFO, "Snapshot '" + dataFile.getAbsolutePath() + "'");
+                    log(INFO, "Graph at '" + dataFile.getParentFile().getAbsolutePath()
                             + FileSystems.getDefault().getSeparator() + "index.html'");
                 } catch (Exception e) {
                     e.printStackTrace();

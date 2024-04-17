@@ -1,6 +1,6 @@
 package com.github.beothorn.agent.transformer;
 
-import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.agent.builder.AgentBuilder.Listener;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.utility.JavaModule;
@@ -15,7 +15,7 @@ import java.util.Set;
 import static com.github.beothorn.agent.logging.Log.LogLevel.*;
 import static com.github.beothorn.agent.logging.Log.log;
 
-public class DebugListener implements AgentBuilder.Listener {
+public class DebugListener implements Listener {
 
     private final Set<String> debugTransformedClasses = new HashSet<>();
     private final Set<String> debugDiscoveredClasses = new HashSet<>();

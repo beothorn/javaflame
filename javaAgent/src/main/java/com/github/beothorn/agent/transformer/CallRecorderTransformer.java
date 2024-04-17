@@ -1,7 +1,7 @@
 package com.github.beothorn.agent.transformer;
 
 import com.github.beothorn.agent.parser.ClassAndMethodMatcher;
-import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
@@ -18,12 +18,12 @@ import static com.github.beothorn.agent.logging.Log.log;
 import static net.bytebuddy.matcher.ElementMatchers.isConstructor;
 import static net.bytebuddy.matcher.ElementMatchers.isMethod;
 
-public class MethodAndConstructorInterception implements AgentBuilder.Transformer {
+public class CallRecorderTransformer implements Transformer {
         private final Advice adviceForFunction;
         private final Advice adviceForConstructor;
         private final List<ClassAndMethodMatcher> filters;
 
-        public MethodAndConstructorInterception(
+        public CallRecorderTransformer(
             Advice adviceForFunction,
             Advice adviceForConstructor,
             List<ClassAndMethodMatcher> filters
