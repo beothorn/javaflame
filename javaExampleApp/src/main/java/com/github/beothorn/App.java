@@ -53,6 +53,7 @@ public class App {
         startRecording();
         TestFiltersA testFiltersA = new TestFiltersA();
         testFiltersA.functionAAA();
+        testFiltersA.functionNonStatic("ewfh");
         stopRecording();
         testFiltersA.functionBBB();
         testFiltersA.functionCCC();

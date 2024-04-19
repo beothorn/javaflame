@@ -15,21 +15,23 @@ import java.util.List;
 
 import static com.github.beothorn.agent.logging.Log.LogLevel.DEBUG;
 import static com.github.beothorn.agent.logging.Log.log;
-import static net.bytebuddy.matcher.ElementMatchers.isConstructor;
-import static net.bytebuddy.matcher.ElementMatchers.isMethod;
+import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class CallRecorder implements Transformer {
         private final Advice adviceForFunction;
         private final Advice adviceForConstructor;
+        private final Advice adviceForStatic;
         private final List<ClassAndMethodMatcher> filters;
 
         public CallRecorder(
             Advice adviceForFunction,
             Advice adviceForConstructor,
+            Advice adviceForStatic,
             List<ClassAndMethodMatcher> filters
         ) {
             this.adviceForFunction = adviceForFunction;
             this.adviceForConstructor = adviceForConstructor;
+            this.adviceForStatic = adviceForStatic;
             this.filters = filters;
             log(DEBUG, () -> "Filters "+ Arrays.toString(this.filters.toArray()));
         }
@@ -64,21 +66,27 @@ public class CallRecorder implements Transformer {
             ElementMatcher.Junction<MethodDescription> funMatcherMethod = isMethod();
 
             for (final ClassAndMethodMatcher classAndMethodFilter : filters) {
-                if (classAndMethodFilter.classMatcher.matches(typeDescription)) {
+                boolean classShouldMatchOnlySomeFunctions = classAndMethodFilter.classMatcher.matches(typeDescription);
+                if (classShouldMatchOnlySomeFunctions) {
                     funMatcherMethod = funMatcherMethod.and(classAndMethodFilter.methodMatcher);
                     log(DEBUG, "Match function in ["+canonicalName+"]: "+classAndMethodFilter.methodMatcher);
-                    return builder.visit(adviceForFunction.on(funMatcherMethod));
+                    return builder
+                        .visit(adviceForFunction.on(funMatcherMethod))
+                        .visit(adviceForStatic.on(funMatcherMethod.and(isStatic())));
                 }
             }
 
+            DynamicType.Builder<?> finalBulder = builder;
+
             log(DEBUG, "Match all functions in "+canonicalName);
-            if (adviceForConstructor == null) {
-                return builder.visit(adviceForFunction.on(funMatcherMethod));
+            if (adviceForConstructor != null) {
+                finalBulder = finalBulder.visit(adviceForConstructor.on(isConstructor()));
             }
-            if (adviceForFunction == null) {
-                return builder.visit(adviceForConstructor.on(funMatcherMethod));
+            if (adviceForFunction != null) {
+                finalBulder = finalBulder
+                    .visit(adviceForFunction.on(funMatcherMethod))
+                    .visit(adviceForStatic.on(funMatcherMethod.and(isStatic())));
             }
-            return builder.visit(adviceForConstructor.on(isConstructor()))
-                    .visit(adviceForFunction.on(funMatcherMethod));
+            return finalBulder;
         }
     }

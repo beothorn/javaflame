@@ -54,7 +54,6 @@ public class MethodInstrumentationAgent {
             this.className = className;
             this.methodName = methodName;
         }
-
     }
 
     public static void premain(
