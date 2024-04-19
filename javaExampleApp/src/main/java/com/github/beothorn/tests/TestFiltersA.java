@@ -12,6 +12,10 @@ public class TestFiltersA {
         return "BBB";
     }
 
+    public String functionNonStatic(String x){
+        return x;
+    }
+
     public String functionCCC(){
         new TestFiltersC("CCCARGS").functionABC();
         return "CCC";
