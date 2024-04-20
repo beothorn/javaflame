@@ -1,9 +1,7 @@
 package com.github.beothorn.agent.advice;
 
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.asm.Advice.AllArguments;
-import net.bytebuddy.asm.Advice.OnMethodExit;
-import net.bytebuddy.asm.Advice.This;
+import net.bytebuddy.asm.Advice.*;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
@@ -14,24 +12,34 @@ import static com.github.beothorn.agent.logging.Log.LogLevel.DEBUG;
 import static com.github.beothorn.agent.logging.Log.LogLevel.ERROR;
 import static com.github.beothorn.agent.logging.Log.log;
 
+/***
+ * This advice is supposed to be injected on constructor.
+ * It will call the interceptor method passing the constructor call.
+ * This advice is injected at the end of the method so the return can be also passed along.
+ */
 public class AdviceInterceptConstructorMethod {
 
     public static String classFullName;
     public static String method;
     public static Method methodToCall;
-
     public static boolean isRecording = true;
 
     @OnMethodExit
     public static void exit(
         @This Object self,
-        @Advice.Origin Executable methodCalled,
-        @AllArguments Object[] allArguments
+        @Origin Executable methodCalled,
+        @AllArguments Object[] allArguments,
+        @Return(typing = Assigner.Typing.DYNAMIC) Object returnValueFromMethod
     ) {
         try {
             if (!isRecording) return;
             if (methodToCall != null) {
-                invoke(methodCalled, self, allArguments, self);
+                invoke(
+                    methodCalled,
+                    self,
+                    allArguments,
+                    returnValueFromMethod
+                );
                 return;
             }
             Class<?> clazz = Class.forName(classFullName);
@@ -58,7 +66,6 @@ public class AdviceInterceptConstructorMethod {
             final Object[] allArguments,
             final Object returnValueFromMethod
     ) throws IllegalAccessException, InvocationTargetException {
-        // TODO: multithread
         isRecording = false;
         try {
             methodToCall.invoke(

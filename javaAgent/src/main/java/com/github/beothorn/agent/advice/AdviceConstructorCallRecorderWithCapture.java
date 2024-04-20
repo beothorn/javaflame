@@ -10,6 +10,11 @@ import static com.github.beothorn.agent.logging.Log.LogLevel.DEBUG;
 import static com.github.beothorn.agent.logging.Log.LogLevel.ERROR;
 import static com.github.beothorn.agent.logging.Log.log;
 
+/***
+ * This advice is supposed to be injected on constructor.
+ * It will call the recorder to record the constructor call on the next snapshot.
+ * This advice capture the values of all parameters.
+ */
 public class AdviceConstructorCallRecorderWithCapture {
 
     @OnMethodEnter
@@ -29,6 +34,7 @@ public class AdviceConstructorCallRecorderWithCapture {
         @This Object self
     ) {
         try{
+            // The new instance is considered as the return value of the constructor.
             FunctionCallRecorderWithValueCapturing.exit(self);
         } catch (Exception e){
             log(ERROR, "On exit constructor "+e.getMessage());

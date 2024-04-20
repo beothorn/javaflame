@@ -13,6 +13,11 @@ import static com.github.beothorn.agent.logging.Log.LogLevel.DEBUG;
 import static com.github.beothorn.agent.logging.Log.LogLevel.ERROR;
 import static com.github.beothorn.agent.logging.Log.log;
 
+/***
+ * This advice is supposed to be injected on methods.
+ * It will call the recorder to record the method call on the next snapshot.
+ * This advice does not get the capture the values of the parameters.
+ */
 public class AdviceFunctionCallRecorder {
     @OnMethodEnter
     public static void enter(

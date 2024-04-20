@@ -220,6 +220,7 @@ public class MethodInstrumentationAgent {
             CallRecorder transformer = new CallRecorder(
                 Advice.to(AdviceInterceptMethod.class),
                 Advice.to(AdviceInterceptConstructorMethod.class),
+                Advice.to(AdviceInterceptStaticMethod.class),
                 fci.matcher.getClassAndMethodMatchers()
             );
             return extendBuilder(builder, matchType, transformer);
@@ -294,6 +295,7 @@ public class MethodInstrumentationAgent {
         return new CallRecorder(
             adviceForFunction,
             adviceForConstructor,
+            adviceForFunction,
             classAndMethodMatchers
         );
     }

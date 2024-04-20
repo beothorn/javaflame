@@ -12,6 +12,12 @@ import static com.github.beothorn.agent.logging.Log.LogLevel.DEBUG;
 import static com.github.beothorn.agent.logging.Log.LogLevel.ERROR;
 import static com.github.beothorn.agent.logging.Log.log;
 
+/***
+ * This advice is supposed to be injected on methods.
+ * It will call the interceptor method passing the method call.
+ * This advice is injected at the end of the constructor so the new instance
+ * is already created.
+ */
 public class AdviceInterceptMethod {
 
     public static String classFullName;
@@ -57,7 +63,6 @@ public class AdviceInterceptMethod {
         final Object[] allArguments,
         final Object returnValueFromMethod
     ) throws IllegalAccessException, InvocationTargetException {
-        // TODO: multithread
         isRecording = false;
         try {
             methodToCall.invoke(

@@ -71,7 +71,7 @@ public class CallRecorder implements Transformer {
                     funMatcherMethod = funMatcherMethod.and(classAndMethodFilter.methodMatcher);
                     log(DEBUG, "Match function in ["+canonicalName+"]: "+classAndMethodFilter.methodMatcher);
                     return builder
-                        .visit(adviceForFunction.on(funMatcherMethod))
+                        .visit(adviceForFunction.on(funMatcherMethod.and(not(isStatic()))))
                         .visit(adviceForStatic.on(funMatcherMethod.and(isStatic())));
                 }
             }
@@ -84,7 +84,7 @@ public class CallRecorder implements Transformer {
             }
             if (adviceForFunction != null) {
                 finalBulder = finalBulder
-                    .visit(adviceForFunction.on(funMatcherMethod))
+                    .visit(adviceForFunction.on(funMatcherMethod.and(not(isStatic()))))
                     .visit(adviceForStatic.on(funMatcherMethod.and(isStatic())));
             }
             return finalBulder;
