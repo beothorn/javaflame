@@ -49,38 +49,44 @@ public class FunctionCallRecorderWithValueCapturing {
         );
     }
 
-    private static void enterExecution(final Object[] allArguments, final String ownerClass, final String methodName, final Parameter[] parameters, final String ownerClassFullName) {
+    private static void enterExecution(
+        final Object[] allArguments,
+        final String ownerClass,
+        final String methodName,
+        final Parameter[] parameters,
+        final String ownerClassFullName
+    ) {
+        final String threadName = Thread.currentThread().getName();
+        // We do not record calls while getting parameter values, because toString()
+        // can call other methods which we are not interested on
+        Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
+        if (!createDetails) {
+            return;
+        }
+
         StringBuilder prettyCall = new StringBuilder();
         prettyCall.append(ownerClass)
                 .append(".")
                 .append(methodName)
                 .append("(");
         String[][] arguments = new String[parameters.length][2];
-        final String threadName = Thread.currentThread().getName();
 
-        // We avoid extracting detail when executing a toString for a parameter
-        // or else we risk creating a stack overflow
-        Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
-        if (createDetails) {
-            shouldDetailThread.put(threadName, false);
-            for (int i = 0; i < parameters.length; i++) {
-                Parameter parameter = parameters[i];
-                String argToString;
-                argToString = getValueAsString(allArguments[i]);
-                String paramType = getTypeAsString(allArguments, i, parameter);
-                prettyCall.append(paramType)
-                        .append(" = ")
-                        .append(argToString);
-                arguments[i][0] = paramType;
-                arguments[i][1] = argToString;
-                if(i < parameters.length-1){
-                    prettyCall.append(", ");
-                }
+        shouldDetailThread.put(threadName, false);
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            String argToString;
+            argToString = getValueAsString(allArguments[i]);
+            String paramType = getTypeAsString(allArguments, i, parameter);
+            prettyCall.append(paramType)
+                    .append(" = ")
+                    .append(argToString);
+            arguments[i][0] = paramType;
+            arguments[i][1] = argToString;
+            if(i < parameters.length-1){
+                prettyCall.append(", ");
             }
-            shouldDetailThread.put(threadName, true);
-        } else {
-            prettyCall.append("ARGUMENT_CAPTURING_OFF");
         }
+        shouldDetailThread.put(threadName, true);
         prettyCall.append(")");
         long entryTime = System.currentTimeMillis();
         onEnter(
@@ -93,7 +99,11 @@ public class FunctionCallRecorderWithValueCapturing {
         );
     }
 
-    public static String getTypeAsString(Object[] allArguments, int i, Parameter parameter) {
+    public static String getTypeAsString(
+        Object[] allArguments,
+        int i,
+        Parameter parameter
+    ) {
         String paramType;
         if (allArguments[i].getClass().isArray()){
             if (allArguments[i] instanceof boolean[]) {
@@ -161,23 +171,26 @@ public class FunctionCallRecorderWithValueCapturing {
     public static void exit(
         Object returnValueFromMethod
     ) {
-        long exitTime = System.currentTimeMillis();
         final String threadName = Thread.currentThread().getName();
-
-        String returnValue = null;
-
         // We avoid extracting detail when executing a toString for a parameter
         // or else we risk creating a stack overflow
         Boolean createDetails = shouldDetailThread.getOrDefault(threadName, true);
-        if(createDetails){
-            shouldDetailThread.put(threadName, false);
-            try {
-                returnValue = getValueAsString(returnValueFromMethod);
-            } catch (Exception e) {
-                returnValue = "RETURN_TOSTRING_EXCEPTION "+e;
-            }
-            shouldDetailThread.put(threadName, true);
+        if (!createDetails) {
+            return;
         }
+
+        long exitTime = System.currentTimeMillis();
+
+        String returnValue;
+
+        shouldDetailThread.put(threadName, false);
+        try {
+            returnValue = getValueAsString(returnValueFromMethod);
+        } catch (Exception e) {
+            returnValue = "RETURN_TOSTRING_EXCEPTION "+e;
+        }
+        shouldDetailThread.put(threadName, true);
+
         String returnType;
         try {
             if (shouldPrintQualified) {

@@ -10,7 +10,7 @@ rm -rf build
 gradle assemble
 popd
 
-java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:DEBUG,out:/tmp,filter:com.github.beothorn.sorts -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+java -javaagent:./javaAgent/build/libs/javaAgent.jar -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,no_capturing_values -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,filter:nameContains(Test) -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java "-javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,filter:named(com.github.beothorn.tests.TestFiltersA)" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
@@ -26,3 +26,6 @@ java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:DEBUG,out:/tmp,filter:c
 #java "-javaagent:./javaAgent/build/libs/javaAgent.jar=log:INFO,out:/tmp,filter:nameMatches(.*TestFilters[AB].*)" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java -javaagent:./javaAgent/build/libs/javaAgent.jar=log:DEBUG,out:/tmp,filter:com.github.beothorn.sorts,capture_stacktrace -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 #java "-javaagent:./javaAgent/build/libs/javaAgent.jar=filter:NO_FILTER,interceptConstructor:Test>com.github.beothorn.tests.Interceptor#interceptConstructor" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+#java "-javaagent:./javaAgent/build/libs/javaAgent.jar=filter:NO_FILTER,intercept:TestFiltersA#functionAAA>com.github.beothorn.tests.Interceptor#interceptConstructor" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+#java "-javaagent:./javaAgent/build/libs/javaAgent.jar=filter:NO_FILTER,intercept:TestFiltersA#functionNonStatic>com.github.beothorn.tests.Interceptor#interceptMethod" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+#java "-javaagent:./javaAgent/build/libs/javaAgent.jar=filter:NO_FILTER,intercept:Common#swap>com.github.beothorn.tests.Interceptor#interceptMethod" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
