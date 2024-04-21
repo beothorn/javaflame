@@ -15,7 +15,7 @@ public class Lexer {
      * {LEFT_PAREN, STRING_VALUE("foobar"), OPERATOR_OR("||"), FUNCTION_CALL("endsWith"), LEFT_PAREN("())")
      * STRING_VALUE("baz"), OPERATOR_AND("&&"), OPERATOR_NOT("!"), RIGHT_PAREN(")")}
      *
-     * @throws Exception with clear error message
+     * @throws CompilationException with clear error message
      *
      * @param input The expression to be tokenized
      */
@@ -28,6 +28,15 @@ public class Lexer {
         return tokens;
     }
 
+    /***
+     * Starting from cursor, reads the next token from input, adds it to tokens and return new cursor position.
+     *
+     * @param tokens The stack to accumulate new tokens
+     * @param input The string expression to evaluate
+     * @param cursor The cursor position to start evaluation
+     * @return new cursor position.
+     * @throws CompilationException
+     */
     private static int readNextToken(Deque<Token> tokens, String input, int cursor) throws CompilationException {
         char currentChar = input.charAt(cursor);
 

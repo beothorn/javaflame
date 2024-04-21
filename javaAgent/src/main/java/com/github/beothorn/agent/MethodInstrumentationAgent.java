@@ -49,7 +49,11 @@ public class MethodInstrumentationAgent {
         public final String className;
         public final String methodName;
 
-        private MatchAndCall(ElementMatcherFromExpression matcher, final String className, final String methodName){
+        private MatchAndCall(
+            final ElementMatcherFromExpression matcher,
+            final String className,
+            final String methodName
+        ){
             this.matcher = matcher;
             this.className = className;
             this.methodName = methodName;

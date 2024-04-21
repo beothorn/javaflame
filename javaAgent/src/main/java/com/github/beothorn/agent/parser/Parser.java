@@ -8,6 +8,13 @@ import static com.github.beothorn.agent.parser.TokenType.OPEN_PAREN;
 
 public class Parser {
 
+    /***
+     * Given a stack of tokens produced by the Lexer, compiles an AST.
+     *
+     * @param tokens The tokens to be processed
+     * @return The final AST
+     * @throws CompilationException In case of oopsies
+     */
     public static ASTNode parse(final Deque<Token> tokens) throws CompilationException {
         ASTNode result = null;
         while (tokens.peek() != null) {
@@ -16,7 +23,7 @@ public class Parser {
         return result;
     }
 
-    public static ASTNode parseUntilClose(final Deque<Token> tokens) throws CompilationException {
+    private static ASTNode parseUntilClose(final Deque<Token> tokens) throws CompilationException {
         ASTNode result = null;
         while (tokens.peek() != null) {
             if (tokens.peek().type.equals(TokenType.CLOSE_PAREN)) {
@@ -59,6 +66,7 @@ public class Parser {
         throw new RuntimeException("NOT IMPLEMENTED");
     }
 
+    // TODO: All class an method will need a flag so assembler can differentiate
     private static ASTNode parseFunctionMatcher(
         final Deque<Token> tokens,
         final ASTNode resultSoFar,
@@ -72,22 +80,22 @@ public class Parser {
         nextToken = tokens.pop();
         if (FUNCTION_CALL.equals(nextToken.type)) {
             return n(
-                    token,
-                    resultSoFar,
-                    parseFunctionCall(tokens, tokens.peek(), nextToken)
+                token,
+                resultSoFar,
+                parseFunctionCall(tokens, tokens.peek(), nextToken)
             );
         }
         if (OPEN_PAREN.equals(nextToken.type)) {
             return n(
-                    token,
-                    resultSoFar,
-                    parseUntilClose(tokens)
+                token,
+                resultSoFar,
+                parseUntilClose(tokens)
             );
         }
         return n(
-                token,
-                resultSoFar,
-                n(nextToken)
+            token,
+            resultSoFar,
+            n(nextToken)
         );
     }
 
