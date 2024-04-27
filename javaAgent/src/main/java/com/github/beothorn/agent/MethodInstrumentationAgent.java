@@ -179,10 +179,12 @@ public class MethodInstrumentationAgent {
             ElementMatcherFromExpression elementMatcher;
             try {
                 elementMatcher = forExpression(f);
+                log(DEBUG, "elementMatcher: "+elementMatcher);
             } catch (CompilationException e) {
                 throw new RuntimeException(e);
             }
             List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcher.getClassAndMethodMatchers();
+            System.out.println(Arrays.toString(classAndMethodMatchers.toArray()));
             CallRecorder transformer = createCallRecorderForJavaFlame(
                 shouldCaptureValues,
                 classAndMethodMatchers
@@ -263,6 +265,7 @@ public class MethodInstrumentationAgent {
         ElementMatcherFromExpression elementMatcherFromExpression;
         try {
             elementMatcherFromExpression = forExpression(interceptConstructorExpression);
+            log(DEBUG, "elementMatcherFromExpression: "+elementMatcherFromExpression);
         } catch (CompilationException e) {
             throw new RuntimeException(e);
         }

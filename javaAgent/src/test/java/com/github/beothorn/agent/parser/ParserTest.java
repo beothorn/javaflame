@@ -46,6 +46,29 @@ class ParserTest {
     }
 
     @Test
+    void simpleParseWithFunctionNegated() throws CompilationException {
+        Deque<Token> tokens = new ArrayDeque<>(asList(
+            // foo#!bar
+            string("foo"),
+            functionMatcher(),
+            not(),
+            string("bar")
+        ));
+        ASTNode root = Parser.parse(tokens);
+        assertEquals(
+            n(
+                functionMatcher(),
+                n(string("foo")),
+                n(
+                    not(),
+                    n(string("bar"))
+                )
+            ),
+            root
+        );
+    }
+
+    @Test
     void simpleParseWithFunctionAnFunctionCallMatcher() throws CompilationException {
         Deque<Token> tokens = new ArrayDeque<>(asList(
             // foo#endsWith(bar)
@@ -120,7 +143,12 @@ class ParserTest {
             Parser.parse(tokens);
             fail("Should throw exception for nested method matcher");
         } catch (CompilationException exc) {
-            assertEquals("", exc.getMessage());
+            assertEquals("Nested method matcher (##).\n" +
+                    "You have a function matcher inside your function matcher.\n" +
+                    "That happens for example in classA#funA||classB#funB.\n" +
+                    "Here, the function matcher is (funA||classB#funB).\n" +
+                    "It should be declared as (classA#funA)||(classB#funB).\n" +
+                    "Try using parenthesis around (class#function).", exc.getMessage());
         }
     }
 

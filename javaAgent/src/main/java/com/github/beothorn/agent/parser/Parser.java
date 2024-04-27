@@ -3,8 +3,7 @@ package com.github.beothorn.agent.parser;
 import java.util.Deque;
 
 import static com.github.beothorn.agent.parser.ASTNode.n;
-import static com.github.beothorn.agent.parser.TokenType.FUNCTION_CALL;
-import static com.github.beothorn.agent.parser.TokenType.OPEN_PAREN;
+import static com.github.beothorn.agent.parser.TokenType.*;
 
 public class Parser {
 
@@ -66,7 +65,6 @@ public class Parser {
         throw new RuntimeException("NOT IMPLEMENTED");
     }
 
-    // TODO: All class an method will need a flag so assembler can differentiate
     private static ASTNode parseFunctionMatcher(
         final Deque<Token> tokens,
         final ASTNode resultSoFar,
@@ -76,6 +74,14 @@ public class Parser {
         Token nextToken;
         if (peek == null) {
             throw new CompilationException("No expression after function matcher start "+ token.value);
+        }
+        if(resultSoFar.containsMethodExpression()) {
+            throw new CompilationException("Nested method matcher (##).\n" +
+                    "You have a function matcher inside your function matcher.\n" +
+                    "That happens for example in classA#funA||classB#funB.\n" +
+                    "Here, the function matcher is (funA||classB#funB).\n" +
+                    "It should be declared as (classA#funA)||(classB#funB).\n" +
+                    "Try using parenthesis around (class#function).");
         }
         nextToken = tokens.pop();
         if (FUNCTION_CALL.equals(nextToken.type)) {
@@ -98,8 +104,14 @@ public class Parser {
                 flagNodeAndChildrenAsMethodMatcher(parseUntilClose(tokens))
             );
         }
+        if (OPERATOR_NOT.equals(nextToken.type)) {
+            return n(
+                token,
+                resultSoFar,
+                flagNodeAndChildrenAsMethodMatcher(parseUnaryOperand(tokens, nextToken))
+            );
+        }
         ASTNode functionMatcherNode = n(nextToken);
-        functionMatcherNode.setMethodExpression();
         return n(
             token,
             resultSoFar,

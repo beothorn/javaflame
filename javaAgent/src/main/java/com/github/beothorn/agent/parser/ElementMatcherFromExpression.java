@@ -33,8 +33,9 @@ public class ElementMatcherFromExpression implements Assembler<ElementMatcherFro
     }
 
     /**
-     * All matchers pair for class and method.
+     * All matchers pair (class, method).
      * This is a pair so function matchers are only applied to the right classes.
+     * For example for [(classA, funA), (classB, funB)], we want to match funA only on classA and not on classB.
      */
     private final List<ClassAndMethodMatcher> matchers = new ArrayList<>();
     /**
@@ -44,6 +45,8 @@ public class ElementMatcherFromExpression implements Assembler<ElementMatcherFro
      * Only after matching this, the function matcher will be applied.
      */
     private ElementMatcher.Junction<NamedElement> typeMatcher;
+
+    // TODO: Have a matcher for class and one for method, both in the same matcher is really confusing
 
     private ElementMatcher.Junction<MethodDescription> methodMatcher;
 
@@ -61,9 +64,7 @@ public class ElementMatcherFromExpression implements Assembler<ElementMatcherFro
         final List<Flag> flags
     ) {
         if(token.value.equals(RESERVED_KEYWORD_CONSTRUCTOR)){
-            ElementMatcherFromExpression elementMatcherFromExpression = new ElementMatcherFromExpression();
-            elementMatcherFromExpression.methodMatcher = isConstructor().and(methodMatcher);
-            return elementMatcherFromExpression;
+            return forMethodMatcher(isConstructor());
         }
         boolean isMethod = flags.contains(Flag.METHOD_EXPRESSION);
         if(isMethod) return forMethodMatcher(nameContains(token.value));
@@ -132,6 +133,7 @@ public class ElementMatcherFromExpression implements Assembler<ElementMatcherFro
             case OPERATOR_OR:
                 if(isMethod){
                     elementMatcherFromExpression.methodMatcher = args.get(0).methodMatcher.or(args.get(1).methodMatcher);
+                    // No matcher added here as there can't be any class matcher inside a function matcher
                     return elementMatcherFromExpression;
                 }
                 elementMatcherFromExpression.typeMatcher = args.get(0).typeMatcher.or(args.get(1).typeMatcher);

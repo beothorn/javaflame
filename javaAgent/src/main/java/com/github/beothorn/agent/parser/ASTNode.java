@@ -52,12 +52,20 @@ public class ASTNode {
         return assembler.assemble(token, (List<T>) results, flags);
     }
 
-    public boolean isMethodExpression(){
+    private boolean isMethodExpression(){
         return flags.contains(Flag.METHOD_EXPRESSION);
     }
 
     public void setMethodExpression(){
         flags.add(Flag.METHOD_EXPRESSION);
+    }
+
+    public boolean containsMethodExpression(){
+        if(isMethodExpression()) return true;
+        for (final ASTNode child : children) {
+            if(child.containsMethodExpression()) return true;
+        }
+        return false;
     }
 
     @Override
