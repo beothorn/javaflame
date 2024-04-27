@@ -3,7 +3,7 @@
 Capture all function calls including argument and return values.  
 No servers or open connections, just plug the agent and get the results.   
 See function calls, parameters and return values all at once.  
-[Latest release v22.0.0](https://github.com/beothorn/javaflame/releases/download/v22.0.0/javaAgent.jar)
+[Latest release v22.0.1](https://github.com/beothorn/javaflame/releases/download/v22.0.1/javaAgent.jar)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
