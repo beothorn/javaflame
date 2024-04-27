@@ -85,6 +85,16 @@ class LexerTest {
     }
 
     @Test
+    void notFunctionFilter() throws CompilationException  {
+        Deque<Token> tokens = Lexer.tokenize("tokens.bar#!funcBaz");
+        assertArrayEquals(new Token[]{
+                string("tokens.bar"), functionMatcher(), not(), string("funcBaz")
+            },
+            tokens.toArray()
+        );
+    }
+
+    @Test
     void happyDayComplexInput() throws CompilationException  {
         Deque<Token> tokens = Lexer.tokenize("aaa#f1&&bbb#(f1||endsWith(f2))||!(endsWith(tokens.bar)||abc)");
         assertArrayEquals(new Token[]{

@@ -48,14 +48,13 @@ class MethodMatcherTest {
 
     @Test
     void happyDayWithConditionalsMatchers() throws CompilationException {
-        ElementMatcherFromExpression elementMatcherFromExpression = ElementMatcherFromExpression.forExpression("(classX||classY)#(funX||funY)||(classW||classZ)#(funW&&funZ)");
+        ElementMatcherFromExpression elementMatcherFromExpression = ElementMatcherFromExpression.forExpression("((classX||classY)#(funX||funY))||((classW||classZ)#(funW&&funZ))");
         List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcherFromExpression.getClassAndMethodMatchers();
-        //Assertions.assertEquals(2, classAndMethodMatchers.size());
+        Assertions.assertEquals(2, classAndMethodMatchers.size());
         Assertions.assertEquals("(name(contains(classX)) or name(contains(classY)) or name(contains(classW)) or name(contains(classZ)))", elementMatcherFromExpression.getClassMatcher().toString());
-        //Assertions.assertEquals("name(contains(a.b.c))", classAndMethodMatchers.get(0).classMatcher.toString());
-        Assertions.assertEquals("name(contains(ff))", classAndMethodMatchers.get(0).methodMatcher.toString());
-        Assertions.assertEquals("name(contains(d.e.f))", classAndMethodMatchers.get(1).classMatcher.toString());
-        Assertions.assertEquals("name(contains(f))", classAndMethodMatchers.get(1).methodMatcher.toString());
+        Assertions.assertEquals("(name(contains(classX)) or name(contains(classY)))", classAndMethodMatchers.get(0).classMatcher.toString());
+        Assertions.assertEquals("(name(contains(funX)) or name(contains(funY)))", classAndMethodMatchers.get(0).methodMatcher.toString());
+        Assertions.assertEquals("(name(contains(classW)) or name(contains(classZ)))", classAndMethodMatchers.get(1).classMatcher.toString());
+        Assertions.assertEquals("(name(contains(funW)) and name(contains(funZ)))", classAndMethodMatchers.get(1).methodMatcher.toString());
     }
-
 }
