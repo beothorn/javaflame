@@ -8,10 +8,12 @@ import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.transformer.CallRecorder;
 import com.github.beothorn.agent.transformer.DebugListener;
+import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.NamedElement;
+import net.bytebuddy.dynamic.scaffold.TypeValidation;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatcher.Junction;
 
@@ -110,7 +112,7 @@ public class MethodInstrumentationAgent {
         maybeStopRecordingTriggerFunction.ifPresent(FunctionCallRecorder::setStopTrigger);
 
         // Agent builder creation starts here
-        AgentBuilder agentBuilder = new AgentBuilder.Default();
+        AgentBuilder agentBuilder = new AgentBuilder.Default(new ByteBuddy().with(TypeValidation.DISABLED));
         boolean coreClassesMode = CommandLine.argumentHasIncludeCoreClasses(argument);
         if(coreClassesMode){
             agentBuilder = agentBuilder.ignore(none());
