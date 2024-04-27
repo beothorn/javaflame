@@ -82,21 +82,41 @@ public class Parser {
             return n(
                 token,
                 resultSoFar,
-                parseFunctionCall(tokens, tokens.peek(), nextToken)
+                flagNodeAndChildrenAsMethodMatcher(
+                    parseFunctionCall(
+                        tokens,
+                        tokens.peek(),
+                        nextToken
+                    )
+                )
             );
         }
         if (OPEN_PAREN.equals(nextToken.type)) {
             return n(
                 token,
                 resultSoFar,
-                parseUntilClose(tokens)
+                flagNodeAndChildrenAsMethodMatcher(parseUntilClose(tokens))
             );
         }
+        ASTNode functionMatcherNode = n(nextToken);
+        functionMatcherNode.setMethodExpression();
         return n(
             token,
             resultSoFar,
-            n(nextToken)
+            flagNodeAndChildrenAsMethodMatcher(functionMatcherNode)
         );
+    }
+
+    private static ASTNode flagNodeAndChildrenAsMethodMatcher(final ASTNode node){
+        node.setMethodExpression();
+        flagNodeChildrenAsMethodMatcher(node.children);
+        return node;
+    }
+
+    private static void flagNodeChildrenAsMethodMatcher(final ASTNode[] nodes){
+        for (final ASTNode node : nodes) {
+            flagNodeAndChildrenAsMethodMatcher(node);
+        }
     }
 
     private static ASTNode parseUnaryOperand(final Deque<Token> tokens, final Token token) throws CompilationException {
