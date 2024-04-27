@@ -11,7 +11,6 @@ import static com.github.beothorn.agent.logging.Log.LogLevel.INFO;
 
 public class CommandLine {
     private static final String ARGUMENT_FILTER = "filter";
-    private static final String ARGUMENT_INTERCEPT_CONSTRUCTOR = "interceptConstructor";
     private static final String ARGUMENT_INTERCEPT_METHOD_EXIT = "intercept";
     private static final String ARGUMENT_START_RECORDING_FUNCTION = "startRecordingTriggerFunction";
     private static final String ARGUMENT_STOP_RECORDING_FUNCTION = "stopRecordingTriggerFunction";
@@ -25,7 +24,6 @@ public class CommandLine {
 
     private static final String[] VALID_ARGS = new String[]{
         ARGUMENT_FILTER,
-        ARGUMENT_INTERCEPT_CONSTRUCTOR,
         ARGUMENT_INTERCEPT_METHOD_EXIT,
         ARGUMENT_START_RECORDING_FUNCTION,
         ARGUMENT_STOP_RECORDING_FUNCTION,
@@ -97,13 +95,6 @@ public class CommandLine {
         return matchCommand(
             argument,
             ARGUMENT_FILTER
-        );
-    }
-
-    public static Optional<String> argumentInterceptConstructor(String argument){
-        return matchCommand(
-            argument,
-            ARGUMENT_INTERCEPT_CONSTRUCTOR
         );
     }
 

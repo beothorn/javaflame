@@ -7,7 +7,6 @@ import com.github.beothorn.agent.parser.CompilationException;
 import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.transformer.CallRecorder;
-import com.github.beothorn.agent.transformer.ConstructorInterceptor;
 import com.github.beothorn.agent.transformer.DebugListener;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
@@ -119,14 +118,9 @@ public class MethodInstrumentationAgent {
 
         final AgentBuilder initialBuilder = createDefaultAgentBuilder(agentBuilder);
 
-        final AgentBuilder builderMaybeWithConstructorInterceptor = maybeAddConstructorInterceptor(
-            argument,
-            initialBuilder
-        );
-
         final AgentBuilder builderMaybeWithMethodInterceptor = maybeAddMethodInterceptor(
             argument,
-            builderMaybeWithConstructorInterceptor
+            initialBuilder
         );
 
         final AgentBuilder finalAgentBuilder = maybeAddFilter(
@@ -192,22 +186,6 @@ public class MethodInstrumentationAgent {
             Junction<NamedElement> matchType = elementMatcher.getClassMatcher();
             return extendBuilder(builder, matchType, transformer);
         }).orElse(extendBuilder(builder, any(), createCallRecorderForJavaFlame(shouldCaptureValues))); // No filter captures all
-    }
-
-    private static AgentBuilder maybeAddConstructorInterceptor(
-        final String argument,
-        final AgentBuilder builder
-    ) {
-        Optional<String> interceptConstructorFilter = CommandLine.argumentInterceptConstructor(argument);
-        Optional<MatchAndCall> forConstructorInterception = interceptConstructorFilter
-                .map(MethodInstrumentationAgent::matchAndCallForFilter);
-        return forConstructorInterception.map(fci -> {
-            AdviceInterceptConstructor.classFullName = fci.className;
-            AdviceInterceptConstructor.method = fci.methodName;
-            Junction<NamedElement> matchType = fci.matcher.getClassMatcher();
-            ConstructorInterceptor transformer = new ConstructorInterceptor();
-            return extendBuilder(builder, matchType, transformer);
-        }).orElse(builder);
     }
 
     private static AgentBuilder maybeAddMethodInterceptor(

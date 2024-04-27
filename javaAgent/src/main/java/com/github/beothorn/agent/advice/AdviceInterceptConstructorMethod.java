@@ -1,7 +1,9 @@
 package com.github.beothorn.agent.advice;
 
-import net.bytebuddy.asm.Advice.*;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
+import net.bytebuddy.asm.Advice.AllArguments;
+import net.bytebuddy.asm.Advice.OnMethodExit;
+import net.bytebuddy.asm.Advice.Origin;
+import net.bytebuddy.asm.Advice.This;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
@@ -28,8 +30,7 @@ public class AdviceInterceptConstructorMethod {
     public static void exit(
         @This Object self,
         @Origin Executable methodCalled,
-        @AllArguments Object[] allArguments,
-        @Return(typing = Assigner.Typing.DYNAMIC) Object returnValueFromMethod
+        @AllArguments Object[] allArguments
     ) {
         try {
             if (!isRecording) return;
@@ -37,8 +38,7 @@ public class AdviceInterceptConstructorMethod {
                 invoke(
                     methodCalled,
                     self,
-                    allArguments,
-                    returnValueFromMethod
+                    allArguments
                 );
                 return;
             }
@@ -51,7 +51,7 @@ public class AdviceInterceptConstructorMethod {
                 Object.class
             );
 
-            invoke(methodCalled, self, allArguments, self);
+            invoke(methodCalled, self, allArguments);
         } catch (Exception e) {
             log(ERROR, "On intercept exit function Exception " + e);
             log(ERROR, "On intercept exit function " + e.getMessage());
@@ -61,10 +61,9 @@ public class AdviceInterceptConstructorMethod {
     }
 
     synchronized public static void invoke(
-            final Executable methodCalled,
-            final Object self,
-            final Object[] allArguments,
-            final Object returnValueFromMethod
+        final Executable methodCalled,
+        final Object self,
+        final Object[] allArguments
     ) throws IllegalAccessException, InvocationTargetException {
         isRecording = false;
         try {
@@ -73,7 +72,7 @@ public class AdviceInterceptConstructorMethod {
                 self,
                 methodCalled,
                 allArguments,
-                returnValueFromMethod
+                self
             );
         }finally {
             isRecording = true;
