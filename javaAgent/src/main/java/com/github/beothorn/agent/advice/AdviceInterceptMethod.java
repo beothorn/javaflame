@@ -26,7 +26,7 @@ public class AdviceInterceptMethod {
 
     public static boolean isRecording = true;
 
-    @OnMethodExit(onThrowable = Throwable.class)
+    @OnMethodExit
     public static void exit(
         @Origin Executable methodCalled,
         @This Object self,
