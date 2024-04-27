@@ -10,6 +10,7 @@ import static com.github.beothorn.agent.parser.ASTNode.n;
 import static com.github.beothorn.agent.parser.Token.*;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class ParserTest {
 
@@ -78,6 +79,7 @@ class ParserTest {
             // but if it was applied to the function we would need a terminator for the function matcher
             // If we want it, we can use parenthesis (see other tests)
             // foo#bar&&baz
+            // will be interpreted as ((foo#bar)&&(baz))
             string("foo"),
             functionMatcher(),
             string("bar"),
@@ -99,6 +101,27 @@ class ParserTest {
             ),
             root
         );
+    }
+
+    @Test
+    void throwExceptionOnNestedMethodSeparator() throws CompilationException {
+        Deque<Token> tokens = new ArrayDeque<>(asList(
+            // classX#funX||classY#funY
+            // will be interpreted as (classX#funX||classY)#funY
+            string("classX"),
+            functionMatcher(),
+            string("funX"),
+            or(),
+            string("classY"),
+            functionMatcher(),
+            string("funY")
+        ));
+        try{
+            Parser.parse(tokens);
+            fail("Should throw exception for nested method matcher");
+        } catch (CompilationException exc) {
+            assertEquals("", exc.getMessage());
+        }
     }
 
     @Test

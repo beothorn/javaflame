@@ -5,8 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Deque;
 
 import static com.github.beothorn.agent.parser.Token.*;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class LexerTest {
 
@@ -103,6 +102,7 @@ class LexerTest {
     void spaceException() {
         try {
             Lexer.tokenize("foo.bar && baz");
+            fail("Should never get here");
         } catch (CompilationException e) {
             assertEquals(e.getMessage(), "Invalid input: Spaces are not allowed: \"foo.bar[ ]&& baz\"");
         }
@@ -112,6 +112,7 @@ class LexerTest {
     void incompleteAndException() {
         try {
             Lexer.tokenize("foo.bar&baz");
+            fail("Should never get here");
         } catch (CompilationException e) {
             assertEquals(e.getMessage(), "Invalid input: Expected '&&' after '&': \"foo.bar[&]baz\"");
         }
@@ -121,6 +122,7 @@ class LexerTest {
     void incompleteOrException() {
         try {
             Lexer.tokenize("foo.bar|baz");
+            fail("Should never get here");
         } catch (CompilationException e) {
             assertEquals(e.getMessage(), "Invalid input: Expected '||' after '|': \"foo.bar[|]baz\"");
         }
@@ -130,6 +132,7 @@ class LexerTest {
     void wrongPlacedNot() {
         try {
             Lexer.tokenize("foo.bar!baz");
+            fail("Should never get here");
         } catch (CompilationException e) {
             assertEquals(e.getMessage(), "Invalid input: ! can appear only on start of string: \"foo.bar[!]baz\"");
         }

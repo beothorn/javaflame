@@ -9,7 +9,7 @@ public class ASTNode {
 
     public Token token;
 
-    FLAG HERE
+    public List<Flag> flags = new ArrayList<>();
 
     public ASTNode[] children;
 
@@ -29,12 +29,16 @@ public class ASTNode {
     public <T> T apply(Assembler<T> assembler) throws CompilationException {
         // If it has no children, it is a string for the default matcher
         if (children.length == 0) {
-            return assembler.assembleDefaultMatcher(token);
+            return assembler.assembleDefaultMatcher(token, flags);
         }
         // If it is a function call, it is the same as if it had no children, just not using the default matcher
         // but the declared one instead. for example named(org.foo.ClassXYZ)
         if (TokenType.FUNCTION_CALL.equals(token.type)) {
-            return assembler.assembleDeclaredMatcher(token, children[0].token.value);
+            return assembler.assembleDeclaredMatcher(
+                token, 
+                children[0].token.value,
+                flags
+            );
         }
         // If it has children, it is some operand that needs to be resolved recursively
         // for example: ClassX||ClassY
@@ -45,7 +49,15 @@ public class ASTNode {
         }
         // After all children is resolved, the operator can finally be assembled
         //noinspection unchecked
-        return assembler.assemble(token, (List<T>) results);
+        return assembler.assemble(token, (List<T>) results, flags);
+    }
+
+    public boolean isMethodExpression(){
+        return flags.contains(Flag.METHOD_EXPRESSION);
+    }
+
+    public void setMethodExpression(){
+        flags.add(Flag.METHOD_EXPRESSION);
     }
 
     @Override

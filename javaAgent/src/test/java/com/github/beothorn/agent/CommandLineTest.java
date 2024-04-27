@@ -20,7 +20,7 @@ class CommandLineTest {
         } catch (RuntimeException e) {
             assertEquals("Unknown argument 'interceptConstructorFor:foobar' on 'interceptConstructorFor:foobar'. " +
                     "Valid arguments are: " +
-                    "[filter, interceptConstructor, startRecordingTriggerFunction, " +
+                    "[filter, interceptConstructor, intercept, startRecordingTriggerFunction, " +
                     "stopRecordingTriggerFunction, log, out, no_capturing_values]. " +
                     "Valid flags are: [no_capturing_values, core_classes, no_snapshots, qualified_functions, capture_stacktrace]", e.getMessage());
         }
