@@ -3,7 +3,7 @@
 Capture all function calls including argument and return values.  
 No servers or open connections, just plug the agent and get the results.   
 See function calls, parameters and return values all at once.  
-[Latest release v21.0.0](https://github.com/beothorn/javaflame/releases/download/v21.0.0/javaAgent.jar)
+[Latest release v22.0.0](https://github.com/beothorn/javaflame/releases/download/v22.0.0/javaAgent.jar)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
@@ -27,7 +27,6 @@ You still can use it to have some idea about the performance, if you assume the 
 # Features
 - See argument values on function calls, not only the function signature. 
 - One Flamegraph per thread.
-- Value capturing, all parameters and return are captured as string.
 - Filtering on instrumentation, bytecode transformation is only done on classes that match the filter.
 - Exclude classes and packages.
 - Continuous snapshots.
@@ -77,7 +76,7 @@ Anything without exclusions will generate lots of data. Either it will not rende
 | qualified_functions | Print the qualified function name, ownerClass.functionName | `java -javaagent:javaAgent.jar=qualified_functions -jar yourApp.jar` |
 | capture_stacktrace  | Capture stacktraces for calls. Very expensive, use it when analizyng a single method.| `java -javaagent:javaAgent.jar=capture_stacktrace -jar yourApp.jar` |
 | filter:expression   | Will instrument only classes for which the qualified name matches the expression, see more below. You probably want to set this to you app package to avoid huge snapshots. | `java "-javaagent:javaAgent.jar=filter:com.github.myApp||store" -jar yourApp.jar` |
-| interceptConstructor:expression>methodReference | For classes matching the expression will call the methodReference. See details below on Intercepting | `java "-javaagent:javaAgent.jar=interceptConstructor:Test||App>com.github.myApp.Interceptor#intercept" -jar .yourApp.jar` |
+| intercept:expression>methodReference | For classes matching the expression will call the methodReference. See details below on Intercepting | `java "-javaagent:javaAgent.jar=intercept:Test||App>com.github.myApp.Interceptor#intercept" -jar .yourApp.jar` |
 | startRecordingTriggerFunction:method | Will start recording the stack only when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=startRecordingTriggerFunction:afterSetup -jar yourApp.jar` |
 | stopRecordingTriggerFunction:method | Will stop recording the stack when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=stopRecordingTriggerFunction:afterJobIsDone -jar yourApp.jar` |
 | out:path            | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
@@ -87,7 +86,7 @@ Anything without exclusions will generate lots of data. Either it will not rende
 The filer expression argument will match the class and the method you want to capture.  
 By default the filter will match any qualified named that contains the string (equivalent to nameContains()) , but you can use different matchers.  
 The method part is optional. A filter with no method will match all methods on your class.  
-Expressions for constructors are not supported yet (but on the work).  
+Constructors can be matched by using the keyword new.  
 
 ## Boolean operators, Precedence operators and matching functions
 
@@ -157,6 +156,13 @@ This will not match:
 ```
 com.github.test.Bar#init
 ```
+
+For constructors, you can use the keyword new. For example, this will match the constructor for Bar:  
+
+```
+java "-javaagent:/PathTo/javaAgent.jar=filter:Bar#new" -jar yourapp.jar
+```
+
 
 ## Match functions
 
@@ -283,26 +289,29 @@ com.github.test.TestC
 
 # Intercepting
 
-You may want to intercept functions or constructors using your own implementation. For this you can pass to the agent the qualified name of your function and it will be callled whenever the intercept filter matches.  
+You may want to intercept functions or constructors using your own implementation. For this you can pass to the agent the qualified name of your function and it will be callled whenever the intercept filter matches.   
+The intercept is called after the function returns.  
 
-## Intercept constructors  
-
-With the constructor interceptor, you can get every new instance of a class matching a filter.  
-Set the argument `interceptConstructor` with the expression to match the class and  the reference for the static method to be called.  
-The method should be static and receive an object as argument. For example:
+Set the argument `intercept` with the expression to match the class and function and the reference for the static method to be called.  
+The method should be static and have this signature:
 ```java
-package com.github.foo;
-
 public class Interceptor {
-    public static void intercept(Object obj){
-        System.out.println(obj);
+    public static void intercept(
+        Object self,
+        Executable methodOrConstructor,
+        Object[] allArguments,
+        Object returnValueFromMethod // On constructors, this contains the new instance
+    ){
+        // Your logic here
     }
 }
 ```
-Here the class is `com.github.foo.Interceptor` and the method is `interceptConstructor` so your command should look like:  
-`java "-javaagent:javaAgent.jar=filter:NO_FILTER,interceptConstructor:Test>com.github.foo.Interceptor#intercept" -jar myApp.jar`  
+Here the class is `Interceptor` and the method is `intercept` so your command should look like:  
+`java "-javaagent:javaAgent.jar=filter:NO_FILTER,intercept:Test>com.github.foo.Interceptor#intercept" -jar myApp.jar`  
 Where `filter:NO_FILTER` matches nothing, so to have no output on the flamegraph (and run it faster).  
 
+To match constructors you can use the new keyword:  
+`java "-javaagent:javaAgent.jar=filter:NO_FILTER,intercept:Test#new>com.github.foo.Interceptor#intercept" -jar myApp.jar`  
 The `Interceptor` class should be on the classpath, it is not injected by the agent.  
 
 
