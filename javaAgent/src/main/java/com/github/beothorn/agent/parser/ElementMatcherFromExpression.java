@@ -7,6 +7,7 @@ import net.bytebuddy.matcher.ElementMatcher;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
@@ -21,6 +22,8 @@ public class ElementMatcherFromExpression implements Assembler<ElementMatcherFro
     }
 
     private static ElementMatcherFromExpression forClassMatcher(ElementMatcher.Junction<NamedElement> typeMatcher) {
+
+
         ElementMatcherFromExpression elementMatcherFromExpression = new ElementMatcherFromExpression();
         elementMatcherFromExpression.typeMatcher = typeMatcher;
         return elementMatcherFromExpression;
