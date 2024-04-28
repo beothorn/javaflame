@@ -180,7 +180,6 @@ public class MethodInstrumentationAgent {
                 throw new RuntimeException(e);
             }
             List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcher.getClassAndMethodMatchers();
-            System.out.println(Arrays.toString(classAndMethodMatchers.toArray()));
             CallRecorder transformer = createCallRecorderForJavaFlame(
                 shouldCaptureValues,
                 classAndMethodMatchers
