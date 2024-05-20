@@ -83,8 +83,8 @@ class FunctionCallRecorderTest {
 
     @Test
     void happyDayWithTrigger() throws JSONException {
-        FunctionCallRecorder.startTrigger = "startRecording";
-        FunctionCallRecorder.stopTrigger = "stopRecording";
+        FunctionCallRecorder.startTrigger = "startRecordingClass#startRecording";
+        FunctionCallRecorder.stopTrigger = "stopRecordingClass#stopRecording";
         FunctionCallRecorder.isRecording = false;
 
         e("main", "ShouldNotRecordThisCall", "",  0);
@@ -114,7 +114,8 @@ class FunctionCallRecorderTest {
             spanJSON("otherRoot", "otherRoot", "otherRoot", 0, 0, 0,
                 spanJSON("OtherFun", "OtherFunClass", "OtherFun", 0, 0, 0,
                     spanJSON("OtherFunFun", "OtherFunFunClass", "OtherFunFun", 0, 0, 0)
-                )
+                ),
+                spanJSON("stopRecording", "stopRecordingClass", "stopRecording", 0, 0, 0)
             )
         );
 

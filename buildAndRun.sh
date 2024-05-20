@@ -71,3 +71,5 @@ java "-javaagent:./javaAgent/build/libs/javaAgent.jar=filter:NO_FILTER,intercept
 java "-javaagent:./javaAgent/build/libs/javaAgent.jar=filter:NO_FILTER,intercept:TestFiltersA#functionNonStatic>com.github.beothorn.tests.Interceptor#interceptMethod" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
 
 java "-javaagent:./javaAgent/build/libs/javaAgent.jar=filter:NO_FILTER,intercept:Common#swap>com.github.beothorn.tests.Interceptor#interceptMethod" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+
+java "-javaagent:./javaAgent/build/libs/javaAgent.jar=out:./outputs/notTest,startRecordingTriggerFunction:com.github.beothorn.App#startRecording,stopRecordingTriggerFunction:com.github.beothorn.App#stopRecording" -jar ./javaExampleApp/build/libs/javaExampleApp.jar
