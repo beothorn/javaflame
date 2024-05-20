@@ -77,8 +77,8 @@ Anything without exclusions will generate lots of data. Either it will not rende
 | capture_stacktrace  | Capture stacktraces for calls. Very expensive, use it when analizyng a single method.| `java -javaagent:javaAgent.jar=capture_stacktrace -jar yourApp.jar` |
 | filter:expression   | Will instrument only classes for which the qualified name matches the expression, see more below. You probably want to set this to you app package to avoid huge snapshots. | `java "-javaagent:javaAgent.jar=filter:com.github.myApp||store" -jar yourApp.jar` |
 | intercept:expression>methodReference | For classes matching the expression will call the methodReference. See details below on Intercepting | `java "-javaagent:javaAgent.jar=intercept:Test||App>com.github.myApp.Interceptor#intercept" -jar .yourApp.jar` |
-| startRecordingTriggerFunction:method | Will start recording the stack only when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=startRecordingTriggerFunction:afterSetup -jar yourApp.jar` |
-| stopRecordingTriggerFunction:method | Will stop recording the stack when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=stopRecordingTriggerFunction:afterJobIsDone -jar yourApp.jar` |
+| startRecordingTriggerFunction:method | Will start recording the stack only when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=startRecordingTriggerFunction:com.example.InitializeClass#afterSetup -jar yourApp.jar` |
+| stopRecordingTriggerFunction:method | Will stop recording the stack when the function with this name is called. This checks only the method name. | `java -javaagent:javaAgent.jar=stopRecordingTriggerFunction:com.example.FinalizeClass#afterJobIsDone -jar yourApp.jar` |
 | out:path            | Specifies the output directory. | `java -javaagent:javaAgent.jar=out:/tmp/flameOut -jar yourApp.jar` |
 
 # Filter Expression

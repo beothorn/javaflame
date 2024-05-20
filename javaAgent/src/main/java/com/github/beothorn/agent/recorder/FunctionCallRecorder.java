@@ -67,7 +67,7 @@ public class FunctionCallRecorder {
             final String threadName = Thread.currentThread().getName();
             onLeave(threadName, currentTimeMillis);
         } catch (Exception e){
-            log(ERROR, "On exit function " + e.getMessage());
+            log(ERROR, "On exit function on function call recorder" + e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
@@ -130,12 +130,9 @@ public class FunctionCallRecorder {
             final long entryTime,
             String[][] arguments
     ){
-        if(isRecording && method.equals(stopTrigger)){
-            isRecording = false;
-            return;
-        }
+        String fullyQualified = className+"#"+method;
 
-        if(!isRecording && method.equals(startTrigger)){
+        if(!isRecording && fullyQualified.equals(startTrigger)){
             isRecording = true;
         }
 
@@ -176,6 +173,11 @@ public class FunctionCallRecorder {
             stacktrace
         );
         stackPerThread.put(threadName, newCurrentRunning);
+
+
+        if(isRecording && fullyQualified.equals(stopTrigger)){
+            isRecording = false;
+        }
     }
 
     private static Span getCurrentRunning(String threadName) {
@@ -195,6 +197,10 @@ public class FunctionCallRecorder {
             final String[] returnValue
     ) {
         final Span stack = getCurrentRunning(threadName);
+        if(stack == null){ // Valid state, this could mean we started recording in a child function call
+            log(TRACE, "Leaving root loop on "+threadName+" no stack");
+            return;
+        }
         Span leave = stack.leave(exitTime, returnValue);
         if(leave == null){ // Valid state, this could mean we started recording in a child function call
             log(TRACE, "Leaving root loop on "+threadName+" last stack: "+stack.description());

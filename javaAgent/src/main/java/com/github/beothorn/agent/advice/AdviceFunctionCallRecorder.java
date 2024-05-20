@@ -36,7 +36,7 @@ public class AdviceFunctionCallRecorder {
         try {
             FunctionCallRecorder.exit();
         } catch (Exception e) {
-            log(ERROR, "On exit function " + e.getMessage());
+            log(ERROR, "On exit function on function call recorder advice " + e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
