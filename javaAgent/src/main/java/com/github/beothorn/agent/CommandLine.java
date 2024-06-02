@@ -16,6 +16,7 @@ public class CommandLine {
     private static final String ARGUMENT_STOP_RECORDING_FUNCTION = "stopRecordingTriggerFunction";
     private static final String ARGUMENT_LOG_LEVEL = "log";
     private static final String ARGUMENT_OUTPUT_FOLDER = "out";
+    private static final String ARGUMENT_SERVER_PORT = "port";
     private static final String FLAG_NO_CAPTURING_VALUES = "no_capturing_values";
     private static final String FLAG_CORE_CLASSES = "core_classes";
     private static final String FLAG_NO_SNAPSHOTS = "no_snapshots";
@@ -29,6 +30,7 @@ public class CommandLine {
         ARGUMENT_STOP_RECORDING_FUNCTION,
         ARGUMENT_LOG_LEVEL,
         ARGUMENT_OUTPUT_FOLDER,
+        ARGUMENT_SERVER_PORT,
         FLAG_NO_CAPTURING_VALUES
     };
 
@@ -127,6 +129,13 @@ public class CommandLine {
         Matcher matcher = Pattern.compile(regex).matcher(argument);
         if(!matcher.find()) return Optional.empty();
         return Optional.of(matcher.group(1));
+    }
+
+    public static Optional<Integer> argumentServerPort(String argument){
+        String regex = ARGUMENT_SERVER_PORT + ":([^,]+)";
+        Matcher matcher = Pattern.compile(regex).matcher(argument);
+        if(!matcher.find()) return Optional.empty();
+        return Optional.of(Integer.valueOf(matcher.group(1)));
     }
 
     public static Log.LogLevel argumentLogLevel(String argument){

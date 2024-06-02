@@ -21,6 +21,10 @@ public class TestFiltersA {
         return "CCC";
     }
 
+    public void threadLoop(){
+        System.out.println("Waiting to be terminated manually");
+    }
+
     @Override
     public String toString() {
         return "TestA";

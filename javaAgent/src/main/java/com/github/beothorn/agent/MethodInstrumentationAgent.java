@@ -8,6 +8,7 @@ import com.github.beothorn.agent.parser.ElementMatcherFromExpression;
 import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.transformer.CallRecorder;
 import com.github.beothorn.agent.transformer.DebugListener;
+import com.github.beothorn.agent.webserver.WebServer;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
@@ -153,6 +154,16 @@ public class MethodInstrumentationAgent {
             snapshotThread.setDaemon(true);
             snapshotThread.start();
         }
+
+
+        Optional<Integer> maybePort = CommandLine.argumentServerPort(argument);
+        maybePort.ifPresent(port -> {
+            try {
+                WebServer.start(outputDirectory, port);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private static AgentBuilder extendBuilder(
