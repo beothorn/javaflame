@@ -1,9 +1,9 @@
 # Javaflame
 
 Capture all function calls including argument and return values.  
-No servers or open connections, just plug the agent and get the results.   
+Just plug the agent and get the results.   
 See function calls, parameters and return values all at once.  
-[Latest release v22.0.1](https://github.com/beothorn/javaflame/releases/download/v22.0.1/javaAgent.jar)
+[Latest release v23.0.0](https://github.com/beothorn/javaflame/releases/download/v23.0.0/javaAgent.jar)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
@@ -31,6 +31,7 @@ You still can use it to have some idea about the performance, if you assume the 
 - Exclude classes and packages.
 - Continuous snapshots.
 - Pure html output in a simple file and all captured data available as a JSON at data.js.
+- Get the result either as html or optionally through http on a port passed as argument on the command.
 - Optional, start and stop recording whenever a method with a certain name is called
 
 # Use cases
@@ -70,6 +71,7 @@ Anything without exclusions will generate lots of data. Either it will not rende
 | Flag                | Description | Example |
 | ------------------- | ----------- | ------- |
 | log:LEVEL           | Outputs log on the stdout. Levels are: NONE, ERROR, INFO, WARN, DEBUG, TRACE | `java -javaagent:javaAgent.jar=log:DEBUG -jar yourApp.jar` |
+| port:PORT           | If present, serves the javaflame output on the given port.| `java -javaagent:javaAgent.jar=port:8080 -jar yourApp.jar` |
 | no_capturing_values | Record only function call, no parameter value or return value will be recorded. This is faster and measures performance more accurately. | `java -javaagent:javaAgent.jar=no_capturing_values -jar yourApp.jar` |
 | core_classes        | Will include Java core classes. More useful in conjunction with filters to check, for example, network calls. | `java -javaagent:javaAgent.jar=core_classes -jar yourApp.jar` |
 | no_snapshots        | Dump the stack only when JVM goes down. Beware, this will use a lot of memory! You probably don't want that. | `java -javaagent:javaAgent.jar=no_snapshots -jar yourApp.jar` |

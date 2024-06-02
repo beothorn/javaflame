@@ -61,6 +61,17 @@ public class App {
         testFiltersB.functionXXX();
         testFiltersB.functionYYY();
         testFiltersB.functionZZZ();
+
+        // Run indefinitely until interrupted
+        try {
+            while (true) {
+                Thread.sleep(1000);
+                testFiltersA.threadLoop();
+            }
+        } catch (InterruptedException e) {
+            // Handle the interruption if necessary
+            System.out.println("Application interrupted.");
+        }
     }
 
     private static void stopRecording() {
