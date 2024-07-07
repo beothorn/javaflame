@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 public class WebServer {
 
     public static void start(String directoryPath, int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         Path baseDir = Paths.get(directoryPath);
 
