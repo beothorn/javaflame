@@ -13,4 +13,4 @@ popd
 rm -rf outputs
 mkdir outputs
 
-java -javaagent:./javaAgent/build/libs/javaAgent.jar=out:./outputs/allvalues -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+java -javaagent:./javaAgent/build/libs/javaAgent.jar=out:./outputs/allvalues,port:9999 -jar ./javaExampleApp/build/libs/javaExampleApp.jar
