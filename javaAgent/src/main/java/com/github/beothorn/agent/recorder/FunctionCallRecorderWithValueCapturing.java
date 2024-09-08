@@ -104,6 +104,9 @@ public class FunctionCallRecorderWithValueCapturing {
         int i,
         Parameter parameter
     ) {
+        if (allArguments[i] == null){
+            return "unknownType";
+        }
         String paramType;
         if (allArguments[i].getClass().isArray()){
             if (allArguments[i] instanceof boolean[]) {
