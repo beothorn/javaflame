@@ -70,7 +70,7 @@ public class MethodInstrumentationAgent {
         CommandLine.validateArguments(argument);
 
         currentLevel = CommandLine.argumentLogLevel(argument);
-        log(INFO, "Agent loaded");
+        log(INFO, "Agent v24.0.0 loaded");
         FunctionCallRecorder.setShouldCaptureStacktrace(CommandLine.argumentHasShouldCaptureStackTraces(argument));
 
         File javaFlameDirectory = getOrCreateOutputDirectory(argument);
@@ -149,6 +149,7 @@ public class MethodInstrumentationAgent {
                 }
             }
         });
+        snapshotThread.setName("Javaflame Snapshot");
 
         if(!CommandLine.argumentHasNoSnapshotsMode(argument)){
             snapshotThread.setDaemon(true);

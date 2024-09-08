@@ -319,38 +319,45 @@ function buildGraph(dataToPlot){
 
         // ---------------------------
 
-        filterButton.addEventListener("click", () => {
+        const doFilter = () => {
             const filterString = filterInput.value;
-            const filtered = filterDataByLambda(dataForGraph, dataToPlot[i].thread, filterString);
-            
-            const oldFlameGraphByTime = document.getElementById("visual"+i);
-            if (oldFlameGraphByTime) {
-                oldFlameGraphByTime.innerHTML = '';
-                loadData({
-                    elementId: oldFlameGraphByTime.id,
-                    data: filtered[i].span,
-                    graphType: "Timestamp",
-                    colorPalette,
-                    zoomOnClick: true,
-                    onClick: (n) => showNode(byTimestampNodeOutput.id, n.node),
-                    tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`      
-                });
-            } 
-            
-            const oldFlameGraphByCallCount = document.getElementById("visual"+i);
-            if (oldFlameGraphByCallCount) {
-                oldFlameGraphByCallCount.innerHTML = '';
-                loadData({
-                    elementId: oldFlameGraphByCallCount.id,
-                    data: filtered[i].span,
-                    graphType: "ChildrenCallCount",
-                    colorPalette,
-                    zoomOnClick: true,
-                    onClick: (n) => showNode(flameGraphNodeOutput.id, n.node),
-                    tooltip: (n) => `<div class="tooltip">${n.name}</div>`
-                });
+                const filtered = filterDataByLambda(dataForGraph, dataToPlot[i].thread, filterString);
+
+                const oldFlameGraphByTime = document.getElementById("visual"+i);
+                if (oldFlameGraphByTime) {
+                    oldFlameGraphByTime.innerHTML = '';
+                    loadData({
+                        elementId: oldFlameGraphByTime.id,
+                        data: filtered[i].span,
+                        graphType: "Timestamp",
+                        colorPalette,
+                        zoomOnClick: true,
+                        onClick: (n) => showNode(byTimestampNodeOutput.id, n.node),
+                        tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`
+                    });
+                }
+
+                const oldFlameGraphByCallCount = document.getElementById("visual"+i);
+                if (oldFlameGraphByCallCount) {
+                    oldFlameGraphByCallCount.innerHTML = '';
+                    loadData({
+                        elementId: oldFlameGraphByCallCount.id,
+                        data: filtered[i].span,
+                        graphType: "ChildrenCallCount",
+                        colorPalette,
+                        zoomOnClick: true,
+                        onClick: (n) => showNode(flameGraphNodeOutput.id, n.node),
+                        tooltip: (n) => `<div class="tooltip">${n.name}</div>`
+                    });
+                }
+        }
+
+        filterInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                doFilter();
             }
         });
+        filterButton.addEventListener("click", doFilter);
 
 
         headerLeft.appendChild(threadName);
@@ -414,7 +421,7 @@ function createReverseHierarchyView(entries, visualizationDiv) {
     visualizationDiv.appendChild(unorderedList);
 }
 
-document.getElementById("searchButton").addEventListener("click", () => {
+function doSearch() {
     const searchInputValue = document.getElementById("searchInput").value;
     if (searchInputValue === '') {
         document.getElementById("searchResult").innerHTML = 'This will return all nodes, please improve your search.';
@@ -423,4 +430,12 @@ document.getElementById("searchButton").addEventListener("click", () => {
     const result = searchString(searchInputValue);
     document.getElementById("searchResult").innerHTML = '';
     createReverseHierarchyView(result, document.getElementById("searchResult"));
+}
+
+document.getElementById("searchButton").addEventListener("click", doSearch);
+
+document.getElementById('searchInput').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        doSearch();
+    }
 });
