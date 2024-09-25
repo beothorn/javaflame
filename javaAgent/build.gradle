@@ -10,22 +10,65 @@ dependencies {
     testImplementation 'org.skyscreamer:jsonassert:1.5.1'
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
+// Define the Java versions you want to build for
+def javaVersions = [8, 11, 21]
+
+// Function to create compile, processResources, and JAR tasks for each Java version
+def createTasksForJavaVersion(javaVersion) {
+    def compileTaskName = "compileJava${javaVersion}"
+    def processResourcesTaskName = "processResources${javaVersion}"
+    def classesDir = file("$buildDir/classes/java${javaVersion}/main")
+    def resourcesDir = file("$buildDir/resources/java${javaVersion}/main")
+    def jarTaskName = "jarJava${javaVersion}"
+
+    // Determine the compiler version to use
+    def compilerVersion = javaVersion >= 9 ? javaVersion : 11 // Use at least Java 11 compiler
+
+    // Custom compile task for the specified Java version
+    tasks.register(compileTaskName, JavaCompile) {
+        source = sourceSets.main.java
+        classpath = sourceSets.main.compileClasspath
+        destinationDirectory = classesDir
+        options.encoding = 'UTF-8'
+        options.release = javaVersion
+        javaCompiler = javaToolchains.compilerFor {
+            languageVersion = JavaLanguageVersion.of(compilerVersion)
+        }
+    }
+
+    // Custom processResources task for the specified Java version
+    tasks.register(processResourcesTaskName, Copy) {
+        from sourceSets.main.resources
+        into resourcesDir
+    }
+
+    // Custom classes task that depends on compile and processResources
+    def classesTaskName = "classesJava${javaVersion}"
+    tasks.register(classesTaskName) {
+        dependsOn compileTaskName, processResourcesTaskName
+    }
+
+    // Custom JAR task for the specified Java version
+    tasks.register(jarTaskName, Jar) {
+        dependsOn classesTaskName
+        archiveClassifier.set("java${javaVersion}")
+        from classesDir
+        from resourcesDir
+        // Include dependencies in the JAR
+        from {
+            configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        }
+        manifest {
+            attributes "Main-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
+            attributes "Agent-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
+            attributes "Premain-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
+            attributes "Can-Redefine-Classes": "true"
+            attributes "Can-Retransform-Classes": "true"
+        }
     }
 }
 
-jar {
-    manifest {
-        attributes "Main-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
-        attributes "Agent-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
-        attributes "Premain-Class": "com.github.beothorn.agent.MethodInstrumentationAgent"
-        attributes "Can-Redefine-Classes" : "true"
-        attributes "Can-Retransform-Classes" : "true"
-    }
-
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
+// Create tasks for each Java version
+javaVersions.each { javaVersion ->
+    createTasksForJavaVersion(javaVersion)
 }
