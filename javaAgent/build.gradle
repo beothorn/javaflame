@@ -1,4 +1,9 @@
+// Define the Java versions you want to build for
+def javaVersions = [8, 11, 21]
+
 apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
 
 // to build call gradle jarJava8 jarJava11 jarJava21
 
@@ -12,8 +17,19 @@ dependencies {
     testImplementation 'org.skyscreamer:jsonassert:1.5.1'
 }
 
-// Define the Java versions you want to build for
-def javaVersions = [8, 11, 21]
+javaVersions.each { javaVersion ->
+    // Sources JAR task
+    tasks.register("sourcesJarJava${javaVersion}", Jar) {
+        archiveClassifier.set("sources-java${javaVersion}")
+        from sourceSets.main.allSource
+    }
+
+    // Javadoc JAR task
+    tasks.register("javadocJarJava${javaVersion}", Jar) {
+        archiveClassifier.set("javadoc-java${javaVersion}")
+        from tasks.javadoc
+    }
+}
 
 // Function to create compile, processResources, and JAR tasks for each Java version
 def createTasksForJavaVersion(javaVersion) {
@@ -73,4 +89,72 @@ def createTasksForJavaVersion(javaVersion) {
 // Create tasks for each Java version
 javaVersions.each { javaVersion ->
     createTasksForJavaVersion(javaVersion)
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            javaVersions.each { javaVersion ->
+                def publicationName = "mavenJava${javaVersion}"
+                def jarTaskName = "jarJava${javaVersion}"
+
+                // Create a publication for each Java version
+                create(publicationName, MavenPublication) {
+                    groupId = 'com.github.beothorn'
+                    artifactId = 'javaFlame'
+                    version = '24.0.0'
+
+                    // Include the custom JAR
+                    artifact(tasks.named(jarTaskName).get()) {
+                        classifier = "java${javaVersion}"
+                    }
+
+                    // Include sources and Javadoc JARs
+                    artifact(tasks.named("sourcesJarJava${javaVersion}").get()) {
+                        classifier = "sources-java${javaVersion}"
+                    }
+                    artifact(tasks.named("javadocJarJava${javaVersion}").get()) {
+                        classifier = "javadoc-java${javaVersion}"
+                    }
+
+                    // POM configuration
+                    pom {
+                        name = 'Javaflame'
+                        description = 'An agent that creates reports for function calls with argument and return values.'
+                        url = 'https://github.com/beothorn/javaflame'
+                        licenses {
+                            license {
+                                name = 'The Apache License, Version 2.0'
+                                url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                            }
+                        }
+                        scm {
+                            connection = 'scm:git:git@github.com:beothorn/javaflame.git'
+                            developerConnection = 'scm:git:ssh://git@github.com/beothorn/javaflame.git'
+                            url = 'https://github.com/beothorn/javaflame'
+                        }
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                name = 'OSSRH'
+                url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+
+                credentials {
+                    username = ossrhUsername
+                    password = ossrhPassword
+                }
+            }
+        }
+    }
+
+    signing {
+        javaVersions.each { javaVersion ->
+            def publicationName = "mavenJava${javaVersion}"
+            sign publishing.publications[publicationName]
+        }
+    }
 }
