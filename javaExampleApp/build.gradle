@@ -5,6 +5,8 @@ repositories {
 }
 
 dependencies {
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.11.0'
 }
 
 java {
@@ -21,4 +23,8 @@ jar {
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+}
+
+test {
+    useJUnitPlatform()
 }
