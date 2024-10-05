@@ -39,6 +39,8 @@ public class MethodInstrumentationAgent {
     public static final String BYTEBUDDY_PACKAGE = "net.bytebuddy";
     private static File snapshotDirectory;
 
+    private static boolean alreadyCalled = false;
+
     private static final long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
 
     private static final ReentrantLock fileWriteLock = new ReentrantLock();
@@ -66,6 +68,12 @@ public class MethodInstrumentationAgent {
         String argumentParameter,
         Instrumentation instrumentation
     ) {
+        if(MethodInstrumentationAgent.alreadyCalled) {
+            log(WARN, "Called premain twice! This may happen when running with gradle. Will ignore call");
+            return;
+        }
+        MethodInstrumentationAgent.alreadyCalled = true;
+
         String argument = argumentParameter == null ? "" : argumentParameter;
         CommandLine.validateArguments(argument);
 
