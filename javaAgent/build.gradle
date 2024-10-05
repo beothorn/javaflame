@@ -1,5 +1,7 @@
 apply plugin: 'java'
 
+// to build call gradle jarJava8 jarJava11 jarJava21
+
 repositories {
     mavenCentral()
 }

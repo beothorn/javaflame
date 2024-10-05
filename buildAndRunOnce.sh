@@ -7,10 +7,10 @@ popd
 
 pushd ./javaAgent
 rm -rf build
-gradle assemble
+gradle jarJava11
 popd
 
 rm -rf outputs
 mkdir outputs
 
-java -javaagent:./javaAgent/build/libs/javaAgent.jar=out:./outputs/allvalues,port:9999 -jar ./javaExampleApp/build/libs/javaExampleApp.jar
+java -javaagent:./javaAgent/build/libs/javaAgent-java11.jar=out:./outputs/allvalues,port:8998 -jar ./javaExampleApp/build/libs/javaExampleApp.jar
