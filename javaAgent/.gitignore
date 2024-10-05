@@ -7,3 +7,5 @@ build
 #Idea
 
 .idea
+
+gradle.properties
