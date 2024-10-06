@@ -1,9 +1,66 @@
+// Function to check if the recording is running
+function checkRecordingStatus() {
+    fetch('/recording')
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            } else {
+                throw new Error('Port not available');
+            }
+        })
+        .then(isRecording => {
+            const startStopButton = document.getElementById('startStop');
+            startStopButton.style.display = 'inline-block';  // Show the button when port is available
+
+            if (isRecording.trim() === 'true') {
+                startStopButton.textContent = 'Stop Capturing';
+            } else {
+                startStopButton.textContent = 'Start Capturing';
+            }
+        })
+        .catch(error => {
+            console.log(error);
+            document.getElementById('startStop').style.display = 'none';  // Hide the button if port not available
+        });
+}
+
+// Function to toggle capturing state
+function toggleRunning() {
+    const startStopButton = document.getElementById('startStop');
+    const isCurrentlyRecording = startStopButton.textContent === 'Stop Capturing';
+    const url = isCurrentlyRecording ? '/stop' : '/start';
+
+    fetch(url)
+        .then(response => {
+            if (response.ok) {
+                if (isCurrentlyRecording) {
+                    startStopButton.textContent = 'Start Capturing';
+                } else {
+                    startStopButton.textContent = 'Stop Capturing';
+                }
+            } else {
+                alert('Failed to change recording state');
+            }
+        })
+        .catch(error => {
+            console.log('Error:', error);
+        });
+}
+
+// Function to refresh the page
+function refreshPage() {
+    location.reload();
+}
+
+checkRecordingStatus();
+
 // If data file is not loaded data is undefined
 // check if data is a declared variable
 if (typeof data === 'undefined') {
     const error = document.createElement("h1");
     error.textContent = "No data loaded. Maybe nothing matches the filters?";
     document.body.appendChild(error);
+    // Nothing captured yet
 }
 
 const argumentsField = document.getElementById("arguments");
