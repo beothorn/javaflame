@@ -259,3 +259,7 @@ ul, .root {
 .active {
   display: block;
 }
+
+#startStop {
+  display: none;
+}

@@ -78,7 +78,7 @@ public class MethodInstrumentationAgent {
         CommandLine.validateArguments(argument);
 
         currentLevel = CommandLine.argumentLogLevel(argument);
-        log(INFO, "Agent v25.0.0 loaded");
+        log(INFO, "Javaflame Agent v25.0.0 loaded");
         FunctionCallRecorder.setShouldCaptureStacktrace(CommandLine.argumentHasShouldCaptureStackTraces(argument));
 
         File javaFlameDirectory = getOrCreateOutputDirectory(argument);
@@ -168,6 +168,9 @@ public class MethodInstrumentationAgent {
         Optional<Integer> maybePort = CommandLine.argumentServerPort(argument);
         maybePort.ifPresent(port -> {
             try {
+                log(INFO, "Will start server at http://localhost:" + port +
+                        "\nRecording is paused, open your browser to start recording.");
+                FunctionCallRecorder.isRecording = false;
                 WebServer.start(outputDirectory, port);
             } catch (IOException e) {
                 throw new RuntimeException(e);
