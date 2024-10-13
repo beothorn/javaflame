@@ -150,9 +150,12 @@ afterEvaluate {
                 name = 'OSSRH'
                 url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
 
-                credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
+                // Only set credentials if they are present
+                if (project.hasProperty('ossrhUsername') && project.hasProperty('ossrhPassword')) {
+                    credentials {
+                        username = project.ossrhUsername
+                        password = project.ossrhPassword
+                    }
                 }
             }
         }
