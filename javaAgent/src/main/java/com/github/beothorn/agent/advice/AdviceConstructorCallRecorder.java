@@ -26,7 +26,8 @@ public class AdviceConstructorCallRecorder {
         try {
             FunctionCallRecorder.enterConstructor(constructor);
         } catch (Exception e){
-            log(ERROR, "On enter constructor "+e.getMessage());
+            log(ERROR, "On enter constructor");
+            log(ERROR, e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
@@ -35,7 +36,8 @@ public class AdviceConstructorCallRecorder {
         try{
             FunctionCallRecorder.exit();
         } catch (Exception e){
-            log(ERROR, "On exit constructor "+e.getMessage());
+            log(ERROR, "On exit constructor");
+            log(ERROR, e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }

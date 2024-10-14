@@ -53,9 +53,15 @@ public class AdviceInterceptConstructorMethod {
 
             invoke(methodCalled, self, allArguments);
         } catch (Exception e) {
-            log(ERROR, "On intercept exit function Exception " + e);
-            log(ERROR, "On intercept exit function " + e.getMessage());
-            log(ERROR, "On intercept calling '" +classFullName+"#"+method+"'");
+            log(ERROR, "On intercept exit function Exception ");
+            log(ERROR, e.toString());
+            log(ERROR, "On intercept exit function");
+            log(ERROR, e.getMessage());
+            log(ERROR, "On intercept calling");
+            log(ERROR, "classFullName");
+            log(ERROR, classFullName);
+            log(ERROR, "method");
+            log(ERROR, method);
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
