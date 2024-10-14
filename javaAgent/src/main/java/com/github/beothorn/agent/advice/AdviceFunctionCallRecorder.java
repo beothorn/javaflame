@@ -27,7 +27,8 @@ public class AdviceFunctionCallRecorder {
         try {
             FunctionCallRecorder.enterFunction(method);
         } catch (Exception e){
-            log(ERROR, "On enter function "+e.getMessage());
+            log(ERROR, "On enter function");
+            log(ERROR, e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
@@ -36,7 +37,8 @@ public class AdviceFunctionCallRecorder {
         try {
             FunctionCallRecorder.exit();
         } catch (Exception e) {
-            log(ERROR, "On exit function on function call recorder advice " + e.getMessage());
+            log(ERROR, "On exit function on function call recorder advice");
+            log(ERROR, e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }

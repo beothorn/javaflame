@@ -25,7 +25,8 @@ public class AdviceConstructorCallRecorderWithCapture {
         try {
             FunctionCallRecorderWithValueCapturing.enterConstructor(constructor, allArguments);
         } catch (Exception e){
-            log(ERROR, "On enter constructor "+e.getMessage());
+            log(ERROR, "On enter constructor");
+            log(ERROR, e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
@@ -37,7 +38,8 @@ public class AdviceConstructorCallRecorderWithCapture {
             // The new instance is considered as the return value of the constructor.
             FunctionCallRecorderWithValueCapturing.exit(self);
         } catch (Exception e){
-            log(ERROR, "On exit constructor "+e.getMessage());
+            log(ERROR, "On exit constructor");
+            log(ERROR, e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }

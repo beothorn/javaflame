@@ -35,8 +35,10 @@ public class AdviceInterceptStaticMethod {
                 returnValueFromMethod
             );
         } catch (Exception e) {
-            log(ERROR, "On intercept exit static function Exception " + e);
-            log(ERROR, "On intercept exit static function " + e.getMessage());
+            log(ERROR, "On intercept exit static function Exception");
+            log(ERROR, e.toString());
+            log(ERROR, "On intercept exit static function");
+            log(ERROR, e.getMessage());
             log(DEBUG, Arrays.toString(e.getStackTrace()));
         }
     }
