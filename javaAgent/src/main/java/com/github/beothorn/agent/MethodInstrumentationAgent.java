@@ -78,7 +78,7 @@ public class MethodInstrumentationAgent {
         CommandLine.validateArguments(argument);
 
         currentLevel = CommandLine.argumentLogLevel(argument);
-        log(INFO, "Javaflame Agent v25.0.0 loaded");
+        log(INFO, "Javaflame Agent v26.0.0 loaded");
         FunctionCallRecorder.setShouldCaptureStacktrace(CommandLine.argumentHasShouldCaptureStackTraces(argument));
 
         File javaFlameDirectory = getOrCreateOutputDirectory(argument);

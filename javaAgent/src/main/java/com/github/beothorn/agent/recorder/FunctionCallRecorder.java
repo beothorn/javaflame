@@ -196,17 +196,20 @@ public class FunctionCallRecorder {
             final long exitTime,
             final String[] returnValue
     ) {
+        // Get the span at the top of thr stack for the thread
         final Span stack = getCurrentRunning(threadName);
         if(stack == null){ // Valid state, this could mean we started recording in a child function call
             log(TRACE, "Leaving root loop on "+threadName+" no stack");
             return;
         }
+        // Leave span at the top of the stack and return parent
         Span leave = stack.leave(exitTime, returnValue);
-        if(leave == null){ // Valid state, this could mean we started recording in a child function call
+        if(leave == null){ // Parent null is a valid state, this could mean we started recording in a child function call
             log(TRACE, "Leaving root loop on "+threadName+" last stack: "+stack.description());
             stack.exitTime = exitTime;
             return;
         }
+        // Re-add the parent span
         stackPerThread.put(threadName, leave);
         log(TRACE, "Leave @"+threadName+": "+stack.description());
     }
