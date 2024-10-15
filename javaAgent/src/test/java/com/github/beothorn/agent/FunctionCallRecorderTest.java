@@ -104,6 +104,7 @@ class FunctionCallRecorderTest {
             onLeave("main", 0);
             e("other", "ShouldNotRecordThisCall", "",  0);
             onLeave("other", 0);
+        onLeave("other", 0);
 
 
         JSONObject otherThread = threadJSON("other",0,
