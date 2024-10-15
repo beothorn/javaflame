@@ -213,6 +213,10 @@ button {
     margin-bottom: 4px;
 }
 
+.threadFunction {
+    font-size: small;
+}
+
 h1,
 h2 {
     color: var(--title-color-theme);
