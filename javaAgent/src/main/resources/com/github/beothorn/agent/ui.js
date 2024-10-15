@@ -282,7 +282,18 @@ function buildGraph(dataToPlot){
 
         const threadName = document.createElement("h1");
         threadName.classList.add("threadName");
-        threadName.appendChild(document.createTextNode(dataToPlot[i].thread));
+        const threadExplicitName = document.createElement("p");
+        threadExplicitName.appendChild(document.createTextNode(dataToPlot[i].thread));
+
+        threadName.appendChild(threadExplicitName);
+
+        if (dataToPlot[i] && dataToPlot[i].span && dataToPlot[i].span.children && dataToPlot[i].span.children[0]) {
+            const threadFirstEntry = document.createElement("p");
+            threadFirstEntry.classList.add("threadFunction");
+            const firstEntryOnThread = dataToPlot[i].span.children[0];
+            threadFirstEntry.appendChild(document.createTextNode( firstEntryOnThread.className + "." + firstEntryOnThread.method));
+            threadName.appendChild(threadFirstEntry);
+        }
 
         const filter = document.createElement("div");
         filter.id = "filterBox"+i;
