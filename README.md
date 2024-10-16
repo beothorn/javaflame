@@ -3,9 +3,9 @@
 Capture all function calls including argument and return values.  
 Just plug the agent and get the results.   
 See function calls, parameters and return values all at once.  
-[JAVA 8 Latest release v25.0.0](https://repo.maven.apache.org/maven2/com/github/beothorn/javaFlame/25.0.0/javaFlame-25.0.0-java8.jar)  
-[JAVA 11 Latest release v25.0.0](https://repo.maven.apache.org/maven2/com/github/beothorn/javaFlame/25.0.0/javaFlame-25.0.0-java11.jar)  
-[JAVA 21 Latest release v25.0.0](https://repo.maven.apache.org/maven2/com/github/beothorn/javaFlame/25.0.0/javaFlame-25.0.0-java21.jar)  
+[JAVA 8 Latest release v26.0.0](https://repo.maven.apache.org/maven2/com/github/beothorn/javaFlame/26.0.0/javaFlame-26.0.0-java8.jar)  
+[JAVA 11 Latest release v26.0.0](https://repo.maven.apache.org/maven2/com/github/beothorn/javaFlame/26.0.0/javaFlame-26.0.0-java11.jar)  
+[JAVA 21 Latest release v26.0.0](https://repo.maven.apache.org/maven2/com/github/beothorn/javaFlame/26.0.0/javaFlame-26.0.0-java21.jar)  
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
