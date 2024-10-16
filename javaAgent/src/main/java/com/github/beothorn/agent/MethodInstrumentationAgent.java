@@ -122,7 +122,7 @@ public class MethodInstrumentationAgent {
         Optional<String> maybeFilter = CommandLine.argumentFilter(argument);
         int lastDotIndex = app.lastIndexOf(".");
         String mainClassPackage = app.substring(0, lastDotIndex == -1 ? app.length() : lastDotIndex );
-        if(maybeFilter.isEmpty()){
+        if(!maybeFilter.isPresent()){
             log(INFO, "Filter should not be empty. Agent will use main class package as filter: " + mainClassPackage);
         }
 

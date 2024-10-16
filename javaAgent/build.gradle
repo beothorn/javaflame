@@ -6,6 +6,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 // to build call gradle jarJava8 jarJava11 jarJava21
+// to publish call
 
 repositories {
     mavenCentral()
