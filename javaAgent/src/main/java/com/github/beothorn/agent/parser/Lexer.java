@@ -10,10 +10,10 @@ public class Lexer {
     /**
      * This Lexer will generate tokens for our string matcher.
      * For example given the expression:
-     * (foobar||endsWith(baz) && !qux)
+     * {@code (foobar||endsWith(baz) && !qux)}
      * we would get the tokens:
-     * {LEFT_PAREN, STRING_VALUE("foobar"), OPERATOR_OR("||"), FUNCTION_CALL("endsWith"), LEFT_PAREN("())")
-     * STRING_VALUE("baz"), OPERATOR_AND("&&"), OPERATOR_NOT("!"), RIGHT_PAREN(")")}
+     * {@code {LEFT_PAREN, STRING_VALUE("foobar"), OPERATOR_OR("||"), FUNCTION_CALL("endsWith"), LEFT_PAREN("())")
+     * STRING_VALUE("baz"), OPERATOR_AND("&&"), OPERATOR_NOT("!"), RIGHT_PAREN(")")} }
      *
      * @throws CompilationException with clear error message
      *
