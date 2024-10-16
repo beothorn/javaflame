@@ -20,13 +20,12 @@ import net.bytebuddy.matcher.ElementMatcher.Junction;
 
 import java.io.*;
 import java.lang.instrument.Instrumentation;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.jar.Manifest;
 
 import static com.github.beothorn.agent.logging.Log.LogLevel.*;
 import static com.github.beothorn.agent.logging.Log.log;
@@ -98,7 +97,37 @@ public class MethodInstrumentationAgent {
         String allFlagsAsString = Arrays.toString(allFlags);
         String outputDirectory = snapshotDirectory.getAbsolutePath();
 
-        String filterString = CommandLine.argumentFilter(argument).orElse("No filter parameter");
+        String path = MethodInstrumentationAgent.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        String app = path;
+
+        try {
+            Enumeration<URL> resources = MethodInstrumentationAgent.class
+                    .getClassLoader().getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                InputStream is = url.openStream();
+                Manifest manifest = new Manifest(is);
+                String mainClass = manifest.getMainAttributes().getValue("Main-Class");
+                if(mainClass != null && !mainClass.equals(MethodInstrumentationAgent.class.getName())){
+                    app = mainClass;
+                    String manifestPath = url.getFile();
+                    int lastExclamationMarkIndex = manifestPath.lastIndexOf("!");
+                    path = manifestPath.substring(0, lastExclamationMarkIndex == -1 ? manifestPath.length() : lastExclamationMarkIndex );
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        Optional<String> maybeFilter = CommandLine.argumentFilter(argument);
+        int lastDotIndex = app.lastIndexOf(".");
+        String mainClassPackage = app.substring(0, lastDotIndex == -1 ? app.length() : lastDotIndex );
+        if(maybeFilter.isEmpty()){
+            log(INFO, "Filter should not be empty. Agent will use main class package as filter: " + mainClassPackage);
+        }
+
+        String filterString = maybeFilter.orElse(mainClassPackage);
+
         String executionMetadata = "logLevel :" + currentLevel.name()
                 + " arguments:" + argument
                 + " flags:" + allFlagsAsString
@@ -108,7 +137,9 @@ public class MethodInstrumentationAgent {
                 + maybeStopRecordingTriggerFunction.map(s -> "Stop recording trigger function" + s).orElse("");
         log(DEBUG, executionMetadata);
 
-        String executionMetadataFormatted = getExecutionMetadataAsHtml(
+        String executionMetadataFormatted = getExecutionMetadataAsJson(
+            app,
+            path,
             argument,
             allFlagsAsString,
             outputDirectory,
@@ -135,6 +166,7 @@ public class MethodInstrumentationAgent {
         );
 
         final AgentBuilder finalAgentBuilder = maybeAddFilter(
+            filterString,
             argument,
             builderMaybeWithMethodInterceptor
         );
@@ -158,12 +190,11 @@ public class MethodInstrumentationAgent {
             }
         });
         snapshotThread.setName("Javaflame Snapshot");
+        snapshotThread.setDaemon(true);
 
         if(!CommandLine.argumentHasNoSnapshotsMode(argument)){
-            snapshotThread.setDaemon(true);
             snapshotThread.start();
         }
-
 
         Optional<Integer> maybePort = CommandLine.argumentServerPort(argument);
         maybePort.ifPresent(port -> {
@@ -189,27 +220,26 @@ public class MethodInstrumentationAgent {
     }
 
     private static AgentBuilder maybeAddFilter(
+        final String filter,
         final String argument,
         final AgentBuilder builder
     ) {
-        Optional<String> maybeFilter = CommandLine.argumentFilter(argument);
         boolean shouldCaptureValues = !CommandLine.argumentHasNoCaptureValuesMode(argument);
-        return maybeFilter.map(f -> {
-            ElementMatcherFromExpression elementMatcher;
-            try {
-                elementMatcher = forExpression(f);
-                log(DEBUG, "elementMatcher: "+elementMatcher);
-            } catch (CompilationException e) {
-                throw new RuntimeException(e);
-            }
-            List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcher.getClassAndMethodMatchers();
-            CallRecorder transformer = createCallRecorderForJavaFlame(
-                shouldCaptureValues,
-                classAndMethodMatchers
-            );
-            Junction<NamedElement> matchType = elementMatcher.getClassMatcher();
-            return extendBuilder(builder, matchType, transformer);
-        }).orElse(extendBuilder(builder, any(), createCallRecorderForJavaFlame(shouldCaptureValues))); // No filter captures all
+
+        ElementMatcherFromExpression elementMatcher;
+        try {
+            elementMatcher = forExpression(filter);
+            log(DEBUG, "elementMatcher: "+elementMatcher);
+        } catch (CompilationException e) {
+            throw new RuntimeException(e);
+        }
+        List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcher.getClassAndMethodMatchers();
+        CallRecorder transformer = createCallRecorderForJavaFlame(
+            shouldCaptureValues,
+            classAndMethodMatchers
+        );
+        Junction<NamedElement> matchType = elementMatcher.getClassMatcher();
+        return extendBuilder(builder, matchType, transformer);
     }
 
     private static AgentBuilder maybeAddMethodInterceptor(
@@ -334,7 +364,9 @@ public class MethodInstrumentationAgent {
         return file;
     }
 
-    public static String getExecutionMetadataAsHtml(
+    public static String getExecutionMetadataAsJson(
+        String app,
+        String path,
         String arguments,
         String allFlagsAsString,
         String outputDirectory,
@@ -342,12 +374,16 @@ public class MethodInstrumentationAgent {
         Optional<String> maybeStartRecordingTriggerFunction,
         Optional<String> maybeStopRecordingTriggerFunction
     ) {
-        return "<p>Arguments: " + arguments + "</p>"
-                + "<p>Flags: " + allFlagsAsString + "</p>"
-                + "<p>Output: '" + outputDirectory + "'</p>"
-                + "<p>Filters: " + filter + "</p>"
-                + maybeStartRecordingTriggerFunction.map(s -> "<p>Start recording trigger function: '" + s + "'</p>").orElse("")
-                + maybeStopRecordingTriggerFunction.map(s -> "<p>Stop recording trigger function: '" + s + "'</p>").orElse("");
+        return "{" +
+                "\"app\":\""+app+"\"," +
+                "\"path\":\""+path+"\"," +
+                "\"arguments\":\""+arguments+"\"," +
+                "\"flags\":\""+allFlagsAsString+"\"," +
+                "\"output\":\""+outputDirectory+"\"," +
+                "\"filters\":\""+filter+"\"," +
+                maybeStartRecordingTriggerFunction.map(s -> "\"startFun\":\"" + s + "\",").orElse("") +
+                maybeStopRecordingTriggerFunction.map(s -> "\"stopFun\":\"" + s + "\",").orElse("") +
+                "}";
     }
 
     private static void writeSnapshotToFile(String executionMetadataFormatted, DebugListener debugListener) {
@@ -366,7 +402,7 @@ public class MethodInstrumentationAgent {
                         raf.close();
                     } else {
                         try (FileWriter fw = new FileWriter(dataFile)) {
-                            String content = "var executionMetadata = \""+ executionMetadataFormatted +"\";\n" +
+                            String content = "var executionMetadata = "+ executionMetadataFormatted +";\n" +
                                     "var data = [" + oldCallStack + ",\n];";
                             fw.write(content);
                             fw.flush();

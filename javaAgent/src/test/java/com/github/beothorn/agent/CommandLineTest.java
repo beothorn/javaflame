@@ -198,7 +198,12 @@ class CommandLineTest {
         String allFlagsAsString = Arrays.toString(allFlags);
         String outputDirectory = "/foo/bar";
 
-        String actual = MethodInstrumentationAgent.getExecutionMetadataAsHtml(
+        String app = "myApp";
+        String path = "file:/x/y.jar";
+
+        String actual = MethodInstrumentationAgent.getExecutionMetadataAsJson(
+            app,
+            path,
             argument,
             allFlagsAsString,
             outputDirectory,
@@ -207,12 +212,16 @@ class CommandLineTest {
             maybeStopRecordingTriggerFunction
         );
 
-        String expected = "<p>Arguments: filter:x.y,startRecordingTriggerFunction:onStart,stopRecordingTriggerFunction:onEnd</p>" +
-                "<p>Flags: []</p>" +
-                "<p>Output: '/foo/bar'</p>" +
-                "<p>Filters: x.y</p>" +
-                "<p>Start recording trigger function: 'onStart'</p>" +
-                "<p>Stop recording trigger function: 'onEnd'</p>";
+        String expected = "{" +
+                "\"app\":\"myApp\"," +
+                "\"path\":\"file:/x/y.jar\"," +
+                "\"arguments\":\"filter:x.y,startRecordingTriggerFunction:onStart,stopRecordingTriggerFunction:onEnd\"," +
+                "\"flags\":\"[]\"," +
+                "\"output\":\"/foo/bar\"," +
+                "\"filters\":\"x.y\"," +
+                "\"startFun\":\"onStart\"," +
+                "\"stopFun\":\"onEnd\"," +
+                "}";
 
         assertEquals(expected, actual);
     }

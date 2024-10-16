@@ -63,8 +63,17 @@ if (typeof data === 'undefined') {
     // Nothing captured yet
 }
 
+document.title = executionMetadata.app;
+
 const argumentsField = document.getElementById("arguments");
-argumentsField.innerHTML = executionMetadata;
+argumentsField.innerHTML = `
+<p>Path: ${executionMetadata.path}</p>
+<p>MainClass: ${executionMetadata.app}</p>
+<p>Arguments: ${executionMetadata.arguments}</p>
+<p>Flags: ${executionMetadata.flags}</p>
+<p>Output: ${executionMetadata.output}</p>
+<p>Filters: ${executionMetadata.filters}</p>
+`;
 
 const firstSnapshot = document.getElementById("startTimestamp");
 const firstSnapshotTimestamp = data[0][0].snapshotTime;
