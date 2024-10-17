@@ -66,17 +66,16 @@ public class MethodInstrumentationAgent {
     public static void premain(
         String argumentParameter,
         Instrumentation instrumentation
-    ) {
+    ) {String argument = argumentParameter == null ? "" : argumentParameter;
+        CommandLine.validateArguments(argument);
+        currentLevel = CommandLine.argumentLogLevel(argument);
+
         if(MethodInstrumentationAgent.alreadyCalled) {
             log(WARN, "Called premain twice! This may happen when running with gradle. Will ignore call");
             return;
         }
         MethodInstrumentationAgent.alreadyCalled = true;
 
-        String argument = argumentParameter == null ? "" : argumentParameter;
-        CommandLine.validateArguments(argument);
-
-        currentLevel = CommandLine.argumentLogLevel(argument);
         log(INFO, "Javaflame Agent v26.0.0 loaded");
         FunctionCallRecorder.setShouldCaptureStacktrace(CommandLine.argumentHasShouldCaptureStackTraces(argument));
 
@@ -97,8 +96,8 @@ public class MethodInstrumentationAgent {
         String allFlagsAsString = Arrays.toString(allFlags);
         String outputDirectory = snapshotDirectory.getAbsolutePath();
 
-        String path = MethodInstrumentationAgent.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-        String app = path;
+        String app = null;
+        String path = null;
 
         try {
             Enumeration<URL> resources = MethodInstrumentationAgent.class
@@ -109,6 +108,7 @@ public class MethodInstrumentationAgent {
                 Manifest manifest = new Manifest(is);
                 String mainClass = manifest.getMainAttributes().getValue("Main-Class");
                 if(mainClass != null && !mainClass.equals(MethodInstrumentationAgent.class.getName())){
+                    log(DEBUG, "Found a manifest with a main class: " + mainClass);
                     app = mainClass;
                     String manifestPath = url.getFile();
                     int lastExclamationMarkIndex = manifestPath.lastIndexOf("!");
@@ -119,20 +119,29 @@ public class MethodInstrumentationAgent {
             throw new RuntimeException(e);
         }
 
-        Optional<String> maybeFilter = CommandLine.argumentFilter(argument);
-        int lastDotIndex = app.lastIndexOf(".");
-        String mainClassPackage = app.substring(0, lastDotIndex == -1 ? app.length() : lastDotIndex );
-        if(!maybeFilter.isPresent()){
-            log(INFO, "Filter should not be empty. Agent will use main class package as filter: " + mainClassPackage);
+        String mainClassPackage = null;
+
+        if(app != null){
+            int lastDotIndex = app.lastIndexOf(".");
+            mainClassPackage = app.substring(0, lastDotIndex == -1 ? app.length() : lastDotIndex );
         }
 
-        String filterString = maybeFilter.orElse(mainClassPackage);
+        Optional<String> maybeFilter = CommandLine.argumentFilter(argument);
+
+        if(!maybeFilter.isPresent()){
+            log(INFO, "Filter should not be empty.");
+        }
+
+        if(!maybeFilter.isPresent() && mainClassPackage != null){
+            log(INFO, "Agent will use main class package as filter: " + mainClassPackage);
+            maybeFilter = Optional.of(mainClassPackage);
+        }
 
         String executionMetadata = "logLevel :" + currentLevel.name()
                 + " arguments:" + argument
                 + " flags:" + allFlagsAsString
                 + " output to '" + outputDirectory + "'"
-                + " filters:" + filterString
+                + " filters:" + maybeFilter.orElse("No filter")
                 + maybeStartRecordingTriggerFunction.map(s -> "Start recording trigger function" + s).orElse("")
                 + maybeStopRecordingTriggerFunction.map(s -> "Stop recording trigger function" + s).orElse("");
         log(DEBUG, executionMetadata);
@@ -143,7 +152,7 @@ public class MethodInstrumentationAgent {
             argument,
             allFlagsAsString,
             outputDirectory,
-            filterString,
+            maybeFilter.orElse("No filter"),
             maybeStartRecordingTriggerFunction,
             maybeStopRecordingTriggerFunction
         );
@@ -166,7 +175,7 @@ public class MethodInstrumentationAgent {
         );
 
         final AgentBuilder finalAgentBuilder = maybeAddFilter(
-            filterString,
+            maybeFilter,
             argument,
             builderMaybeWithMethodInterceptor
         );
@@ -220,26 +229,27 @@ public class MethodInstrumentationAgent {
     }
 
     private static AgentBuilder maybeAddFilter(
-        final String filter,
-        final String argument,
-        final AgentBuilder builder
+            final Optional<String> maybeFilter,
+            final String argument,
+            final AgentBuilder builder
     ) {
         boolean shouldCaptureValues = !CommandLine.argumentHasNoCaptureValuesMode(argument);
-
-        ElementMatcherFromExpression elementMatcher;
-        try {
-            elementMatcher = forExpression(filter);
-            log(DEBUG, "elementMatcher: "+elementMatcher);
-        } catch (CompilationException e) {
-            throw new RuntimeException(e);
-        }
-        List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcher.getClassAndMethodMatchers();
-        CallRecorder transformer = createCallRecorderForJavaFlame(
-            shouldCaptureValues,
-            classAndMethodMatchers
-        );
-        Junction<NamedElement> matchType = elementMatcher.getClassMatcher();
-        return extendBuilder(builder, matchType, transformer);
+        return maybeFilter.map(f -> {
+            ElementMatcherFromExpression elementMatcher;
+            try {
+                elementMatcher = forExpression(f);
+                log(DEBUG, "elementMatcher: "+elementMatcher);
+            } catch (CompilationException e) {
+                throw new RuntimeException(e);
+            }
+            List<ClassAndMethodMatcher> classAndMethodMatchers = elementMatcher.getClassAndMethodMatchers();
+            CallRecorder transformer = createCallRecorderForJavaFlame(
+                    shouldCaptureValues,
+                    classAndMethodMatchers
+            );
+            Junction<NamedElement> matchType = elementMatcher.getClassMatcher();
+            return extendBuilder(builder, matchType, transformer);
+        }).orElse(extendBuilder(builder, any(), createCallRecorderForJavaFlame(shouldCaptureValues))); // No filter captures all
     }
 
     private static AgentBuilder maybeAddMethodInterceptor(
