@@ -5,8 +5,8 @@ apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
-// to build call gradle jarJava8 jarJava11 jarJava21
-// to publish call gradle jarJava8 jarJava11 jarJava21 publish
+// to build call ./gradlew --console=plain clean jar8 jar11 jar21
+// to publish call gradle jar8 jar11 jar21 publish
 
 repositories {
     mavenCentral()
@@ -18,30 +18,34 @@ dependencies {
     testImplementation 'org.skyscreamer:jsonassert:1.5.1'
 }
 
+println "Registering tasks for ${javaVersions}"
+
+javadoc.options.addStringOption('Xdoclint:none', '-quiet')
+
 javaVersions.each { javaVersion ->
+    def compileTaskName = "compileJava${javaVersion}"
+    def processResourcesTaskName = "processResources${javaVersion}"
+    def classesDir = file("$buildDir/classes/java${javaVersion}/main")
+    def resourcesDir = file("$buildDir/resources/java${javaVersion}/main")
+    def jarTaskName = "jar${javaVersion}"
+    def classesTaskName = "classes${javaVersion}"
+    def javaDocTaskName = "javadoc${javaVersion}"
+    def sourcesJavaTaskName="sources${javaVersion}"
+
+    // Determine the compiler version to use
+    def compilerVersion = javaVersion >= 9 ? javaVersion : 11 // Use at least Java 11 compiler
+
     // Sources JAR task
-    tasks.register("sourcesJarJava${javaVersion}", Jar) {
+    tasks.register(sourcesJavaTaskName, Jar) {
         archiveClassifier.set("sources-java${javaVersion}")
         from sourceSets.main.allSource
     }
 
     // Javadoc JAR task
-    tasks.register("javadocJarJava${javaVersion}", Jar) {
+    tasks.register(javaDocTaskName, Jar) {
         archiveClassifier.set("javadoc-java${javaVersion}")
         from tasks.javadoc
     }
-}
-
-// Function to create compile, processResources, and JAR tasks for each Java version
-def createTasksForJavaVersion(javaVersion) {
-    def compileTaskName = "compileJava${javaVersion}"
-    def processResourcesTaskName = "processResources${javaVersion}"
-    def classesDir = file("$buildDir/classes/java${javaVersion}/main")
-    def resourcesDir = file("$buildDir/resources/java${javaVersion}/main")
-    def jarTaskName = "jarJava${javaVersion}"
-
-    // Determine the compiler version to use
-    def compilerVersion = javaVersion >= 9 ? javaVersion : 11 // Use at least Java 11 compiler
 
     // Custom compile task for the specified Java version
     tasks.register(compileTaskName, JavaCompile) {
@@ -62,14 +66,13 @@ def createTasksForJavaVersion(javaVersion) {
     }
 
     // Custom classes task that depends on compile and processResources
-    def classesTaskName = "classesJava${javaVersion}"
     tasks.register(classesTaskName) {
         dependsOn compileTaskName, processResourcesTaskName
     }
 
     // Custom JAR task for the specified Java version
     tasks.register(jarTaskName, Jar) {
-        dependsOn classesTaskName
+        dependsOn tasks.named(classesTaskName)
         archiveClassifier.set("java${javaVersion}")
         from classesDir
         from resourcesDir
@@ -87,17 +90,12 @@ def createTasksForJavaVersion(javaVersion) {
     }
 }
 
-// Create tasks for each Java version
-javaVersions.each { javaVersion ->
-    createTasksForJavaVersion(javaVersion)
-}
-
 afterEvaluate {
     publishing {
         publications {
             javaVersions.each { javaVersion ->
-                def publicationName = "mavenJava${javaVersion}"
-                def jarTaskName = "jarJava${javaVersion}"
+                def publicationName = "maven${javaVersion}"
+                def jarTaskName = "jar${javaVersion}"
 
                 // Create a publication for each Java version
                 create(publicationName, MavenPublication) {
@@ -111,10 +109,10 @@ afterEvaluate {
                     }
 
                     // Include sources and Javadoc JARs
-                    artifact(tasks.named("sourcesJarJava${javaVersion}").get()) {
+                    artifact(tasks.named("sources${javaVersion}").get()) {
                         classifier = "sources-java${javaVersion}"
                     }
-                    artifact(tasks.named("javadocJarJava${javaVersion}").get()) {
+                    artifact(tasks.named("javadoc${javaVersion}").get()) {
                         classifier = "javadoc-java${javaVersion}"
                     }
 
@@ -164,7 +162,7 @@ afterEvaluate {
 
     signing {
         javaVersions.each { javaVersion ->
-            def publicationName = "mavenJava${javaVersion}"
+            def publicationName = "maven${javaVersion}"
             sign publishing.publications[publicationName]
         }
     }
