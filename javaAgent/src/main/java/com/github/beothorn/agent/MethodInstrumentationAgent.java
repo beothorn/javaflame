@@ -22,7 +22,7 @@ import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.net.URL;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.Manifest;
@@ -32,16 +32,29 @@ import static com.github.beothorn.agent.logging.Log.log;
 import static com.github.beothorn.agent.parser.ElementMatcherFromExpression.forExpression;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
+/***
+ * This is the entrypoint for the agent.
+ * Here all arguments will be parsed.
+ * The advices will be wired in accordance to the filters.
+ * The snapshot thread will be started.
+ */
 public class MethodInstrumentationAgent {
 
+    public static final String VERSION = "v27.0.0";
+
+    // These packages needs to be ignored. They belong to the agent.
     public static final String AGENT_PACKAGE = "com.github.beothorn.agent";
     public static final String BYTEBUDDY_PACKAGE = "net.bytebuddy";
-    private static File snapshotDirectory;
 
+    // When the agent runs from gradle inside intellij, for some reason premain is called twice
+    // This boolean will avoid a second execution
     private static boolean alreadyCalled = false;
 
+    // The interval when the snapshot is stored. This will be configurable in the future.
+    // there is also a stack cleanup that happens when the snapshot happens, so this relates to memory consumption.
     private static final long SAVE_SNAPSHOT_INTERVAL_MILLIS = 1000L;
 
+    // No concurrency problems when writing the snapshot.
     private static final ReentrantLock fileWriteLock = new ReentrantLock();
 
     public static Log.LogLevel currentLevel = ERROR;
@@ -64,39 +77,47 @@ public class MethodInstrumentationAgent {
     }
 
     public static void premain(
+            String argumentParameter,
+            Instrumentation instrumentation
+    ) {
+        try {
+            premainInternal(argumentParameter, instrumentation);
+        } catch (Exception e){
+            System.err.println("AGENT FAILED TO LOAD");
+            System.err.println(e);
+            e.printStackTrace();
+        }
+    }
+
+    public static void premainInternal(
         String argumentParameter,
         Instrumentation instrumentation
-    ) {String argument = argumentParameter == null ? "" : argumentParameter;
+    ) {
+        String argument = argumentParameter == null ? "" : argumentParameter;
         CommandLine.validateArguments(argument);
         currentLevel = CommandLine.argumentLogLevel(argument);
 
+        // This may happen when running javaflame from intellij with gradle
         if(MethodInstrumentationAgent.alreadyCalled) {
             log(WARN, "Called premain twice! This may happen when running with gradle. Will ignore call");
             return;
         }
+        // If premain is called again, it just returns
         MethodInstrumentationAgent.alreadyCalled = true;
 
-        log(INFO, "Javaflame Agent v26.0.0 loaded");
+        log(INFO, "Javaflame Agent " + VERSION + " loaded");
+        // FunctionCallRecorder may run without capturing argument values if no_capturing_values is set
         FunctionCallRecorder.setShouldCaptureStacktrace(CommandLine.argumentHasShouldCaptureStackTraces(argument));
-
-        File javaFlameDirectory = getOrCreateOutputDirectory(argument);
-
-        snapshotDirectory = new File(javaFlameDirectory.getAbsolutePath(), System.currentTimeMillis() + "_snap");
-        log(INFO, "Output at "+snapshotDirectory.getAbsolutePath());
-        if(!snapshotDirectory.mkdir()){
-            log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
-        }
-
-        writeHtmlFiles();
 
         Optional<String> maybeStartRecordingTriggerFunction = CommandLine.argumentStartRecordingTriggerFunction(argument);
         Optional<String> maybeStopRecordingTriggerFunction = CommandLine.argumentStopRecordingTriggerFunction(argument);
 
         String[] allFlags = CommandLine.allFlagsOnArgument(argument);
         String allFlagsAsString = Arrays.toString(allFlags);
-        String outputDirectory = snapshotDirectory.getAbsolutePath();
 
+        // The Main class from the last manifest found
         String app = null;
+        // The path of the last manifest
         String path = null;
 
         try {
@@ -118,6 +139,20 @@ public class MethodInstrumentationAgent {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        File javaFlameDirectory = getOutputDirectory(argument);
+        File snapshotDirectory = new File( javaFlameDirectory.getAbsolutePath(), "javaflame");
+        try {
+            log(INFO, "Output at "+snapshotDirectory.getCanonicalPath());
+        } catch (IOException e) {
+            log(ERROR, e.getMessage());
+        }
+        if(!snapshotDirectory.exists() && !snapshotDirectory.mkdir()){
+            log(ERROR, "Could not create dir "+snapshotDirectory.getAbsolutePath());
+        }
+        String outputDirectory = snapshotDirectory.getAbsolutePath();
+
+        writeHtmlFiles(snapshotDirectory);
 
         String mainClassPackage = null;
 
@@ -183,13 +218,18 @@ public class MethodInstrumentationAgent {
         // Install agent with all options from arguments
         finalAgentBuilder.installOn(instrumentation);
 
+        File dataFile = new File(snapshotDirectory, "data.js");
+        if(dataFile.exists()) {
+            dataFile.delete();
+        }
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            writeSnapshotToFile(executionMetadataFormatted, new DebugListener());
+            writeSnapshotToFile(snapshotDirectory, executionMetadataFormatted, new DebugListener());
         }));
 
         Thread snapshotThread = new Thread(() -> {
             while (true) {
-                writeSnapshotToFile(executionMetadataFormatted, new DebugListener());
+                writeSnapshotToFile(snapshotDirectory,executionMetadataFormatted, new DebugListener());
                 try {
                     //noinspection BusyWait
                     Thread.sleep(SAVE_SNAPSHOT_INTERVAL_MILLIS);
@@ -289,6 +329,12 @@ public class MethodInstrumentationAgent {
         ).and(m);
     }
 
+    /***
+     * Gets a filter for an interceptor in the format FILTER>INTERCEPTOR_METHOD .
+     * This will retun a class with the parsed filter an the interceptor class and method name.
+     * @param filter
+     * @return
+     */
     private static MatchAndCall matchAndCallForFilter(
         final String filter
     ) {
@@ -349,29 +395,30 @@ public class MethodInstrumentationAgent {
         );
     }
 
-    private static File getOrCreateOutputDirectory(final String argument) {
-        Optional<File> file = getOutputDirectory(argument);
+    private static File getOutputDirectory(final String argument) {
+        Optional<String> maybeFilePath = CommandLine.outputFileOnArgument(argument);
 
-        File javaFlameDirectory;
+        String defaultOutput = ".";
+        String output = maybeFilePath.orElse(defaultOutput);
+
+        File fileOutput = Paths.get(output).toFile();
+        File workingDir = Paths.get(defaultOutput).toFile();
+
+        if(!fileOutput.exists()){
+            log(ERROR, "Directory does not exist: '"+fileOutput+"'");
+            log(ERROR, "Will use: '"+workingDir.getAbsolutePath()+"'");
+            return workingDir;
+        }
+        if(!fileOutput.isDirectory()){
+            log(ERROR, "Not a directory: '"+fileOutput+"'");
+            log(ERROR, "Will use: '"+workingDir.getAbsolutePath()+"'");
+            return workingDir;
+        }
         try {
-            javaFlameDirectory = file.orElse(Files.createTempDirectory("javaflame").toFile());
+            return fileOutput.getCanonicalFile();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return javaFlameDirectory;
-    }
-
-    private static Optional<File> getOutputDirectory(final String argument) {
-        Optional<String> maybeFilePath = CommandLine.outputFileOnArgument(argument);
-        Optional<File> file = maybeFilePath
-                .map(File::new)
-                .filter(f -> f.exists() || f.isDirectory());
-        if(maybeFilePath.isPresent() && !file.isPresent()){
-            log(ERROR, "Bad directory: '"+maybeFilePath.get()+"'");
-            log(ERROR, "Directory needs to exist!");
-            log(ERROR, "Will use temporary instead");
-        }
-        return file;
     }
 
     public static String getExecutionMetadataAsJson(
@@ -386,6 +433,7 @@ public class MethodInstrumentationAgent {
     ) {
         return "{" +
                 "\"app\":\""+app+"\"," +
+                "\"workingDir\":\""+System.getProperty("user.dir")+"\"," +
                 "\"path\":\""+path+"\"," +
                 "\"arguments\":\""+arguments+"\"," +
                 "\"flags\":\""+allFlagsAsString+"\"," +
@@ -396,7 +444,11 @@ public class MethodInstrumentationAgent {
                 "}";
     }
 
-    private static void writeSnapshotToFile(String executionMetadataFormatted, DebugListener debugListener) {
+    private static void writeSnapshotToFile(
+        File snapshotDirectory,
+        String executionMetadataFormatted,
+        DebugListener debugListener
+    ) {
         fileWriteLock.lock();
         String snapshotDirectoryAbsolutePath = snapshotDirectory.getAbsolutePath();
         try {
@@ -436,7 +488,7 @@ public class MethodInstrumentationAgent {
         }
     }
 
-    private static void writeHtmlFiles() {
+    private static void writeHtmlFiles(File snapshotDirectory) {
         try {
             extractFromResources(snapshotDirectory, "index.html");
             extractFromResources(snapshotDirectory, "code.js");
@@ -477,6 +529,9 @@ public class MethodInstrumentationAgent {
 
     private static void extractFromResources(final File snapshotDirectory, final String fileToBeExtracted) throws IOException {
         File indexHtmlOut = new File(snapshotDirectory.getAbsolutePath(), fileToBeExtracted);
+        if(indexHtmlOut.exists()) {
+            indexHtmlOut.delete();
+        }
         try(InputStream in = MethodInstrumentationAgent.class.getResourceAsStream(fileToBeExtracted)){
             if(in == null){
                 throw new RuntimeException("[JAVA_AGENT] ERROR Jar is corrupted, missing file '"+ fileToBeExtracted +"'");

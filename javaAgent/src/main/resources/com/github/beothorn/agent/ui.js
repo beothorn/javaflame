@@ -68,6 +68,7 @@ document.title = executionMetadata.app;
 const argumentsField = document.getElementById("arguments");
 argumentsField.innerHTML = `
 <p>Path: ${executionMetadata.path}</p>
+<p>Working Directory: ${executionMetadata.workingDir}</p>
 <p>MainClass: ${executionMetadata.app}</p>
 <p>Arguments: ${executionMetadata.arguments}</p>
 <p>Flags: ${executionMetadata.flags}</p>

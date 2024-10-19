@@ -200,6 +200,7 @@ class CommandLineTest {
 
         String app = "myApp";
         String path = "file:/x/y.jar";
+        System.setProperty("user.dir", "/tmp");
 
         String actual = MethodInstrumentationAgent.getExecutionMetadataAsJson(
             app,
@@ -214,6 +215,7 @@ class CommandLineTest {
 
         String expected = "{" +
                 "\"app\":\"myApp\"," +
+                "\"workingDir\":\"/tmp\","+
                 "\"path\":\"file:/x/y.jar\"," +
                 "\"arguments\":\"filter:x.y,startRecordingTriggerFunction:onStart,stopRecordingTriggerFunction:onEnd\"," +
                 "\"flags\":\"[]\"," +
