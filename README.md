@@ -11,8 +11,8 @@ Want to see it in action? [Check out this rendering of some sort algorithms flam
 
 # Screenshots  
 
-![flamegraph detailed](https://github.com/beothorn/javaflame/blob/main/screenshotTooltip.png?raw=true)
-![flamegraph hierarchy](https://github.com/beothorn/javaflame/blob/main/screenshotHierarchical.png?raw=true)
+![flamegraph detailed](https://raw.githubusercontent.com/beothorn/javaflame/refs/heads/main/docs/screenshotTooltip.png)
+![flamegraph hierarchy](https://raw.githubusercontent.com/beothorn/javaflame/refs/heads/main/docs/screenshotHierarchical.png)
 
 # What is this for?
 
