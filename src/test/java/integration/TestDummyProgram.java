@@ -106,7 +106,7 @@ public class TestDummyProgram {
         FunctionCallRecorder.stackPerThread.clear();
         FunctionCallRecorder.shouldPrintQualified = true;
         Thread runner = new Thread(() -> new TestDummyProgram().run("{\"bar\":\n\"baz\"}"));
-        runner.setName("main"); // When running with gradle, test is wrapped in a different thread so we make sure the runner thread is always called main
+        runner.setName("mainFAIL"); // When running with gradle, test is wrapped in a different thread so we make sure the runner thread is always called main
         runner.start();
         runner.join();
 
