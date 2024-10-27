@@ -1,3 +1,5 @@
+![build status](https://github.com/beothorn/javaflame/actions/workflows/gradle.yml/badge.svg)
+
 # Javaflame
 
 Capture all function calls including argument and return values.  
