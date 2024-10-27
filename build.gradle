@@ -15,12 +15,17 @@ repositories {
 dependencies {
     implementation 'net.bytebuddy:byte-buddy:1.14.6'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
     testImplementation 'org.skyscreamer:jsonassert:1.5.1'
 }
 
 println "Registering tasks for ${javaVersions}"
 
 javadoc.options.addStringOption('Xdoclint:none', '-quiet')
+
+test {
+    useJUnitPlatform()
+}
 
 javaVersions.each { javaVersion ->
     def compileTaskName = "compileJava${javaVersion}"
@@ -31,6 +36,7 @@ javaVersions.each { javaVersion ->
     def classesTaskName = "classes${javaVersion}"
     def javaDocTaskName = "javadoc${javaVersion}"
     def sourcesJavaTaskName="sources${javaVersion}"
+    def testTaskName = "test${javaVersion}"
 
     // Determine the compiler version to use
     def compilerVersion = javaVersion >= 9 ? javaVersion : 11 // Use at least Java 11 compiler

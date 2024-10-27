@@ -1,15 +1,15 @@
 package integration;
 
-import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import com.github.beothorn.agent.TestHelper;
+import com.github.beothorn.agent.recorder.FunctionCallRecorder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 
+import static com.github.beothorn.agent.TestHelper.threadJSON;
 import static com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing.enterFunction;
 import static com.github.beothorn.agent.recorder.FunctionCallRecorderWithValueCapturing.exit;
-import static com.github.beothorn.agent.TestHelper.threadJSON;
 
 public class TestDummyProgram {
 
@@ -102,10 +102,13 @@ public class TestDummyProgram {
     }
 
     @Test
-    void runDummyProgramAndCheckOutput() throws JSONException {
+    void runDummyProgramAndCheckOutput() throws JSONException, InterruptedException {
         FunctionCallRecorder.stackPerThread.clear();
         FunctionCallRecorder.shouldPrintQualified = true;
-        new TestDummyProgram().run("{\"bar\":\n\"baz\"}");
+        Thread runner = new Thread(() -> new TestDummyProgram().run("{\"bar\":\n\"baz\"}"));
+        runner.setName("main"); // When running with gradle, test is wrapped in a different thread so we make sure the runner thread is always called main
+        runner.start();
+        runner.join();
 
         JSONArray expected = new JSONArray().put(
             threadJSON("main", 0,
