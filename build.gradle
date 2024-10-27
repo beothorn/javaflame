@@ -23,8 +23,27 @@ println "Registering tasks for ${javaVersions}"
 
 javadoc.options.addStringOption('Xdoclint:none', '-quiet')
 
+
 test {
     useJUnitPlatform()
+    // Show standard output and standard error of the test.
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+
+        // Optionally, include more details on failures
+        exceptionFormat = 'full'  // Options: 'full', 'short'
+    }
+
+    // Gradle often suppresses output; this will always show it on console
+    testLogging {
+        showExceptions true
+        showCauses true
+        showStackTraces true
+    }
+
+    // Force all output to be shown immediately
+    outputs.upToDateWhen { false }
 }
 
 javaVersions.each { javaVersion ->
