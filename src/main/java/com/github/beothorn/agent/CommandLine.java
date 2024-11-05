@@ -22,6 +22,7 @@ public class CommandLine {
     private static final String FLAG_NO_SNAPSHOTS = "no_snapshots";
     private static final String FLAG_QUALIFIED_FUNCTIONS = "qualified_functions";
     private static final String FLAG_CAPTURE_STACKTRACE = "capture_stacktrace";
+    private static final String FLAG_OFF = "off";
 
     private static final String[] VALID_ARGS = new String[]{
         ARGUMENT_FILTER,
@@ -39,7 +40,8 @@ public class CommandLine {
         FLAG_CORE_CLASSES,
         FLAG_NO_SNAPSHOTS,
         FLAG_QUALIFIED_FUNCTIONS,
-        FLAG_CAPTURE_STACKTRACE
+        FLAG_CAPTURE_STACKTRACE,
+        FLAG_OFF
     };
 
     public static void validateArguments(String argument){
@@ -71,6 +73,10 @@ public class CommandLine {
         return Arrays.stream(VALID_FLAGS)
                 .filter(f -> isOnArguments(f, arguments))
                 .toArray(String[]::new);
+    }
+
+    public static boolean argumentHasOff(String argument){
+        return isOnArguments(FLAG_OFF, argument);
     }
 
     public static boolean argumentHasQualifiedFunctions(String argument){

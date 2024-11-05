@@ -106,6 +106,12 @@ public class MethodInstrumentationAgent {
         MethodInstrumentationAgent.alreadyCalled = true;
 
         log(INFO, "Javaflame Agent " + VERSION + " loaded");
+
+        if(CommandLine.argumentHasOff(argument)) {
+            log(INFO, "OFF flag is on, will do nothing.");
+            return;
+        }
+
         // FunctionCallRecorder may run without capturing argument values if no_capturing_values is set
         FunctionCallRecorder.setShouldCaptureStacktrace(CommandLine.argumentHasShouldCaptureStackTraces(argument));
 

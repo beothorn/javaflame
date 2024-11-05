@@ -22,7 +22,7 @@ class CommandLineTest {
                     "Valid arguments are: " +
                     "[filter, intercept, startRecordingTriggerFunction, " +
                     "stopRecordingTriggerFunction, log, out, port, no_capturing_values]. " +
-                    "Valid flags are: [no_capturing_values, core_classes, no_snapshots, qualified_functions, capture_stacktrace]", e.getMessage());
+                    "Valid flags are: [no_capturing_values, core_classes, no_snapshots, qualified_functions, capture_stacktrace, off]", e.getMessage());
         }
     }
 
@@ -53,6 +53,14 @@ class CommandLineTest {
         whenItHasCommand(
             CommandLine::argumentHasNoCaptureValuesMode,
             "no_capturing_values"
+        );
+    }
+
+    @Test
+    void whenItHasCommandOff(){
+        whenItHasCommand(
+                CommandLine::argumentHasOff,
+                "off"
         );
     }
 
