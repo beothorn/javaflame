@@ -230,12 +230,22 @@ public class MethodInstrumentationAgent {
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            writeSnapshotToFile(snapshotDirectory, executionMetadataFormatted, new DebugListener());
+            writeSnapshotToFile(snapshotDirectory, new DebugListener());
         }));
+
+
+        String content = "var executionMetadata = "+ executionMetadataFormatted +";\n";
+        File metaFile = new File(snapshotDirectory, "meta.js");
+        try (FileWriter fw = new FileWriter(metaFile)) {
+            fw.write(content);
+            fw.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         Thread snapshotThread = new Thread(() -> {
             while (true) {
-                writeSnapshotToFile(snapshotDirectory,executionMetadataFormatted, new DebugListener());
+                writeSnapshotToFile(snapshotDirectory, new DebugListener());
                 try {
                     //noinspection BusyWait
                     Thread.sleep(SAVE_SNAPSHOT_INTERVAL_MILLIS);
@@ -452,7 +462,6 @@ public class MethodInstrumentationAgent {
 
     private static void writeSnapshotToFile(
         File snapshotDirectory,
-        String executionMetadataFormatted,
         DebugListener debugListener
     ) {
         fileWriteLock.lock();
@@ -470,8 +479,7 @@ public class MethodInstrumentationAgent {
                         raf.close();
                     } else {
                         try (FileWriter fw = new FileWriter(dataFile)) {
-                            String content = "var executionMetadata = "+ executionMetadataFormatted +";\n" +
-                                    "var data = [" + oldCallStack + ",\n];";
+                            String content = "var data = [" + oldCallStack + ",\n];";
                             fw.write(content);
                             fw.flush();
                         } catch (IOException e) {
