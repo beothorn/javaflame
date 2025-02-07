@@ -126,7 +126,7 @@ afterEvaluate {
                 create(publicationName, MavenPublication) {
                     groupId = 'com.github.beothorn'
                     artifactId = 'javaFlame'
-                    version = '27.0.0'
+                    version = '27.1.0'
 
                     // Include the custom JAR
                     artifact(tasks.named(jarTaskName).get()) {

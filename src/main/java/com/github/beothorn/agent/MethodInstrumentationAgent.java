@@ -40,7 +40,7 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
  */
 public class MethodInstrumentationAgent {
 
-    public static final String VERSION = "v27.0.0";
+    public static final String VERSION = "v27.1.0";
 
     // These packages needs to be ignored. They belong to the agent.
     public static final String AGENT_PACKAGE = "com.github.beothorn.agent";
