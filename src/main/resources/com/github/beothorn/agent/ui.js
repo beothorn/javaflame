@@ -506,8 +506,12 @@ function doSearch() {
         return;
     }
     const result = searchString(searchInputValue);
-    document.getElementById("searchResult").innerHTML = '';
-    createReverseHierarchyView(result, document.getElementById("searchResult"));
+    if(result.length === 0) {
+        document.getElementById("searchResult").innerHTML = 'No results';
+    } else {
+        document.getElementById("searchResult").innerHTML = '';
+        createReverseHierarchyView(result, document.getElementById("searchResult"));
+    }
 }
 
 document.getElementById("searchButton").addEventListener("click", doSearch);
