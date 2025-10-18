@@ -267,3 +267,7 @@ ul, .root {
 #startStop {
   display: none;
 }
+
+#searchResult > ul {
+  overflow-x: scroll;
+}
