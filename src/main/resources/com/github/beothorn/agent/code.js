@@ -199,7 +199,7 @@ function searchNodes(node, searchPredicate, result) {
 }
 
 function searchString(searchTerm) {
-    return search((n) => n.name.includes(searchTerm));
+    return search((n) => n.name.toLowerCase().includes(searchTerm.toLowerCase()));
 }
 
 function searchId(idToSearch) {
