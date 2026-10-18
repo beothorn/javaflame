@@ -109,6 +109,7 @@ gradle-app.setting
 
 # Package Files #
 *.jar
+!skill/javaflame/javaflame.jar
 *.war
 *.nar
 *.ear

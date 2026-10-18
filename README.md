@@ -5,7 +5,7 @@
 Capture all function calls including argument and return values.  
 Just plug the agent and get the results.   
 See function calls, parameters and return values all at once.  
-[Latest release v27.1.0](https://github.com/beothorn/javaflame/releases/download/v27.1.0/javaAgent-java8.jar)  
+[Latest release v27.1.0](https://github.com/beothorn/javaflame/releases/download/v27.1.0/javaAgent-java8.jar) or [use it as a skill](#use-it-as-a-skill)
 
 Want to see it in action? [Check out this rendering of some sort algorithms flamegraphs](https://beothorn.github.io/javaflame).
 
@@ -48,6 +48,43 @@ And all calls coming from MergeSort will show up on the graph, including arguent
 The nice thing is that this is not restricted to classes on your code. You can filter third party libraries.  
 That means if you know where some network call is done, or a GRPC or whatever else, you can build a graph listing all external calls. For example, to log postgres sql calls yoou could do:  
 `java -javaagent:/PathTo/javaAgent.jar=filter:org.postgresql.jdbc.PgConnection#prepareStatement -jar yourapp.jar`
+
+# Use it as a skill
+
+The [Javaflame skill](skill/javaflame/SKILL.md) lets a coding assistant run your Java application or JUnit tests with Javaflame, investigate captured arguments and returns, and create call diagrams. It includes the agent JAR and a dependency-free Node.js trace explorer that searches large `data.js` files without dumping them into the conversation. The skill always reports the output folder and `index.html` so you can inspect the page yourself.
+
+Install Node.js 18+ and the JDK/build tools required by your application. Clone this repository, then copy the **whole** `skill/javaflame` directory (including `javaflame.jar`, the script and references) to your assistant's skills directory. Run one of these commands from the Javaflame repository root:
+
+```bash
+# Claude Code — available across your local projects
+mkdir -p "$HOME/.claude/skills"
+cp -R skill/javaflame "$HOME/.claude/skills/"
+
+# GitHub Copilot — available across your local projects
+mkdir -p "$HOME/.copilot/skills"
+cp -R skill/javaflame "$HOME/.copilot/skills/"
+
+# Codex — available across your local projects
+mkdir -p "$HOME/.agents/skills"
+cp -R skill/javaflame "$HOME/.agents/skills/"
+```
+
+For a project-only installation, copy the folder to `<your-project>/.claude/skills/javaflame` for Claude Code, `<your-project>/.github/skills/javaflame` for Copilot, or `<your-project>/.agents/skills/javaflame` for Codex. Keep `SKILL.md` directly inside that `javaflame` folder; do not add another nested `javaflame` directory. Start a new assistant session after installation if the skill is not discovered. See the official [Claude Code skill documentation](https://code.claude.com/docs/en/skills), [Copilot skill documentation](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills), and [Codex skill documentation](https://learn.chatgpt.com/docs/build-skills) for discovery and supported environments.
+
+Try asking: “Use the javaflame skill to investigate `OrderServiceTest.createsOrder`, show the relevant callers and values, and tell me where to open the output.” In Claude Code you can invoke `/javaflame`; in Codex you can name `$javaflame` explicitly.
+
+To try the explorer directly from this checkout:
+
+```bash
+node skill/javaflame/javaflameDataExplorer.js docs/data.js summary
+node skill/javaflame/javaflameDataExplorer.js docs/data.js search --query sort --limit 5
+node skill/javaflame/javaflameDataExplorer.js --help
+```
+
+Example prompts:  
+`$javaflame I need a sequence diagram for test testMappingFromResource in html format. Identify the main actors (the 4 main classes involved in this ) and give me a sequence diagram including argument values`
+
+`$javaflame Give me the command line to run the app XYZ with javaflame so I can test adding the client, then after I do it, check where the client name "John Doe" is being stored.`
 
 # Quick start
 

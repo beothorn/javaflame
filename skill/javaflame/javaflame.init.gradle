@@ -1,0 +1,22 @@
+// Attach Javaflame only to the selected test worker, preserving other JVM args.
+// Use --no-configuration-cache: this temporary init script configures projects
+// after evaluation and reads invocation-specific system properties.
+gradle.projectsEvaluated {
+    def taskPath = System.getProperty('javaflame.task', ':test')
+    def agentJar = System.getProperty('javaflame.jar')
+    def output = System.getProperty('javaflame.out')
+    def captureFilter = System.getProperty('javaflame.filter')
+    if (!agentJar || !output || !captureFilter) {
+        throw new GradleException('Missing Javaflame JVM properties')
+    }
+    allprojects {
+        tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+            if (path == taskPath) {
+                jvmArgs "-javaagent:${agentJar}=out:${output},filter:${captureFilter}"
+                // Prevent multiple test workers from overwriting one capture.
+                maxParallelForks = 1
+                forkEvery = 0
+            }
+        }
+    }
+}
