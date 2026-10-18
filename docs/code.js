@@ -115,13 +115,17 @@ function filterDataByLambda(data, threadName, filterLambda){
     if (filterLambda.trim() === "") return data;
     if (!filterLambda.includes("span")) {
         alert("Filter function must include span. Example: span.name.includes('Foo'). Will search string instead.");
-        return data.map( d => {
+        const result = data.map( d => {
             if(d.thread !== threadName) return d;
             return {
                 ...d,
                 "span": filterSpans(d.span, (s) => s.name.includes(filterLambda))
             };
         });
+        if (result.filter(r => r.thread === threadName)[0].span === null) {
+            alert("Nothing found");
+        }
+        return result;
     }
     try {
         const filterFunction = new Function('span', `return ${filterLambda};`);
@@ -195,7 +199,7 @@ function searchNodes(node, searchPredicate, result) {
 }
 
 function searchString(searchTerm) {
-    return search((n) => n.name.includes(searchTerm));
+    return search((n) => n.name.toLowerCase().includes(searchTerm.toLowerCase()));
 }
 
 function searchId(idToSearch) {

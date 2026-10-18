@@ -1,13 +1,80 @@
+// Function to check if the recording is running
+function checkRecordingStatus() {
+    fetch('/recording')
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            } else {
+                throw new Error('Port not available');
+            }
+        })
+        .then(isRecording => {
+            const startStopButton = document.getElementById('startStop');
+            startStopButton.style.display = 'inline-block';  // Show the button when port is available
+
+            if (isRecording.trim() === 'true') {
+                startStopButton.textContent = 'Stop Capturing';
+            } else {
+                startStopButton.textContent = 'Start Capturing';
+            }
+        })
+        .catch(error => {
+            console.log(error);
+            document.getElementById('startStop').style.display = 'none';  // Hide the button if port not available
+        });
+}
+
+// Function to toggle capturing state
+function toggleRunning() {
+    const startStopButton = document.getElementById('startStop');
+    const isCurrentlyRecording = startStopButton.textContent === 'Stop Capturing';
+    const url = isCurrentlyRecording ? '/stop' : '/start';
+
+    fetch(url)
+        .then(response => {
+            if (response.ok) {
+                if (isCurrentlyRecording) {
+                    startStopButton.textContent = 'Start Capturing';
+                } else {
+                    startStopButton.textContent = 'Stop Capturing';
+                }
+            } else {
+                alert('Failed to change recording state');
+            }
+        })
+        .catch(error => {
+            console.log('Error:', error);
+        });
+}
+
+// Function to refresh the page
+function refreshPage() {
+    location.reload();
+}
+
+checkRecordingStatus();
+
 // If data file is not loaded data is undefined
 // check if data is a declared variable
 if (typeof data === 'undefined') {
     const error = document.createElement("h1");
     error.textContent = "No data loaded. Maybe nothing matches the filters?";
     document.body.appendChild(error);
+    // Nothing captured yet
 }
 
+document.title = executionMetadata.app;
+
 const argumentsField = document.getElementById("arguments");
-argumentsField.innerHTML = executionMetadata;
+argumentsField.innerHTML = `
+<p>Path: ${executionMetadata.path}</p>
+<p>Working Directory: ${executionMetadata.workingDir}</p>
+<p>MainClass: ${executionMetadata.app}</p>
+<p>Arguments: ${executionMetadata.arguments}</p>
+<p>Flags: ${executionMetadata.flags}</p>
+<p>Output: ${executionMetadata.output}</p>
+<p>Filters: ${executionMetadata.filters}</p>
+`;
 
 const firstSnapshot = document.getElementById("startTimestamp");
 const firstSnapshotTimestamp = data[0][0].snapshotTime;
@@ -205,7 +272,7 @@ function createHierarchicalView(treeData, visualizationDiv) {
 }
 
 function buildGraph(dataToPlot){
-    const colorPalette = ["#900C3F","#C70039","#F94C10","#F8DE22"];
+    const colorPalette = ["#900C3F","#C70039","#F94C10","#F8DE22"]; // TODO: light mode palette, change with theme
     for(let i = 0; i < dataToPlot.length; i++){
         const box = document.createElement("div");
         box.id = "chartBox"+i;
@@ -225,7 +292,18 @@ function buildGraph(dataToPlot){
 
         const threadName = document.createElement("h1");
         threadName.classList.add("threadName");
-        threadName.appendChild(document.createTextNode(dataToPlot[i].thread));
+        const threadExplicitName = document.createElement("p");
+        threadExplicitName.appendChild(document.createTextNode(dataToPlot[i].thread));
+
+        threadName.appendChild(threadExplicitName);
+
+        if (dataToPlot[i] && dataToPlot[i].span && dataToPlot[i].span.children && dataToPlot[i].span.children[0]) {
+            const threadFirstEntry = document.createElement("p");
+            threadFirstEntry.classList.add("threadFunction");
+            const firstEntryOnThread = dataToPlot[i].span.children[0];
+            threadFirstEntry.appendChild(document.createTextNode( firstEntryOnThread.className + "." + firstEntryOnThread.method));
+            threadName.appendChild(threadFirstEntry);
+        }
 
         const filter = document.createElement("div");
         filter.id = "filterBox"+i;
@@ -319,38 +397,45 @@ function buildGraph(dataToPlot){
 
         // ---------------------------
 
-        filterButton.addEventListener("click", () => {
+        const doFilter = () => {
             const filterString = filterInput.value;
-            const filtered = filterDataByLambda(dataForGraph, dataToPlot[i].thread, filterString);
-            
-            const oldFlameGraphByTime = document.getElementById("visual"+i);
-            if (oldFlameGraphByTime) {
-                oldFlameGraphByTime.innerHTML = '';
-                loadData({
-                    elementId: oldFlameGraphByTime.id,
-                    data: filtered[i].span,
-                    graphType: "Timestamp",
-                    colorPalette,
-                    zoomOnClick: true,
-                    onClick: (n) => showNode(byTimestampNodeOutput.id, n.node),
-                    tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`      
-                });
-            } 
-            
-            const oldFlameGraphByCallCount = document.getElementById("visual"+i);
-            if (oldFlameGraphByCallCount) {
-                oldFlameGraphByCallCount.innerHTML = '';
-                loadData({
-                    elementId: oldFlameGraphByCallCount.id,
-                    data: filtered[i].span,
-                    graphType: "ChildrenCallCount",
-                    colorPalette,
-                    zoomOnClick: true,
-                    onClick: (n) => showNode(flameGraphNodeOutput.id, n.node),
-                    tooltip: (n) => `<div class="tooltip">${n.name}</div>`
-                });
+                const filtered = filterDataByLambda(dataForGraph, dataToPlot[i].thread, filterString);
+
+                const oldFlameGraphByTime = document.getElementById("visual"+i);
+                if (oldFlameGraphByTime) {
+                    oldFlameGraphByTime.innerHTML = '';
+                    loadData({
+                        elementId: oldFlameGraphByTime.id,
+                        data: filtered[i].span,
+                        graphType: "Timestamp",
+                        colorPalette,
+                        zoomOnClick: true,
+                        onClick: (n) => showNode(byTimestampNodeOutput.id, n.node),
+                        tooltip: (n) => `<div class="tooltip">Execution time(millis): ${n.node.exitTime - n.node.entryTime}<br>${n.name}</div>`
+                    });
+                }
+
+                const oldFlameGraphByCallCount = document.getElementById("visual"+i);
+                if (oldFlameGraphByCallCount) {
+                    oldFlameGraphByCallCount.innerHTML = '';
+                    loadData({
+                        elementId: oldFlameGraphByCallCount.id,
+                        data: filtered[i].span,
+                        graphType: "ChildrenCallCount",
+                        colorPalette,
+                        zoomOnClick: true,
+                        onClick: (n) => showNode(flameGraphNodeOutput.id, n.node),
+                        tooltip: (n) => `<div class="tooltip">${n.name}</div>`
+                    });
+                }
+        }
+
+        filterInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                doFilter();
             }
         });
+        filterButton.addEventListener("click", doFilter);
 
 
         headerLeft.appendChild(threadName);
@@ -414,13 +499,25 @@ function createReverseHierarchyView(entries, visualizationDiv) {
     visualizationDiv.appendChild(unorderedList);
 }
 
-document.getElementById("searchButton").addEventListener("click", () => {
+function doSearch() {
     const searchInputValue = document.getElementById("searchInput").value;
     if (searchInputValue === '') {
         document.getElementById("searchResult").innerHTML = 'This will return all nodes, please improve your search.';
         return;
     }
     const result = searchString(searchInputValue);
-    document.getElementById("searchResult").innerHTML = '';
-    createReverseHierarchyView(result, document.getElementById("searchResult"));
+    if(result.length === 0) {
+        document.getElementById("searchResult").innerHTML = 'No results';
+    } else {
+        document.getElementById("searchResult").innerHTML = '';
+        createReverseHierarchyView(result, document.getElementById("searchResult"));
+    }
+}
+
+document.getElementById("searchButton").addEventListener("click", doSearch);
+
+document.getElementById('searchInput').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        doSearch();
+    }
 });

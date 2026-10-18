@@ -1,0 +1,1 @@
+var executionMetadata = {"app":"com.github.beothorn.App","workingDir":"/home/foobar/javaSortingAlgorithms","path":"file:/home/foobar/javaSortingAlgorithms/build/libs/javaSortingAlgorithms.jar","arguments":"","flags":"[]","output":"/home/foobar/javaSortingAlgorithms/javaflame","filters":"com.github.beothorn",};

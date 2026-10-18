@@ -213,6 +213,10 @@ button {
     margin-bottom: 4px;
 }
 
+.threadFunction {
+    font-size: small;
+}
+
 h1,
 h2 {
     color: var(--title-color-theme);
@@ -258,4 +262,12 @@ ul, .root {
 /* Show the nested list when the user clicks on the caret/arrow (with JavaScript) */
 .active {
   display: block;
+}
+
+#startStop {
+  display: none;
+}
+
+#searchResult > ul {
+  overflow-x: scroll;
 }
